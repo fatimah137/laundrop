@@ -34,7 +34,7 @@ Laundrop adalah sistem manajemen laundry modern yang memudahkan pelanggan memesa
 ## 🛠️ Teknologi
 
 ### Backend
-- **Laravel 12** — PHP Framework
+- **Laravel 11** — PHP Framework
 - **Laravel Sanctum** — API Authentication
 - **MySQL 8** — Database
 - **Tesseract OCR / Google Vision API** — AI OCR
