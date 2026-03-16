@@ -1,24 +1,16 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Laravel
+laundrop-api/vendor
+laundrop-api/node_modules
+laundrop-api/public/storage
+laundrop-api/storage/*.key
+laundrop-api/.env
+# React
+laundrop-web/node_modules
+laundrop-web/dist
+laundrop-web/.env
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# System
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+.vscode
+.idea
