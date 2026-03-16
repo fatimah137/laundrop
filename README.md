@@ -34,7 +34,7 @@ Laundrop adalah sistem manajemen laundry modern yang memudahkan pelanggan memesa
 ## 🛠️ Teknologi
 
 ### Backend
-- **Laravel 11** — PHP Framework
+- **Laravel 12** — PHP Framework
 - **Laravel Sanctum** — API Authentication
 - **MySQL 8** — Database
 - **Tesseract OCR / Google Vision API** — AI OCR
@@ -52,10 +52,10 @@ Laundrop adalah sistem manajemen laundry modern yang memudahkan pelanggan memesa
 
 ## 👩‍💻 Tim Pengembang
 
-| Nama | NIM | Role |
-|------|-----|------|
-| Desyana Dewi Hapsari | 3.34.23.1.08 | Backend Developer |
-| Fatimah Fauzi Abdul Ghoni | 3.34.23.1.11 | Frontend Developer |
+| Nama | NIM |
+|------|-----|
+| Desyana Dewi Hapsari | 3.34.23.1.08 |
+| Fatimah Fauzi Abdul Ghoni | 3.34.23.1.11 |
 
 > Pembimbing I: Tahan Prahara, S.T., M.Kom.  
 > Pembimbing II: Amran Yobioktabera, S.Kom., M.Kom.
