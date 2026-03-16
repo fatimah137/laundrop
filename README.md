@@ -113,7 +113,7 @@ Pastikan software berikut sudah terinstall di komputer kamu:
 Buka terminal di VS Code (`Ctrl + \``) lalu jalankan:
 
 ```bash
-git clone https://github.com/desyana/laundrop.git
+git clone https://github.com/fatimah137/laundrop.git
 cd laundrop
 ```
 
