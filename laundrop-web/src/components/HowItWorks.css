@@ -1,0 +1,78 @@
+.how {
+  padding: 64px 0;
+  background: #fff;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.step {
+  border-radius: 16px;
+  padding: 24px 20px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+}
+
+.step:hover {
+  border-color: var(--primary);
+}
+
+.step.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.step-num {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+
+.step.active .step-num {
+  color: rgba(255,255,255,0.7);
+}
+
+.step h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+}
+
+.step.active h3 {
+  color: #fff;
+}
+
+.step p {
+  font-size: 13px;
+  color: var(--text-gray);
+  line-height: 1.6;
+}
+
+.step.active p {
+  color: rgba(255,255,255,0.85);
+}
+
+.how-cta {
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
