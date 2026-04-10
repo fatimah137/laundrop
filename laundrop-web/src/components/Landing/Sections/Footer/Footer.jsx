@@ -1,5 +1,5 @@
 import './Footer.css'
-import logoImg from '../assets/Logo_Laundrop.png'
+import logoImg from "../../../../assets/Logo_Laundrop.png";
 
 const footerLinks = [
   {

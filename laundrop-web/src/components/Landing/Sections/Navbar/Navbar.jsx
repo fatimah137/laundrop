@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './Navbar.css'
-import logoImg from '../assets/Logo_Laundrop.png'
+import logoImg from "../../../../assets/Logo_Laundrop.png";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -25,8 +25,8 @@ export default function Navbar() {
           <li><a href="#faq">FAQ</a></li>
         </ul>
 
-        <a href="/login" className="btn-primary navbar-cta">
-          Login
+        <a href="/Pesan Sekarang" className="btn-primary navbar-cta">
+          Pesan Sekarang
         </a>
       </div>
     </nav>
