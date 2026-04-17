@@ -1,0 +1,87 @@
+/* Container Utama Header */
+.main-header {
+  height: 64px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+/* Tombol Menu Mobile (Sembunyikan di Layar Lebar) */
+.mobile-menu-btn {
+  padding: 8px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.mobile-menu-btn:hover {
+  background-color: #f1f5f9;
+}
+
+/* Bagian Kanan Header */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Ikon Notifikasi & Titik Merah */
+.notif-link {
+  position: relative;
+  padding: 8px;
+  border-radius: 8px;
+  color: #64748b;
+  display: flex;
+  transition: 0.2s;
+}
+
+.notif-link:hover {
+  background-color: #f1f5f9;
+}
+
+.notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444; /* Warna merah */
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+/* Lingkaran Avatar Profile */
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #008ecc; /* Biru Laundrop */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+
+.avatar-circle:hover {
+  opacity: 0.9;
+}
+
+/* Responsif: Sembunyikan tombol menu jika layar di atas 1024px */
+@media (min-width: 1024px) {
+  .mobile-menu-btn {
+    display: none;
+  }
+}

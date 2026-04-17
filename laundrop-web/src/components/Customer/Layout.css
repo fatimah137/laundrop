@@ -1,0 +1,69 @@
+/* CONTAINER UTAMA */
+.layout-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+/* SIDEBAR */
+.sidebar-wrapper {
+  width: 260px;
+  background-color: #121926;
+  flex-shrink: 0; /* biar tidak mengecil */
+}
+
+/* MAIN WRAPPER */
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* AREA KONTEN */
+.content-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background-color: #f8fafc;
+}
+
+/* BATASI LEBAR KONTEN (OPSIONAL) */
+.content-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* OVERLAY (MOBILE) */
+.sidebar-overlay {
+  display: none;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .sidebar-wrapper {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    height: 100vh;
+    z-index: 50;
+    transition: 0.3s;
+  }
+
+  .sidebar-wrapper.active {
+    left: 0;
+  }
+
+  .main-wrapper {
+    margin-left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 40;
+  }
+}
