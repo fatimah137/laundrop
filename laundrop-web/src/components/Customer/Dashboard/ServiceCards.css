@@ -92,3 +92,17 @@
 .card.purple {
   background: #f5f3ff;
 }
+
+.card.green {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.card.green .icon-box {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.card.green .price {
+  color: #16a34a;
+}

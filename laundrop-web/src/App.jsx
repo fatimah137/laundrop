@@ -1,7 +1,14 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppProvider } from './context/AppContext' // 1. Import Provider
 import Home from './pages/Home'
+
+// Customer Pages
 import Dashboard from './pages/customer/Dashboard/Dashboard'
+import Order from "./pages/customer/Order/Order";
+import History from "./pages/customer/History/History";
+import Notification from './pages/customer/Notification/Notification';
+import Profile from './pages/customer/Profile/Profile'
+import Setting from './pages/customer/Setting/Setting'
 
 // AUTH Pages
 import Login from './pages/auth/Login'
@@ -31,6 +38,11 @@ function App() {
 
           {/* Customer */}
           <Route path="/customer/dashboard" element={<Dashboard />} />
+          <Route path="/customer/order" element={<Order />} />
+          <Route path="/customer/history" element={<History />} />
+          <Route path="/customer/notification" element={<Notification />} />
+          <Route path="/customer/profile" element={<Profile />} />
+          <Route path="/customer/setting" element={<Setting />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>

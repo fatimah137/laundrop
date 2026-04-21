@@ -122,6 +122,34 @@
   gap: 8px;
 }
 
+/* Status Badge - Recent Orders */
+.status-text {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.status-text.on-progress {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-text.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-text.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-text.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 /* Responsive Grid for Mobile */
 @media (max-width: 640px) {
   .stats-grid {

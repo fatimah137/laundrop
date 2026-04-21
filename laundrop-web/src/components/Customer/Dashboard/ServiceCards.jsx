@@ -3,31 +3,40 @@ import "./ServiceCards.css";
 
 const SERVICES = [
   {
-    id: "regular",
-    name: "Regular Wash",
-    icon: Shirt,
-    price: "$5 / kg",
-    duration: "2–3 days",
-    desc: "Standard wash, dry & fold for everyday clothes.",
-    color: "blue",
+    id:       "cuci-setrika",
+    name:     "Cuci + Setrika",
+    icon:     Shirt,
+    price:    "Rp 10.000 / kg",
+    duration: "2–3 hari",
+    desc:     "Mencuci dan menyetrika pakaian sehari-hari.",
+    color:    "blue",
   },
   {
-    id: "express",
-    name: "Express Wash",
-    icon: Zap,
-    price: "$10 / kg",
-    duration: "Same day",
-    desc: "Fast turnaround — done within 4 hours of pickup.",
-    color: "orange",
+    id:       "setrika",
+    name:     "Setrika Saja",
+    icon:     Zap,
+    price:    "Rp 5.000 / kg",
+    duration: "1–2 hari",
+    desc:     "Hanya menyetrika pakaian yang sudah dicuci.",
+    color:    "orange",
   },
   {
-    id: "dry",
-    name: "Dry Cleaning",
-    icon: Sparkles,
-    price: "$15 / kg",
-    duration: "3–5 days",
-    desc: "Delicate care for suits, gowns & special garments.",
-    color: "purple",
+    id:       "cuci-kering",
+    name:     "Cuci Kering",
+    icon:     Sparkles,
+    price:    "Rp 40.000 / pcs",
+    duration: "3–5 hari",
+    desc:     "Perawatan khusus untuk jas, gaun & pakaian formal.",
+    color:    "purple",
+  },
+  {
+    id:       "express",
+    name:     "Express (24 Jam)",
+    icon:     Clock,
+    price:    "Rp 15.000 / kg",
+    duration: "24 jam",
+    desc:     "Selesai dalam 24 jam setelah penjemputan.",
+    color:    "green",
   },
 ];
 
@@ -40,10 +49,8 @@ export default function ServiceCards() {
             <div className="icon-box">
               <Icon size={20} />
             </div>
-
             <p className="name">{name}</p>
             <p className="desc">{desc}</p>
-
             <div className="card-footer">
               <span className="price">{price}</span>
               <span className="duration">

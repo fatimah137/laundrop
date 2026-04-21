@@ -3,10 +3,12 @@ import { ShoppingBag, CheckCircle, DollarSign, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../../context/AppContext';
 import Layout from '../../../components/Customer/Layout';
+import { formatRp } from '../../../context/AppContext';
 import StatCard from '../../../components/Customer/Dashboard/StatCard';
 import OrderCard from '../../../components/Customer/Dashboard/OrderCard';
 import ServiceCards from '../../../components/Customer/Dashboard/ServiceCards';
 import QuickActions from '../../../components/Customer/Dashboard/QuickActions';
+import TrackOrderModal from '../../../components/Customer/Orders/TrackOrderModal';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -49,7 +51,7 @@ export default function Dashboard() {
           <StatCard 
             icon={DollarSign} 
             label="Total Spending" 
-            value={`$${totalSpending.toFixed(2)}`} 
+           value={formatRp(totalSpending)}
             colorClass="purple" 
           />
         </section>
@@ -90,7 +92,7 @@ export default function Dashboard() {
         <section className="content-card">
           <div className="card-header">
             <h3>Recent Orders</h3>
-            <Link to="/history" className="view-all-link">
+            <Link to="/customer/history" className="view-all-link">
               View all <ArrowRight size={16} />
             </Link>
           </div>
@@ -102,13 +104,22 @@ export default function Dashboard() {
                   <p className="recent-sub">{order.date} · {order.service}</p>
                 </div>
                 <div className="recent-right">
-                   <span className={`status-text ${order.status.toLowerCase()}`}>{order.status}</span>
-                   <span className="recent-price">${order.price.toFixed(2)}</span>
+                   <span className={`status-text ${order.status.toLowerCase().replace(/ /g, '-')}`}>
+                   {order.status}
+                  </span>
+                  <span className="recent-price">{formatRp(order.price)}</span>
                 </div>
               </div>
             ))}
           </div>
         </section>
+     
+      {trackingOrder && (
+        <TrackOrderModal
+          order={trackingOrder}
+          onClose={() => setTrackingOrder(null)}
+        />
+      )}
 
       </div>
     </Layout>

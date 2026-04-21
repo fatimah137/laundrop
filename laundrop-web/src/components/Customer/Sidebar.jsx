@@ -1,16 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ShoppingBag, Clock, Bell, User, Settings, WashingMachine, X, LogOut } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import Logo from '../../assets/Logo_Laundrop.png';
 import './Sidebar.css';
 
 // Sesuaikan path dengan App.jsx 
 const navItems = [
   { path: '/customer/dashboard', label: 'Dashboard', icon: LayoutDashboard }, // Ubah dari '/'
-  { path: '/order', label: 'Order', icon: ShoppingBag },
-  { path: '/history', label: 'Order History', icon: Clock },
-  { path: '/notifications', label: 'Notifications', icon: Bell },
-  { path: '/profile', label: 'Profile', icon: User },
-  { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/customer/order', label: 'Order', icon: ShoppingBag },
+  { path: '/customer/history', label: 'Order History', icon: Clock },
+  { path: '/customer/notification', label: 'Notifications', icon: Bell },
+  { path: '/customer/profile', label: 'Profile', icon: User },
+  { path: '/customer/setting', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -34,13 +35,13 @@ export default function Sidebar({ open, onClose }) {
         <div className="sidebar-header">
           <div className="logo-section">
             <div className="logo-box">
-              <WashingMachine className="logo-icon" />
+               <img src={Logo} alt="Laundrop" className="logo-img" /> {/* 👈 ganti ini */}
             </div>
             <span className="logo-text">Laundrop</span>
           </div>
           <button className="close-mobile-btn" onClick={onClose}>
             <X size={20} />
-          </button>
+            </button>
         </div>
 
         {/* Menu Navigasi */}

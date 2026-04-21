@@ -1,4 +1,3 @@
-/* Container Utama Header */
 .main-header {
   height: 64px;
   background-color: #ffffff;
@@ -13,7 +12,6 @@
   box-sizing: border-box;
 }
 
-/* Tombol Menu Mobile (Sembunyikan di Layar Lebar) */
 .mobile-menu-btn {
   padding: 8px;
   border-radius: 8px;
@@ -28,44 +26,57 @@
   background-color: #f1f5f9;
 }
 
-/* Bagian Kanan Header */
 .header-right {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-/* Ikon Notifikasi & Titik Merah */
-.notif-link {
+.bell-btn {
   position: relative;
   padding: 8px;
   border-radius: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
   color: #64748b;
   display: flex;
-  transition: 0.2s;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  transition: background 0.2s;
 }
 
-.notif-link:hover {
+.bell-btn:hover {
   background-color: #f1f5f9;
 }
 
-.notif-dot {
+.bell-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  background-color: #ef4444; /* Warna merah */
-  border-radius: 50%;
-  border: 2px solid white;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 2px solid #fff;
+  line-height: 1;
+  pointer-events: none;
 }
 
-/* Lingkaran Avatar Profile */
 .avatar-circle {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #008ecc; /* Biru Laundrop */
+  background-color: #008ecc;
   color: white;
   display: flex;
   align-items: center;
@@ -79,7 +90,6 @@
   opacity: 0.9;
 }
 
-/* Responsif: Sembunyikan tombol menu jika layar di atas 1024px */
 @media (min-width: 1024px) {
   .mobile-menu-btn {
     display: none;

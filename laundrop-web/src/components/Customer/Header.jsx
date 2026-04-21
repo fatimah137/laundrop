@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import './Header.css'; // import file CSS-nya
 
 export default function Header({ onMenuClick }) {
-  const { unreadCount } = useApp();
+  const { unreadCount, profile } = useApp();
 
   return (
     <header className="main-header">
@@ -18,15 +18,15 @@ export default function Header({ onMenuClick }) {
 
       <div className="header-right">
         {/* Notifikasi */}
-        <Link to="/notifications" className="notif-link">
-          <Bell className="icon" />
-          {unreadCount > 0 && <span className="notif-dot" />}
-        </Link>
+        <button className="bell-btn" onClick={() => navigate('/customer/notifications')}>
+          <Bell size={20} />
+          {unreadCount > 0 && <span className="bell-badge">{unreadCount}</span>}
+        </button>
 
         {/* Profil User */}
-        <Link to="/profile" className="profile-link">
+        <Link to="/customer/profile" className="profile-link">
           <div className="avatar-circle">
-            AJ
+            {profile?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
           </div>
         </Link>
       </div>

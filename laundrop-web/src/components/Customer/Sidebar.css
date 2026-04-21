@@ -33,10 +33,16 @@
   gap: 12px;
 }
 
+.logo-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
 .logo-box {
   width: 36px;
   height: 36px;
-  background-color: #008ecc;
+  background-color: #fefefe;
   border-radius: 10px;
   display: flex;
   align-items: center;

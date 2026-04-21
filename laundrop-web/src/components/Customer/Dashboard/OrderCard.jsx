@@ -3,7 +3,7 @@ import { Calendar, MapPin, Truck } from 'lucide-react';
 
 export default function OrderCard({ order, onTrack }) {
   if (!order) return null;
-  
+
   return (
     <div className="order-item">
       <div className="order-top">
@@ -13,12 +13,12 @@ export default function OrderCard({ order, onTrack }) {
             {order.status}
           </span>
         </div>
-        <span className="order-price">${order.price.toFixed(2)}</span>
+        <span className="order-price">Rp {order.price.toLocaleString('id-ID')}</span> {/* 👈 */}
       </div>
 
       <div className="order-mid">
         <div className="info-detail">
-          <Calendar size={14} /> <span>{order.pickupDate} · {order.pickupTime}</span>
+          <Calendar size={14} /> <span>{order.date} · {order.pickupTime}</span> {/* 👈 date bukan pickupDate */}
         </div>
         <div className="info-detail">
           <MapPin size={14} /> <span>{order.pickupAddress}</span>
