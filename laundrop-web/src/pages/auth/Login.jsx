@@ -1,23 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
+import Logo from "../../assets/Logo_Laundrop.png"; // 
 import "./auth.css";
 
-function LogoIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="8" fill="url(#logo-grad)"/>
-      <path d="M10 24c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-      <circle cx="18" cy="14" r="3.5" fill="#fff"/>
-      <defs>
-        <linearGradient id="logo-grad" x1="0" y1="0" x2="36" y2="36">
-          <stop stopColor="#60A5FA"/>
-          <stop offset="1" stopColor="#2563EB"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
+// Akun dummy
+const DUMMY_ACCOUNTS = [
+  { email: "desyana@laundrop.com", password: "123456", name: "Desyana Dewi" },
+  { email: "user@laundrop.com",    password: "123456", name: "User" },
+];
 
 function GoogleIcon() {
   return (
@@ -46,34 +37,53 @@ function EyeIcon({ open }) {
 }
 
 export default function Login() {
-  const navigate = useNavigate();
-  const { login, user } = useApp();
+  const navigate  = useNavigate();
+  const { login } = useApp();
 
-  const [showPass, setShowPass] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "" });
-
-  useEffect(() => {
-    if (user) {
-      navigate("/customer/dashboard");
-    }
-  }, [user, navigate]);
+  const [showPass, setShowPass]   = useState(false);
+  const [form, setForm]           = useState({ email: "", password: "" });
+  const [error, setError]         = useState("");
+  const [showToast, setShowToast] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    login({
-      name: "User",
-      email: form.email,
-    });
-    navigate("/customer/dashboard");
+    setError("");
+
+    const account = DUMMY_ACCOUNTS.find(
+      a => a.email === form.email && a.password === form.password
+    );
+
+    if (!account) {
+      setError("Email atau password salah.");
+      return;
+    }
+
+    login({ name: account.name, email: account.email });
+
+    // Tampilkan toast
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+      navigate("/customer/dashboard");
+    }, 1500);
   };
 
   return (
     <div className="auth-page">
+
+      {/* Toast Berhasil */}
+      {showToast && (
+        <div className="auth-toast">
+          ✓ Berhasil masuk! Mengalihkan...
+        </div>
+      )}
+
       <main className="auth-main">
         <div className="auth-card">
 
+          {/* Logo */}
           <div className="auth-logo" onClick={() => navigate("/")}>
-            <LogoIcon />
+            <img src={Logo} alt="Laundrop" className="auth-logo-img" />
             <span className="auth-logo-text">Laundrop</span>
           </div>
 
@@ -100,9 +110,7 @@ export default function Login() {
             </div>
 
             <div className="auth-field">
-              <div className="auth-field-header">
-                <label>Password</label>
-              </div>
+              <label>Password</label>
               <div className="auth-input-wrap">
                 <input
                   className="auth-input"
@@ -122,6 +130,13 @@ export default function Login() {
               </div>
             </div>
 
+            {/* Error message */}
+            {error && (
+              <div className="auth-error">
+                {error}
+              </div>
+            )}
+
             <div className="auth-forgot">
               <button
                 type="button"
@@ -136,6 +151,13 @@ export default function Login() {
               Sign In
             </button>
           </form>
+
+          {/* Hint akun dummy */}
+          <div className="auth-hint">
+            <p>Gunakan akun demo:</p>
+            <p>Email: <strong>desyana@laundrop.com</strong></p>
+            <p>Password: <strong>123456</strong></p>
+          </div>
 
           <div className="auth-bottom">
             Don't have an account?{" "}

@@ -10,11 +10,19 @@ function generateOrderId() {
   return `LND-${year}-${num}`;
 }
 
+// Akun dummy
+export const DUMMY_ACCOUNTS = [
+  { email: "desyana@laundrop.com", password: "123456", name: "Desyana Dewi" },
+  { email: "user@laundrop.com",    password: "123456", name: "User" },
+];
+
 export const AppProvider = ({ children }) => {
+
+  const [user, setUser] = useState(null); // 👈 tambah
 
   const [profile] = useState({
     name:  "Desyana Dewi",
-    email: "desyana.dewi@example.com",
+    email: "desyana@laundrop.com",
   });
 
   const [orders, setOrders] = useState([
@@ -34,11 +42,11 @@ export const AppProvider = ({ children }) => {
       paymentMethod:   "Cash",
       createdAt:       "2023-10-24T10:00:00.000Z",
       timeline: [
-        { label: "Order Diterima",  time: "24 Okt, 10:00", done: true  },
-        { label: "Dijemput",        time: "24 Okt, 11:30", done: true  },
-        { label: "Sedang Dicuci",   time: null,            done: false },
-        { label: "Siap Dikirim",    time: null,            done: false },
-        { label: "Terkirim",        time: null,            done: false },
+        { label: "Order Diterima", time: "24 Okt, 10:00", done: true  },
+        { label: "Dijemput",       time: "24 Okt, 11:30", done: true  },
+        { label: "Sedang Dicuci",  time: null,            done: false },
+        { label: "Siap Dikirim",   time: null,            done: false },
+        { label: "Terkirim",       time: null,            done: false },
       ],
     },
     {
@@ -57,11 +65,11 @@ export const AppProvider = ({ children }) => {
       paymentMethod:   "Cash",
       createdAt:       "2023-10-20T10:00:00.000Z",
       timeline: [
-        { label: "Order Diterima",  time: "20 Okt, 10:00", done: true },
-        { label: "Dijemput",        time: "20 Okt, 11:00", done: true },
-        { label: "Sedang Disetrika",time: "20 Okt, 14:00", done: true },
-        { label: "Siap Dikirim",    time: "21 Okt, 09:00", done: true },
-        { label: "Terkirim",        time: "21 Okt, 11:00", done: true },
+        { label: "Order Diterima",   time: "20 Okt, 10:00", done: true },
+        { label: "Dijemput",         time: "20 Okt, 11:00", done: true },
+        { label: "Sedang Disetrika", time: "20 Okt, 14:00", done: true },
+        { label: "Siap Dikirim",     time: "21 Okt, 09:00", done: true },
+        { label: "Terkirim",         time: "21 Okt, 11:00", done: true },
       ],
     },
     {
@@ -80,11 +88,11 @@ export const AppProvider = ({ children }) => {
       paymentMethod:   "QRIS",
       createdAt:       "2023-10-18T11:00:00.000Z",
       timeline: [
-        { label: "Order Diterima",  time: "18 Okt, 11:00", done: true },
-        { label: "Dijemput",        time: "18 Okt, 12:00", done: true },
-        { label: "Sedang Dicuci",   time: "19 Okt, 10:00", done: true },
-        { label: "Siap Dikirim",    time: "20 Okt, 09:00", done: true },
-        { label: "Terkirim",        time: "20 Okt, 10:30", done: true },
+        { label: "Order Diterima", time: "18 Okt, 11:00", done: true },
+        { label: "Dijemput",       time: "18 Okt, 12:00", done: true },
+        { label: "Sedang Dicuci",  time: "19 Okt, 10:00", done: true },
+        { label: "Siap Dikirim",   time: "20 Okt, 09:00", done: true },
+        { label: "Terkirim",       time: "20 Okt, 10:30", done: true },
       ],
     },
     {
@@ -103,11 +111,11 @@ export const AppProvider = ({ children }) => {
       paymentMethod:   "QRIS",
       createdAt:       "2023-10-15T09:00:00.000Z",
       timeline: [
-        { label: "Order Diterima",  time: "15 Okt, 09:00", done: true },
-        { label: "Dijemput",        time: "15 Okt, 10:00", done: true },
-        { label: "Sedang Dicuci",   time: "15 Okt, 12:00", done: true },
-        { label: "Siap Dikirim",    time: "15 Okt, 20:00", done: true },
-        { label: "Terkirim",        time: "16 Okt, 09:00", done: true },
+        { label: "Order Diterima", time: "15 Okt, 09:00", done: true },
+        { label: "Dijemput",       time: "15 Okt, 10:00", done: true },
+        { label: "Sedang Dicuci",  time: "15 Okt, 12:00", done: true },
+        { label: "Siap Dikirim",   time: "15 Okt, 20:00", done: true },
+        { label: "Terkirim",       time: "16 Okt, 09:00", done: true },
       ],
     },
   ]);
@@ -138,6 +146,16 @@ export const AppProvider = ({ children }) => {
   const totalSpending   = orders.reduce((acc, o) => acc + (o.price || 0), 0);
   const unreadCount     = notifications.filter(n => !n.read).length;
 
+  // 👇 tambah fungsi login & logout
+  function login(userData) {
+    setUser(userData);
+  }
+
+  function logout() {
+    setUser(null);
+    localStorage.clear();
+  }
+
   function addOrder(orderData) {
     const newOrder = {
       ...orderData,
@@ -146,11 +164,11 @@ export const AppProvider = ({ children }) => {
       status:    "Pending",
       createdAt: new Date().toISOString(),
       timeline: [
-        { label: "Order Diterima",  time: new Date().toLocaleString("id-ID"), done: true  },
-        { label: "Dijemput",        time: null,                               done: false },
-        { label: "Sedang Dicuci",   time: null,                               done: false },
-        { label: "Siap Dikirim",    time: null,                               done: false },
-        { label: "Terkirim",        time: null,                               done: false },
+        { label: "Order Diterima", time: new Date().toLocaleString("id-ID"), done: true  },
+        { label: "Dijemput",       time: null,                               done: false },
+        { label: "Sedang Dicuci",  time: null,                               done: false },
+        { label: "Siap Dikirim",   time: null,                               done: false },
+        { label: "Terkirim",       time: null,                               done: false },
       ],
     };
     setOrders(prev => [newOrder, ...prev]);
@@ -179,6 +197,9 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
+      user,           // 👈 tambah
+      login,          // 👈 tambah
+      logout,         // 👈 tambah
       profile,
       orders,
       activeOrders,

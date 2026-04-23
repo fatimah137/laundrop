@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Logo from "../../assets/Logo_Laundrop.png";
 import "./auth.css";
 
 function LogoIcon() {
