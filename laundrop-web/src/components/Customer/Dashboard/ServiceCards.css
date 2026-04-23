@@ -1,0 +1,108 @@
+.services {
+  margin-top: 24px;
+  padding: 16px;
+}
+
+.title {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* CARD */
+.card {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #eee;
+  transition: 0.3s;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+
+  min-height: 180px;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ICON */
+.icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+/* TEXT */
+.name {
+  font-weight: 600;
+}
+
+.desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 6px 0 12px;
+}
+
+/* FOOTER */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  background: transparent;
+
+}
+
+.price {
+ font-size: 18px;
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.duration {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  gap: 4px;
+}
+
+/* COLOR VARIANT */
+.card.blue {
+  background: #eff6ff;
+}
+
+.card.orange {
+  background: #fff7ed;
+}
+
+.card.purple {
+  background: #f5f3ff;
+}
+
+.card.green {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.card.green .icon-box {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.card.green .price {
+  color: #16a34a;
+}
