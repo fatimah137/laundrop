@@ -1,0 +1,16 @@
+.page-title {
+  margin-bottom: 5px;
+}
+
+.page-title-heading {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+
+.page-title-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+}
