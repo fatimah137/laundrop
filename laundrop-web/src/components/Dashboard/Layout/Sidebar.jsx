@@ -15,6 +15,7 @@ const ALL_MENUS = [
   { key: 'payment',       path: '/dashboard/payment',       icon: Wallet,          label: 'Payment',       group: 'finance' },
   { key: 'reports',       path: '/dashboard/reports',       icon: BarChart3,       label: 'Reports',       group: 'finance' },
   { key: 'notifications', path: '/dashboard/notifications', icon: Bell,            label: 'Notifications', group: 'system' },
+  { key: 'employees',     path: '/dashboard/employees',     icon: UsersRound,      label: 'Employees',     group: 'system' },
   { key: 'profile',       path: '/dashboard/profile',       icon: UserCircle,      label: 'Profile',       group: 'system' },
   { key: 'settings',      path: '/dashboard/settings',      icon: Settings,        label: 'Settings',      group: 'system' },
 ];
