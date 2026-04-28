@@ -1,27 +1,43 @@
-.stat-card {
-  background: white;
-  padding: 20px;
+.customer-stat-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
+  padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.stat-icon-wrapper {
+.customer-stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-/* Warna dinamis lewat class */
-.blue .stat-icon-wrapper { background: #e0f2fe; color: #008ecc; }
-.green .stat-icon-wrapper { background: #dcfce7; color: #15803d; }
-.purple .stat-icon-wrapper { background: #f5f3ff; color: #7c3aed; }
+.customer-stat-icon.blue   { background: #eff6ff; color: #3b82f6; }
+.customer-stat-icon.green  { background: #f0fdf4; color: #10b981; }
+.customer-stat-icon.purple { background: #f5f3ff; color: #7c3aed; }
 
-.stat-label { color: #64748b; font-size: 13px; margin: 0; }
-.stat-value { color: #1e293b; font-size: 20px; font-weight: 700; margin: 4px 0 0; }
+.customer-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 4px;
+}
+
+.customer-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.1;
+}

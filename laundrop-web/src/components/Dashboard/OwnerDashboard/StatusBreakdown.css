@@ -1,0 +1,79 @@
+/* StatusBreakdown.css */
+
+.status-card {
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.status-title {
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--foreground-color, #111827);
+}
+
+.status-subtitle {
+  font-size: 0.75rem;
+  color: var(--muted-color, #6b7280);
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.empty-chart {
+  height: 14rem; /* h-56 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  color: var(--muted-color);
+}
+
+.chart-layout {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pie-container {
+  width: 9rem; /* 144px / w-36 */
+  height: 9rem; /* 144px / h-36 */
+  flex-shrink: 0;
+}
+
+.legend-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* space-y-2 */
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.legend-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-dot {
+  width: 0.625rem; /* 10px */
+  height: 0.625rem;
+  border-radius: 9999px;
+}
+
+.status-name {
+  font-weight: 500;
+}
+
+.status-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
