@@ -11,7 +11,6 @@ const ALL_MENUS = [
   { key: 'orders',        path: '/dashboard/orders',        icon: ShoppingBag,     label: 'Orders',        group: 'main' },
   { key: 'customers',     path: '/dashboard/customers',     icon: Users,           label: 'Customers',     group: 'main' },
   { key: 'services',      path: '/dashboard/services',      icon: Sparkles,        label: 'Services',      group: 'main' },
-  { key: 'tracking',      path: '/dashboard/tracking',      icon: MapPin,          label: 'Tracking',      group: 'main' },
   { key: 'payment',       path: '/dashboard/payment',       icon: Wallet,          label: 'Payment',       group: 'finance' },
   { key: 'reports',       path: '/dashboard/reports',       icon: BarChart3,       label: 'Reports',       group: 'finance' },
   { key: 'notifications', path: '/dashboard/notifications', icon: Bell,            label: 'Notifications', group: 'system' },
@@ -21,7 +20,7 @@ const ALL_MENUS = [
 ];
 
 // Menu yang bisa diakses employee
-const EMPLOYEE_MENUS = ['dashboard', 'orders', 'tracking', 'notifications', 'profile'];
+const EMPLOYEE_MENUS = ['dashboard', 'orders', 'notifications', 'profile'];
 
 const GROUPS = [
   { key: 'main',    label: 'Main' },

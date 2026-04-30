@@ -9,9 +9,6 @@ import AppLayout from './components/Dashboard/Layout/AppLayout';
 // Owner/Admin Pages 
 import OwnerDashboard from "./pages/dashboard/OwnerDashboard/OwnerDashboard";
 import Orders from "./pages/dashboard/Orders/Orders";
-import Customers from "./pages/dashboard/Customers/Customers";
-import Services from "./pages/dashboard/Services/Services";
-import Reports from "./pages/dashboard/Reports/Reports";
 
 // Customer Pages
 import Dashboard from './pages/customer/Dashboard/Dashboard'
@@ -57,11 +54,8 @@ function App() {
 
             {/* Owner/Admin - Menggunakan AppLayout agar Sidebar muncul */}
             <Route element={<AppLayout />}>
-              <Route path="/owner/dashboard" element={<OwnerDashboard />} />
-              <Route path="/owner/orders" element={<Orders />} />
-              <Route path="/owner/customers" element={<Customers />} />
-              <Route path="/owner/services" element={<Services />} />
-              <Route path="/owner/reports" element={<Reports />} />
+              <Route path="/dashboard/dashboard" element={<OwnerDashboard />} />
+              <Route path="/dashboard/orders" element={<Orders />} />
             </Route>
 
           </Routes>
