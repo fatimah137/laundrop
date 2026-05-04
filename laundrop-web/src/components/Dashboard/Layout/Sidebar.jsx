@@ -7,16 +7,16 @@ import {
 import './Sidebar.css';
 
 const ALL_MENUS = [
-  { key: 'dashboard',     path: '/dashboard/dashboard',     icon: LayoutDashboard, label: 'Dashboard',     group: 'main' },
-  { key: 'orders',        path: '/dashboard/orders',        icon: ShoppingBag,     label: 'Orders',        group: 'main' },
-  { key: 'customers',     path: '/dashboard/customers',     icon: Users,           label: 'Customers',     group: 'main' },
-  { key: 'services',      path: '/dashboard/services',      icon: Sparkles,        label: 'Services',      group: 'main' },
-  { key: 'payment',       path: '/dashboard/payment',       icon: Wallet,          label: 'Payment',       group: 'finance' },
-  { key: 'reports',       path: '/dashboard/reports',       icon: BarChart3,       label: 'Reports',       group: 'finance' },
-  { key: 'notifications', path: '/dashboard/notifications', icon: Bell,            label: 'Notifications', group: 'system' },
-  { key: 'employees',     path: '/dashboard/employees',     icon: UsersRound,      label: 'Employees',     group: 'system' },
-  { key: 'profile',       path: '/dashboard/profile',       icon: UserCircle,      label: 'Profile',       group: 'system' },
-  { key: 'settings',      path: '/dashboard/settings',      icon: Settings,        label: 'Settings',      group: 'system' },
+  { key: 'dashboard',     path: 'dashboard',     icon: LayoutDashboard, label: 'Dashboard',     group: 'main' },
+  { key: 'orders',        path: 'orders',        icon: ShoppingBag,     label: 'Orders',        group: 'main' },
+  { key: 'customers',     path: 'customers',     icon: Users,           label: 'Customers',     group: 'main' },
+  { key: 'services',      path: 'services',      icon: Sparkles,        label: 'Services',      group: 'main' },
+  { key: 'payment',       path: 'payment',       icon: Wallet,          label: 'Payment',       group: 'finance' },
+  { key: 'reports',       path: 'reports',       icon: BarChart3,       label: 'Reports',       group: 'finance' },
+  { key: 'notifications', path: 'notifications', icon: Bell,            label: 'Notifications', group: 'system' },
+  { key: 'employees',     path: 'employees',     icon: UsersRound,      label: 'Employees',     group: 'system' },
+  { key: 'profile',       path: 'profile',       icon: UserCircle,      label: 'Profile',       group: 'system' },
+  { key: 'settings',      path: 'settings',      icon: Settings,        label: 'Settings',      group: 'system' },
 ];
 
 // Menu yang bisa diakses employee

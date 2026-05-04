@@ -18,18 +18,6 @@ export default function Topbar({ onMenuClick, role = 'owner', currentUser, unrea
         <Menu size={20} />
       </button>
 
-      {/* Search */}
-      <div className="topbar-search">
-        <Search size={16} className="topbar-search-icon" />
-        <input
-          type="text"
-          className="topbar-search-input"
-          placeholder="Search orders, customers..."
-          value={searchValue}
-          onChange={e => setSearchValue(e.target.value)}
-        />
-      </div>
-
       <div className="topbar-spacer" />
 
       <div className="topbar-right">
