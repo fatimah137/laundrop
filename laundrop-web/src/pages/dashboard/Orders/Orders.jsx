@@ -1,35 +1,42 @@
 import { useState, useMemo } from 'react';
 import { Plus, List, Map as MapIcon } from 'lucide-react';
-import { useRole }          from '../../../context/RoleContext';
+import { useRole } from '../../../context/RoleContext';
 import { MOCK_ORDERS, MOCK_EMPLOYEES } from '../../../data/mockData';
-import { STATUS_CONFIG}     from '../../../data/statusConfig';
-import OrderListView        from '../../../components/Dashboard/Orders/OrderListView';
-import PickupMap            from '../../../components/Dashboard/Orders/PickupMap';
-import OrderFormDialog      from '../../../components/Dashboard/Orders/OrderFormDialog';
-import OrderDetailModal     from '../../../components/Dashboard/Orders/OrderDetailModal';
+import { STATUS_CONFIG } from '../../../data/statusConfig';
+import OrderListView from '../../../components/Dashboard/Orders/OrderListView';
+import PickupMap from '../../../components/Dashboard/Orders/PickupMap';
+import OrderFormDialog from '../../../components/Dashboard/Orders/OrderFormDialog';
+import OrderDetailModal from '../../../components/Dashboard/Orders/OrderDetailModal';
+import Toast from '../../../components/shared/Toast'; // ✅ tambah
 import './Orders.css';
 
-/* ── Status filter — sesuai statusConfig.js ──────────────────────── */
+/* Status filter */
 const STATUS_FILTERS = ['all', 'pending', 'pickup', 'process', 'ready', 'delivery', 'selesai', 'cancelled'];
 
-/* ── Label per filter — ambil dari statusConfig ──────────────────── */
 const getFilterLabel = (key) => {
   if (key === 'all') return 'Semua';
   return STATUS_CONFIG[key]?.label ?? key;
 };
 
-/* ── Component ───────────────────────────────────────────────────── */
 export default function Orders() {
   const { role } = useRole();
 
-  const [orders,       setOrders]       = useState(MOCK_ORDERS);
-  const [view,         setView]         = useState('list');
+  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const [view, setView] = useState('list');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [search,       setSearch]       = useState('');
-  const [showForm,     setShowForm]     = useState(false);
-  const [editOrder,    setEditOrder]    = useState(null);
-  const [detailOrder,  setDetailOrder]  = useState(null);
-  const [deleteOrder,  setDeleteOrder]  = useState(null);
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editOrder, setEditOrder] = useState(null);
+  const [detailOrder, setDetailOrder] = useState(null);
+  const [deleteOrder, setDeleteOrder] = useState(null);
+
+  // ✅ Toast state
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const canDelete = role === 'owner' || role === 'admin';
 
@@ -43,48 +50,58 @@ export default function Orders() {
     });
   }, [orders, statusFilter, search]);
 
+  /* SAVE */
   const handleSave = (data) => {
     if (editOrder) {
       setOrders(prev => prev.map(o => o.id === editOrder.id ? { ...o, ...data } : o));
+      showToast('Pesanan berhasil diupdate!');
     } else {
       const newOrder = {
         ...data,
-        id:           Date.now(),
+        id: Date.now(),
         order_number: `LD-${Date.now().toString().slice(-8)}`,
-        pickup_date:  new Date().toISOString().split('T')[0],
+        pickup_date: new Date().toISOString().split('T')[0],
       };
       setOrders(prev => [newOrder, ...prev]);
+      showToast('Pesanan baru berhasil ditambahkan!');
     }
     setShowForm(false);
     setEditOrder(null);
   };
 
+  /* DELETE */
   const handleDelete = (id) => {
     setOrders(prev => prev.filter(o => o.id !== id));
     setDeleteOrder(null);
+    showToast('Pesanan berhasil dihapus!', 'danger');
   };
 
+  /* STATUS */
   const handleStatusChange = (id, newStatus) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+    showToast('Status pesanan berhasil diupdate!');
   };
 
   return (
     <div className="ow-orders-page">
 
-      {/* ── Topbar ── */}
+      {/* ✅ Toast */}
+      <Toast toast={toast} onClose={() => setToast(null)} />
+
+      {/* Topbar */}
       <div className="ow-orders-topbar">
         <div className="ow-orders-topbar-left">
           <h1 className="ow-orders-title">Order</h1>
           <p className="ow-orders-subtitle">{orders.length} total pesanan</p>
         </div>
         <div className="ow-orders-topbar-right">
-          {/* View toggle */}
+
           <div className="ow-view-toggle">
             <button
               className={`ow-view-btn ${view === 'list' ? 'active' : ''}`}
               onClick={() => setView('list')}
             >
-              <List size={15} /> List 
+              <List size={15} /> List
             </button>
             <button
               className={`ow-view-btn ${view === 'map' ? 'active' : ''}`}
@@ -93,7 +110,7 @@ export default function Orders() {
               <MapIcon size={15} /> Map
             </button>
           </div>
-          {/* New order button */}
+
           {canDelete && (
             <button
               className="ow-btn-new"
@@ -105,7 +122,7 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* ── Status filter tabs ── */}
+      {/* Filter */}
       <div className="ow-status-filters">
         {STATUS_FILTERS.map(s => {
           const count = s !== 'all' ? orders.filter(o => o.status === s).length : null;
@@ -126,16 +143,13 @@ export default function Orders() {
         })}
       </div>
 
-      {/* ── Content ── */}
+      {/* Content */}
       {view === 'map' ? (
         <div className="ow-map-wrapper">
           <PickupMap orders={filtered} />
         </div>
       ) : filtered.length === 0 ? (
         <div className="ow-orders-empty">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-          </svg>
           <p className="ow-orders-empty-title">Tidak ada pesanan ditemukan</p>
           <p className="ow-orders-empty-sub">Coba ubah filter atau buat pesanan baru</p>
           {canDelete && (
@@ -160,7 +174,7 @@ export default function Orders() {
         />
       )}
 
-      {/* ── Detail Modal ── */}
+      {/* Detail */}
       {detailOrder && (
         <OrderDetailModal
           order={detailOrder}
@@ -168,7 +182,7 @@ export default function Orders() {
         />
       )}
 
-      {/* ── Delete Confirm ── */}
+      {/* Delete */}
       {deleteOrder && (
         <div className="ow-modal-overlay" onClick={() => setDeleteOrder(null)}>
           <div className="ow-modal-box small" onClick={e => e.stopPropagation()}>
@@ -177,9 +191,8 @@ export default function Orders() {
               <button className="ow-modal-close" onClick={() => setDeleteOrder(null)}>✕</button>
             </div>
             <div className="ow-modal-body">
-              <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+              <p style={{ fontSize: 13, color: '#64748b' }}>
                 Pesanan <strong>{deleteOrder.order_number}</strong> akan dihapus permanen.
-                Tindakan ini tidak bisa dibatalkan.
               </p>
             </div>
             <div className="ow-modal-footer">
@@ -190,7 +203,7 @@ export default function Orders() {
         </div>
       )}
 
-      {/* ── Form Dialog ── */}
+      {/* Form */}
       {showForm && (
         <OrderFormDialog
           order={editOrder}

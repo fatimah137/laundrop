@@ -9,7 +9,7 @@ const ROLE_PERMISSIONS = {
   },
   employee: {
     label: 'Employee',
-    menus: ['dashboard', 'orders', 'tracking'],
+    menus: ['dashboard', 'orders', 'notifications', 'profile'],
   },
 };
 

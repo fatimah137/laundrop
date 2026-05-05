@@ -15,15 +15,13 @@
   --prf-gray-900:    #0F172A;
   --prf-white:       #FFFFFF;
   --prf-green:       #15803D;
-  --prf-green-bg:    #DCFCE7;
   --prf-red:         #B91C1C;
-  --prf-red-bg:      #FEE2E2;
   --prf-font:        'Plus Jakarta Sans', sans-serif;
   --prf-radius:      14px;
   --prf-shadow:      0 1px 4px rgba(0,0,0,0.06);
 }
 
-/* ── Page ────────────────────────────────────────────────────────── */
+/* ── Page ───────────────────────────────────────── */
 .prf-page {
   font-family: var(--prf-font);
   animation: prfFade 0.2s ease;
@@ -31,10 +29,10 @@
 
 @keyframes prfFade {
   from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0);   }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Layout: kiri avatar + kanan forms ───────────────────────────── */
+/* ── Layout ─────────────────────────────────────── */
 .prf-layout {
   display: grid;
   grid-template-columns: 260px 1fr;
@@ -46,7 +44,7 @@
   .prf-layout { grid-template-columns: 1fr; }
 }
 
-/* ── Card base ───────────────────────────────────────────────────── */
+/* ── Card ───────────────────────────────────────── */
 .prf-card {
   background: var(--prf-white);
   border: 1px solid var(--prf-gray-200);
@@ -55,13 +53,12 @@
   box-shadow: var(--prf-shadow);
 }
 
-/* ── Avatar card ─────────────────────────────────────────────────── */
+/* ── Avatar Card ───────────────────────────────── */
 .prf-avatar-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0;
 }
 
 .prf-avatar {
@@ -71,8 +68,6 @@
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  letter-spacing: -1px;
-  flex-shrink: 0;
   margin-bottom: 14px;
 }
 
@@ -91,7 +86,6 @@
 }
 
 .prf-role-badge {
-  display: inline-block;
   padding: 4px 14px;
   border-radius: 999px;
   font-size: 12px;
@@ -118,19 +112,17 @@
   margin-bottom: 10px;
 }
 
-.prf-av-info-row:last-child { margin-bottom: 0; }
 
 .prf-av-info-label { color: var(--prf-gray-500); }
-.prf-av-info-val   { font-weight: 600; color: var(--prf-gray-900); text-align: right; }
+.prf-av-info-val   { font-weight: 600; color: var(--prf-gray-900); }
 
-/* ── Right: stacked forms ────────────────────────────────────────── */
+/* ── Forms ─────────────────────────────────────── */
 .prf-forms {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* ── Form title row ──────────────────────────────────────────────── */
 .prf-form-title {
   display: flex;
   align-items: center;
@@ -145,21 +137,25 @@
   margin: 0;
 }
 
-.prf-form-icon { color: var(--prf-blue); flex-shrink: 0; }
+.prf-form-icon {
+  color: var(--prf-blue);
+}
 
-/* ── Grid ────────────────────────────────────────────────────────── */
+/* ── Grid ──────────────────────────────────────── */
 .prf-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
-.prf-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 18px;
+.prf-grid-3 input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--dash-border, #e2e8f0);
+  border-radius: 10px;
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
 @media (max-width: 640px) {
@@ -167,7 +163,7 @@
   .prf-grid-3 { grid-template-columns: 1fr; }
 }
 
-/* ── Field ───────────────────────────────────────────────────────── */
+/* ── Field ─────────────────────────────────────── */
 .prf-field {
   display: flex;
   flex-direction: column;
@@ -175,119 +171,115 @@
 }
 
 .prf-field label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--prf-gray-700);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dash-text, #1e293b);
 }
 
 .prf-field input {
-  height: 40px;
-  padding: 0 13px;
-  border: 1.5px solid var(--prf-gray-200);
-  border-radius: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--dash-border, #e2e8f0);
+  border-radius: 10px;
   font-size: 13px;
-  font-family: var(--prf-font);
-  color: var(--prf-gray-900);
-  background: var(--prf-white);
+  color: var(--dash-text, #1e293b);
+  background: #fff;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
 }
 
 .prf-field input:focus {
-  border-color: var(--prf-blue);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  border-color: var(--dash-primary, #1A7BF2);
+  box-shadow: 0 0 0 3px rgba(26, 123, 242, 0.1);
 }
 
-.prf-field input::placeholder { color: var(--prf-gray-400); }
+.prf-field input::placeholder { color: var(--dash-text-muted, #94a3b8); }
 
 .prf-field input.disabled,
 .prf-field input:disabled {
-  background: var(--prf-gray-50);
-  color: var(--prf-gray-500);
+  background: var(--dash-bg, #f8fafc);
+  color: var(--dash-text-muted, #94a3b8);
   cursor: not-allowed;
-  border-color: var(--prf-gray-200);
 }
 
-/* ── Buttons ─────────────────────────────────────────────────────── */
+/* ── Buttons ───────────────────────────────────── */
 .prf-btn-save {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 22px;
-  background: var(--prf-blue);
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--dash-primary, #1A7BF2);
   color: #fff;
   border: none;
-  border-radius: 9px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--prf-font);
-  transition: background 0.15s, transform 0.1s;
-}
-
-.prf-btn-save:hover  { background: var(--prf-blue-dark); }
-.prf-btn-save:active { transform: scale(0.98); }
-
-.prf-btn-outline {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 22px;
-  background: var(--prf-white);
-  color: var(--prf-gray-700);
-  border: 1.5px solid var(--prf-gray-200);
-  border-radius: 9px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--prf-font);
-  transition: all 0.15s;
-}
-
-.prf-btn-outline:hover {
-  border-color: var(--prf-blue);
-  color: var(--prf-blue);
-  background: var(--prf-blue-light);
-}
-
-/* ── Toast ───────────────────────────────────────────────────────── */
-.prf-toast-wrap {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 999;
-}
-
-.prf-toast {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 12px 18px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
-  font-family: var(--prf-font);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  animation: prfToastIn 0.25s ease;
-  min-width: 240px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: inherit;
 }
 
-@keyframes prfToastIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0);    }
+.prf-btn-save:hover { opacity: 0.85; }
+
+.prf-btn-outline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: #fff;
+  color: var(--dash-text, #1e293b);
+  border: 1px solid var(--dash-border, #e2e8f0);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
 }
 
-.prf-toast-success {
-  background: var(--prf-green-bg);
-  color: var(--prf-green);
-  border: 1px solid #BBF7D0;
+.prf-btn-outline:hover { background: var(--dash-bg, #f8fafc); }
+
+/* ── Toast (FINAL - sama semua halaman) ───────── */
+.prf-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  animation: prf-slide-down 0.3s ease;
+  white-space: nowrap;
+  color: #fff;
 }
 
-.prf-toast-error {
-  background: var(--prf-red-bg);
-  color: var(--prf-red);
-  border: 1px solid #FECACA;
+.prf-toast.success { background: #059669; }
+.prf-toast.danger  { background: #ef4444; }
+
+.prf-toast-close {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+
+.prf-toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes prf-slide-down {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }

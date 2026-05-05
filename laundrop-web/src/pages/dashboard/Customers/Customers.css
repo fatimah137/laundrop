@@ -1,49 +1,9 @@
 .cust-page {
   display: flex;
+   animation: owFadeIn 0.2s ease;
   flex-direction: column;
   gap: 20px;
   position: relative;
-}
-
-/* Toast */
-.cust-toast {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-  animation: cust-slide-down 0.3s ease;
-  white-space: nowrap;
-  color: #fff;
-}
-
-.cust-toast.success { background: #059669; }
-.cust-toast.danger  { background: #ef4444; }
-
-.cust-toast-close {
-  background: none;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  margin-left: 4px;
-  opacity: 0.8;
-}
-
-.cust-toast-close:hover { opacity: 1; }
-
-@keyframes cust-slide-down {
-  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* Header */

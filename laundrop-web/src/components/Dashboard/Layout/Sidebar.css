@@ -1,4 +1,4 @@
-.owner-sidebar {
+.sidebar {
   width: 256px;
   height: 100%;
   display: flex;
@@ -9,7 +9,7 @@
 }
 
 /* Logo */
-.owner-sidebar-logo {
+.sidebar-logo {
   height: 64px;
   padding: 0 20px;
   display: flex;
@@ -19,7 +19,7 @@
   flex-shrink: 0;
 }
 
-.owner-logo-icon {
+.sidebar-logo-icon {
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -32,14 +32,14 @@
   box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
 }
 
-.owner-logo-name {
+.sidebar-logo-name {
   font-size: 15px;
   font-weight: 700;
   color: #fff;
   line-height: 1.2;
 }
 
-.owner-logo-role {
+.sidebar-logo-role {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -48,7 +48,7 @@
 }
 
 /* Nav */
-.owner-sidebar-nav {
+.sidebar-nav {
   flex: 1;
   overflow-y: auto;
   padding: 16px 12px;
@@ -57,16 +57,16 @@
   gap: 20px;
 }
 
-.owner-sidebar-nav::-webkit-scrollbar {
+.sidebar-nav::-webkit-scrollbar {
   width: 4px;
 }
 
-.owner-sidebar-nav::-webkit-scrollbar-thumb {
+.sidebar-nav::-webkit-scrollbar-thumb {
   background: #243044;
   border-radius: 4px;
 }
 
-.owner-nav-group ul {
+.sidebar-nav-group ul {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -75,7 +75,7 @@
   gap: 2px;
 }
 
-.owner-nav-group-label {
+.sidebar-nav-group-label {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -85,7 +85,7 @@
   margin: 0 0 6px;
 }
 
-.owner-nav-link {
+.sidebar-nav-link {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -98,25 +98,25 @@
   transition: all 0.15s;
 }
 
-.owner-nav-link:hover {
+.sidebar-nav-link:hover {
   background: #243044;
   color: #fff;
 }
 
-.owner-nav-link.active {
+.sidebar-nav-link.active {
   background: #0ea5e9;
   color: #fff;
   box-shadow: 0 4px 12px rgba(14, 165, 233, 0.30);
 }
 
 /* Footer */
-.owner-sidebar-footer {
+.sidebar-footer {
   padding: 12px;
   border-top: 1px solid #243044;
   flex-shrink: 0;
 }
 
-.owner-user-card {
+.sidebar-user-card {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -126,7 +126,7 @@
   margin-bottom: 8px;
 }
 
-.owner-user-avatar {
+.sidebar-user-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -140,12 +140,12 @@
   flex-shrink: 0;
 }
 
-.owner-user-info {
+.sidebar-user-info {
   flex: 1;
   min-width: 0;
 }
 
-.owner-user-name {
+.sidebar-user-name {
   font-size: 13px;
   font-weight: 600;
   color: #fff;
@@ -155,7 +155,7 @@
   text-overflow: ellipsis;
 }
 
-.owner-user-email {
+.sidebar-user-email {
   font-size: 11px;
   color: #64748b;
   margin: 0;
@@ -164,7 +164,7 @@
   text-overflow: ellipsis;
 }
 
-.owner-logout-btn {
+.sidebar-logout-btn {
   width: 100%;
   display: flex;
   align-items: center;
@@ -180,23 +180,23 @@
   transition: background 0.15s;
 }
 
-.owner-logout-btn:hover {
+.sidebar-logout-btn:hover {
   background: rgba(239, 68, 68, 0.1);
 }
 
 /* Modal Logout */
-.owner-logout-overlay {
+.sidebar-logout-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 100;
+  z-index: 9999;          /* dinaikkan dari 100 → 9999 agar tidak tertimpa elemen lain */
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
 }
 
-.owner-logout-modal {
+.sidebar-logout-modal {
   background: #fff;
   border-radius: 20px;
   padding: 32px 24px;
@@ -204,15 +204,17 @@
   max-width: 360px;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  animation: popIn 0.2s ease;
+  animation: sidebarPopIn 0.2s ease;
+  position: relative;
+  z-index: 10000;
 }
 
-@keyframes popIn {
+@keyframes sidebarPopIn {
   from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
 }
 
-.owner-logout-modal-icon {
+.sidebar-logout-modal-icon {
   width: 64px;
   height: 64px;
   background: #fef2f2;
@@ -224,26 +226,26 @@
   margin: 0 auto 16px;
 }
 
-.owner-logout-modal-title {
+.sidebar-logout-modal-title {
   font-size: 18px;
   font-weight: 700;
   color: #1e293b;
   margin: 0 0 8px;
 }
 
-.owner-logout-modal-desc {
+.sidebar-logout-modal-desc {
   font-size: 14px;
   color: #64748b;
   margin: 0 0 24px;
   line-height: 1.5;
 }
 
-.owner-logout-modal-actions {
+.sidebar-logout-modal-actions {
   display: flex;
   gap: 12px;
 }
 
-.btn-owner-cancel {
+.sidebar-btn-cancel {
   flex: 1;
   padding: 12px;
   border: 1px solid #e2e8f0;
@@ -256,9 +258,9 @@
   transition: background 0.2s;
 }
 
-.btn-owner-cancel:hover { background: #f1f5f9; }
+.sidebar-btn-cancel:hover { background: #f1f5f9; }
 
-.btn-owner-confirm {
+.sidebar-btn-confirm {
   flex: 1;
   padding: 12px;
   border: none;
@@ -271,4 +273,4 @@
   transition: opacity 0.2s;
 }
 
-.btn-owner-confirm:hover { opacity: 0.85; }
+.sidebar-btn-confirm:hover { opacity: 0.85; }

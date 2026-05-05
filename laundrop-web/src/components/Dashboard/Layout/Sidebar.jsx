@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingBag, Users, Sparkles, Wallet,
-  BarChart3, Bell, UserCircle, Settings, UsersRound, MapPin, Waves, LogOut
+  BarChart3, Bell, UserCircle, Settings, UsersRound, Waves, LogOut
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -54,27 +55,27 @@ export default function Sidebar({ onNavigate, role = 'owner' }) {
 
   return (
     <>
-      <aside className="owner-sidebar">
+      <aside className="sidebar">
 
         {/* Logo */}
-        <div className="owner-sidebar-logo">
-          <div className="owner-logo-icon">
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">
             <Waves size={20} strokeWidth={2.5} />
           </div>
           <div>
-            <div className="owner-logo-name">Laundrop</div>
-            <div className="owner-logo-role">{roleLabel} Panel</div>
+            <div className="sidebar-logo-name">Laundrop</div>
+            <div className="sidebar-logo-role">{roleLabel} Panel</div>
           </div>
         </div>
 
         {/* Navigasi */}
-        <nav className="owner-sidebar-nav">
+        <nav className="sidebar-nav">
           {GROUPS.map(group => {
             const groupMenus = menus.filter(m => m.group === group.key);
             if (groupMenus.length === 0) return null;
             return (
-              <div key={group.key} className="owner-nav-group">
-                <p className="owner-nav-group-label">{group.label}</p>
+              <div key={group.key} className="sidebar-nav-group">
+                <p className="sidebar-nav-group-label">{group.label}</p>
                 <ul>
                   {groupMenus.map(({ key, path, icon: Icon, label }) => (
                     <li key={key}>
@@ -83,7 +84,7 @@ export default function Sidebar({ onNavigate, role = 'owner' }) {
                         end={path.endsWith('dashboard')}
                         onClick={onNavigate}
                         className={({ isActive }) =>
-                          `owner-nav-link ${isActive ? 'active' : ''}`
+                          `sidebar-nav-link ${isActive ? 'active' : ''}`
                         }
                       >
                         <Icon size={18} strokeWidth={2} />
@@ -98,17 +99,17 @@ export default function Sidebar({ onNavigate, role = 'owner' }) {
         </nav>
 
         {/* Footer User */}
-        <div className="owner-sidebar-footer">
-          <div className="owner-user-card">
-            <div className="owner-user-avatar">{initials}</div>
-            <div className="owner-user-info">
-              <p className="owner-user-name">{currentUser.name}</p>
-              <p className="owner-user-email">{currentUser.email}</p>
+        <div className="sidebar-footer">
+          <div className="sidebar-user-card">
+            <div className="sidebar-user-avatar">{initials}</div>
+            <div className="sidebar-user-info">
+              <p className="sidebar-user-name">{currentUser.name}</p>
+              <p className="sidebar-user-email">{currentUser.email}</p>
             </div>
           </div>
 
           <button
-            className="owner-logout-btn"
+            className="sidebar-logout-btn"
             onClick={() => setShowLogoutModal(true)}
           >
             <LogOut size={16} />
@@ -117,27 +118,29 @@ export default function Sidebar({ onNavigate, role = 'owner' }) {
         </div>
       </aside>
 
-      {/* Modal Logout */}
-      {showLogoutModal && (
-        <div className="owner-logout-overlay" onClick={() => setShowLogoutModal(false)}>
-          <div className="owner-logout-modal" onClick={e => e.stopPropagation()}>
-            <div className="owner-logout-modal-icon">
+      {/* Modal Logout — di-render langsung ke document.body via Portal
+           agar tidak terpengaruh z-index / stacking context parent manapun */}
+      {showLogoutModal && createPortal(
+        <div className="sidebar-logout-overlay" onClick={() => setShowLogoutModal(false)}>
+          <div className="sidebar-logout-modal" onClick={e => e.stopPropagation()}>
+            <div className="sidebar-logout-modal-icon">
               <LogOut size={28} />
             </div>
-            <h3 className="owner-logout-modal-title">Keluar dari Akun?</h3>
-            <p className="owner-logout-modal-desc">
+            <h3 className="sidebar-logout-modal-title">Keluar dari Akun?</h3>
+            <p className="sidebar-logout-modal-desc">
               Apakah Anda yakin ingin keluar dari akun Anda?
             </p>
-            <div className="owner-logout-modal-actions">
-              <button className="btn-owner-cancel" onClick={() => setShowLogoutModal(false)}>
+            <div className="sidebar-logout-modal-actions">
+              <button className="sidebar-btn-cancel" onClick={() => setShowLogoutModal(false)}>
                 Batal
               </button>
-              <button className="btn-owner-confirm" onClick={handleLogoutConfirm}>
+              <button className="sidebar-btn-confirm" onClick={handleLogoutConfirm}>
                 Ya, Keluar
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

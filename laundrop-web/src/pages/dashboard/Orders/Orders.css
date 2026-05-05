@@ -21,6 +21,8 @@
 .ow-orders-page {
   font-family: var(--ow-font);
   animation: owFadeIn 0.2s ease;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes owFadeIn {
@@ -219,7 +221,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 50;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;

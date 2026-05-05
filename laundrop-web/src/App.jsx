@@ -6,7 +6,7 @@ import Home from './pages/Home'
 // Layout & Wrapper
 import AppLayout from './components/Dashboard/Layout/AppLayout';
 
-// Owner/Admin Pages 
+// Owner Pages 
 import OwnerDashboard from "./pages/dashboard/OwnerDashboard/OwnerDashboard";
 import Orders from "./pages/dashboard/Orders/Orders";
 import Customers from "./pages/dashboard/Customers/Customers";
@@ -15,6 +15,8 @@ import Payment from "./pages/dashboard/Payment/Payment";
 import Notifications from "./pages/dashboard/Notifications/Notifications";
 import Employees from "./pages/dashboard/Employees/Employees";
 import OwnerProfile from "./pages/dashboard/Profile/Profile";
+import Settings from "./pages/dashboard/Settings/Settings";
+import Reports from "./pages/dashboard/Reports/Reports";
 
 // Customer Pages
 import Dashboard from './pages/customer/Dashboard/Dashboard'
@@ -68,6 +70,8 @@ function App() {
             <Route path="notifications" element={<Notifications />} />
             <Route path="employees" element={<Employees />} />
             <Route path="profile" element={<OwnerProfile />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="reports" element={<Reports />} />
             </Route>
           </Routes>
         </BrowserRouter>

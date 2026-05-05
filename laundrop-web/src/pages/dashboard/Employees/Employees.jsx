@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, MoreHorizontal, UserCog, X, CheckCircle, Phone, Mail } from 'lucide-react';
+import { Plus, Edit, Trash2, MoreHorizontal, UserCog, X, Phone, Mail } from 'lucide-react';
 import { useRole } from '../../../context/RoleContext';
 import { MOCK_EMPLOYEES } from '../../../data/mockData';
 import EmptyState from '../../../components/shared/EmptyState';
+import Toast from '../../../components/shared/Toast'; // ✅ tambah ini
 import './Employees.css';
 
 const ROLE_LABELS = {
-  owner:    'Owner',
+  owner: 'Owner',
   employee: 'Employee',
 };
 
@@ -33,10 +34,10 @@ export default function Employees() {
   const openForm = (item = null) => {
     setEditItem(item);
     setForm(item ? {
-      name:      item.name,
-      phone:     item.phone     || '',
-      email:     item.email     || '',
-      role:      item.role      || 'employee',
+      name: item.name,
+      phone: item.phone || '',
+      email: item.email || '',
+      role: item.role || 'employee',
       is_active: item.is_active !== false,
     } : BLANK);
     setShowForm(true);
@@ -50,7 +51,10 @@ export default function Employees() {
       ));
       showToast('Karyawan berhasil diupdate!');
     } else {
-      setEmployees(prev => [...prev, { ...form, id: Date.now(), joined: new Date().toISOString().split('T')[0] }]);
+      setEmployees(prev => [
+        ...prev,
+        { ...form, id: Date.now(), joined: new Date().toISOString().split('T')[0] }
+      ]);
       showToast('Karyawan baru berhasil ditambahkan!');
     }
     setShowForm(false);
@@ -68,7 +72,6 @@ export default function Employees() {
   const initials = (name) =>
     name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
 
-  // Akses terbatas untuk non-owner
   if (role !== 'owner') {
     return (
       <div className="emp-restricted">
@@ -82,16 +85,8 @@ export default function Employees() {
   return (
     <div className="emp-page">
 
-      {/* Toast */}
-      {toast && (
-        <div className={`emp-toast ${toast.type}`}>
-          <CheckCircle size={18} />
-          <span>{toast.msg}</span>
-          <button className="emp-toast-close" onClick={() => setToast(null)}>
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      {/* ✅ Toast baru */}
+      <Toast toast={toast} onClose={() => setToast(null)} />
 
       {/* Header */}
       <div className="emp-header">
@@ -136,7 +131,6 @@ export default function Employees() {
                   </div>
                 </div>
 
-                {/* Dropdown */}
                 <div className="emp-menu-wrap">
                   <button
                     className="emp-menu-btn"

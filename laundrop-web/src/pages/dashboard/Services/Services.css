@@ -1,5 +1,6 @@
 .svc-page {
   display: flex;
+  animation: owFadeIn 0.2s ease;
   flex-direction: column;
   gap: 20px;
   position: relative;

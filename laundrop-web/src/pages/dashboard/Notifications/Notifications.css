@@ -3,6 +3,7 @@
 ───────────────────────────────────────── */
 .notif-page {
   width: 100%;
+  animation: owFadeIn 0.2s ease;
   max-width: 1200px; /* bisa 1000–1400 */
   margin: 0 auto;    /* biar center */
 }
