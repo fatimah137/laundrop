@@ -6,12 +6,19 @@ import './OrderListView.css';
 
 const STATUS_FLOW = ['pending', 'pickup', 'proses', 'siap', 'delivery', 'selesai'];
 
-export default function OrderListView({ orders = [], employees = [], role, onEdit, onDelete, onViewDetail, onStatusChange }) {
+export default function OrderListView({
+  orders = [],
+  employees = [],
+  canManage,        // ✅ ganti dari role
+  onEdit,
+  onDelete,
+  onViewDetail,
+  onStatusChange,
+}) {
   const [openMenuId, setOpenMenuId]       = useState(null);
   const [viewingDetail, setViewingDetail] = useState(null);
 
   const getEmployee = (id) => employees.find(e => e.id === id || e.name === id);
-  const canEdit     = role === 'owner' || role === 'admin';
 
   return (
     <>
@@ -19,7 +26,8 @@ export default function OrderListView({ orders = [], employees = [], role, onEdi
         {orders.map(order => {
           const emp        = getEmployee(order.assigned_employee);
           const currentIdx = STATUS_FLOW.indexOf(order.status);
-          const nextStatus = currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null;
+          const nextStatus = currentIdx < STATUS_FLOW.length - 1
+            ? STATUS_FLOW[currentIdx + 1] : null;
           const isMenuOpen = openMenuId === order.id;
 
           return (
@@ -86,7 +94,8 @@ export default function OrderListView({ orders = [], employees = [], role, onEdi
                             <Eye size={14} /> View Detail
                           </button>
 
-                          {canEdit && (
+                          {/* ✅ canManage berlaku untuk owner DAN employee */}
+                          {canManage && (
                             <>
                               <div className="olv-dropdown-divider" />
                               <button
@@ -117,7 +126,6 @@ export default function OrderListView({ orders = [], employees = [], role, onEdi
         })}
       </div>
 
-      {/* Detail Modal */}
       {viewingDetail && (
         <OrderDetailModal
           order={viewingDetail}

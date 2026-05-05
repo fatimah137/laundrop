@@ -1,41 +1,40 @@
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import StatusBadge from '../../shared/StatusBadge';
 import './OrderDetailModal.css';
 
-const STATUS_FLOW = ['pending', 'pickup', 'proses', 'siap', 'delivery', 'selesai'];
-
-const STEP_LABELS = {
-  pending:  'Pending',
-  pickup:   'Pickup',
-  proses:   'Proses',
-  siap:     'Siap',
-  delivery: 'Delivery',
-  selesai:  'Selesai',
+const STATUS_FLOW  = ['pending', 'pickup', 'proses', 'siap', 'delivery', 'selesai'];
+const STEP_LABELS  = {
+  pending: 'Pending', pickup: 'Pickup', proses: 'Proses',
+  siap: 'Siap', delivery: 'Delivery', selesai: 'Selesai',
 };
 
 export default function OrderDetailModal({ order, onClose }) {
+  // ✅ guard harus SEBELUM createPortal, bukan di dalam
   if (!order) return null;
 
-  const currentIdx = STATUS_FLOW.indexOf(order.status);
-  const unit       = order.unit || 'kg';
-
+  const currentIdx  = STATUS_FLOW.indexOf(order.status);
+  const unit        = order.unit || 'kg';
   const calcedTotal = order.total_amount || 0;
 
   const rows = [
-    { label: 'Order ID',    value: order.order_number || order.order_id },
-    { label: 'Customer',    value: order.customer_name },
-    { label: 'Phone',       value: order.customer_phone || '-' },
-    { label: 'Alamat',      value: order.address || '-' },
-    { label: 'Karyawan',    value: order.assigned_employee || '-' },
-    { label: 'Layanan',     value: order.service_name || '-' },
-    { label: unit === 'kg' ? 'Berat' : 'Jumlah Pakaian',
+    { label: 'Order ID',  value: order.order_number || order.order_id },
+    { label: 'Customer',  value: order.customer_name },
+    { label: 'Phone',     value: order.customer_phone || '-' },
+    { label: 'Alamat',    value: order.address || '-' },
+    { label: 'Karyawan',  value: order.assigned_employee || '-' },
+    { label: 'Layanan',   value: order.service_name || '-' },
+    {
+      label: unit === 'kg' ? 'Berat' : 'Jumlah Pakaian',
       value: unit === 'kg'
-        ? (order.weight        ? `${order.weight} kg`        : `${order.quantity} kg`)
-        : (order.total_clothes ? `${order.total_clothes} pcs` : `${order.quantity} pcs`) },
-    { label: 'Catatan',     value: order.notes || '-' },
+        ? (order.weight        ? `${order.weight} kg`         : `${order.quantity} kg`)
+        : (order.total_clothes ? `${order.total_clothes} pcs` : `${order.quantity} pcs`),
+    },
+    { label: 'Catatan',   value: order.notes || '-' },
   ];
 
-  return (
+  // ✅ createPortal dipanggil setelah semua hook dan guard selesai
+  return createPortal(
     <div className="odm-overlay" onClick={onClose}>
       <div className="odm-dialog" onClick={e => e.stopPropagation()}>
 
@@ -89,11 +88,14 @@ export default function OrderDetailModal({ order, onClose }) {
           {/* Total */}
           <div className="odm-total">
             <span className="odm-total-label">Total</span>
-            <span className="odm-total-value">Rp {calcedTotal.toLocaleString('id-ID')}</span>
+            <span className="odm-total-value">
+              Rp {calcedTotal.toLocaleString('id-ID')}
+            </span>
           </div>
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

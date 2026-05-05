@@ -5,6 +5,7 @@ import {
   LayoutDashboard, ShoppingBag, Users, Sparkles, Wallet,
   BarChart3, Bell, UserCircle, Settings, UsersRound, Waves, LogOut
 } from 'lucide-react';
+import { useRole } from '../../../context/RoleContext';
 import './Sidebar.css';
 
 const ALL_MENUS = [
@@ -20,36 +21,25 @@ const ALL_MENUS = [
   { key: 'settings',      path: 'settings',      icon: Settings,        label: 'Settings',      group: 'system' },
 ];
 
-// Menu yang bisa diakses employee
-const EMPLOYEE_MENUS = ['dashboard', 'orders', 'notifications', 'profile'];
-
 const GROUPS = [
   { key: 'main',    label: 'Main' },
   { key: 'finance', label: 'Finance' },
   { key: 'system',  label: 'System' },
 ];
 
-export default function Sidebar({ onNavigate, role = 'owner' }) {
+export default function Sidebar({ onNavigate }) {
   const navigate = useNavigate();
+  const { role, currentUser, can, logout } = useRole();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const currentUser = {
-    name:  role === 'owner' ? 'Admin Owner' : 'Karyawan',
-    email: role === 'owner' ? 'owner@laundrop.com' : 'employee@laundrop.com',
-  };
-
   const roleLabel = role === 'owner' ? 'Owner' : 'Employee';
-
-  // Filter menu berdasarkan role
-  const menus = role === 'owner'
-    ? ALL_MENUS
-    : ALL_MENUS.filter(m => EMPLOYEE_MENUS.includes(m.key));
-
-  const initials = currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('');
+  const menus     = ALL_MENUS.filter(m => can(m.key));
+  const initials  = currentUser?.name
+    ?.split(' ').map(n => n[0]).slice(0, 2).join('') ?? 'U';
 
   const handleLogoutConfirm = () => {
     setShowLogoutModal(false);
-    localStorage.clear();
+    logout();
     navigate('/login');
   };
 
@@ -103,8 +93,8 @@ export default function Sidebar({ onNavigate, role = 'owner' }) {
           <div className="sidebar-user-card">
             <div className="sidebar-user-avatar">{initials}</div>
             <div className="sidebar-user-info">
-              <p className="sidebar-user-name">{currentUser.name}</p>
-              <p className="sidebar-user-email">{currentUser.email}</p>
+              <p className="sidebar-user-name">{currentUser?.name}</p>
+              <p className="sidebar-user-email">{currentUser?.email}</p>
             </div>
           </div>
 
@@ -116,10 +106,9 @@ export default function Sidebar({ onNavigate, role = 'owner' }) {
             <span>Logout</span>
           </button>
         </div>
+
       </aside>
 
-      {/* Modal Logout — di-render langsung ke document.body via Portal
-           agar tidak terpengaruh z-index / stacking context parent manapun */}
       {showLogoutModal && createPortal(
         <div className="sidebar-logout-overlay" onClick={() => setShowLogoutModal(false)}>
           <div className="sidebar-logout-modal" onClick={e => e.stopPropagation()}>

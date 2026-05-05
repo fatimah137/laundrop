@@ -4,6 +4,14 @@
   background: #f8fafc;
 }
 
+.topbar {
+  z-index: 50; /* lebih rendah dari modal */
+}
+
+.ow-modal-overlay {
+  z-index: 9999 !important;
+}
+
 /* Sidebar Desktop - tampil di layar >= 1024px */
 .sidebar-desktop {
   display: none;

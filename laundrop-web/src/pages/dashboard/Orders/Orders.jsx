@@ -7,10 +7,9 @@ import OrderListView from '../../../components/Dashboard/Orders/OrderListView';
 import PickupMap from '../../../components/Dashboard/Orders/PickupMap';
 import OrderFormDialog from '../../../components/Dashboard/Orders/OrderFormDialog';
 import OrderDetailModal from '../../../components/Dashboard/Orders/OrderDetailModal';
-import Toast from '../../../components/shared/Toast'; // ✅ tambah
+import Toast from '../../../components/shared/Toast';
 import './Orders.css';
 
-/* Status filter */
 const STATUS_FILTERS = ['all', 'pending', 'pickup', 'process', 'ready', 'delivery', 'selesai', 'cancelled'];
 
 const getFilterLabel = (key) => {
@@ -21,24 +20,23 @@ const getFilterLabel = (key) => {
 export default function Orders() {
   const { role } = useRole();
 
-  const [orders, setOrders] = useState(MOCK_ORDERS);
-  const [view, setView] = useState('list');
+  const [orders, setOrders]           = useState(MOCK_ORDERS);
+  const [view, setView]               = useState('list');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [editOrder, setEditOrder] = useState(null);
+  const [search, setSearch]           = useState('');
+  const [showForm, setShowForm]       = useState(false);
+  const [editOrder, setEditOrder]     = useState(null);
   const [detailOrder, setDetailOrder] = useState(null);
   const [deleteOrder, setDeleteOrder] = useState(null);
+  const [toast, setToast]             = useState(null);
 
-  // ✅ Toast state
-  const [toast, setToast] = useState(null);
+  // ✅ employee dan owner sama-sama bisa manage order
+  const canManage = role === 'owner' || role === 'employee';
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
-
-  const canDelete = role === 'owner' || role === 'admin';
 
   const filtered = useMemo(() => {
     return orders.filter(o => {
@@ -50,7 +48,6 @@ export default function Orders() {
     });
   }, [orders, statusFilter, search]);
 
-  /* SAVE */
   const handleSave = (data) => {
     if (editOrder) {
       setOrders(prev => prev.map(o => o.id === editOrder.id ? { ...o, ...data } : o));
@@ -69,23 +66,24 @@ export default function Orders() {
     setEditOrder(null);
   };
 
-  /* DELETE */
   const handleDelete = (id) => {
     setOrders(prev => prev.filter(o => o.id !== id));
     setDeleteOrder(null);
     showToast('Pesanan berhasil dihapus!', 'danger');
   };
 
-  /* STATUS */
   const handleStatusChange = (id, newStatus) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
     showToast('Status pesanan berhasil diupdate!');
   };
 
+  const openNewForm  = () => { setEditOrder(null); setShowForm(true); };
+  const openEditForm = (order) => { setEditOrder(order); setShowForm(true); };
+  const closeForm    = () => { setShowForm(false); setEditOrder(null); };
+
   return (
     <div className="ow-orders-page">
 
-      {/* ✅ Toast */}
       <Toast toast={toast} onClose={() => setToast(null)} />
 
       {/* Topbar */}
@@ -95,7 +93,6 @@ export default function Orders() {
           <p className="ow-orders-subtitle">{orders.length} total pesanan</p>
         </div>
         <div className="ow-orders-topbar-right">
-
           <div className="ow-view-toggle">
             <button
               className={`ow-view-btn ${view === 'list' ? 'active' : ''}`}
@@ -111,11 +108,8 @@ export default function Orders() {
             </button>
           </div>
 
-          {canDelete && (
-            <button
-              className="ow-btn-new"
-              onClick={() => { setEditOrder(null); setShowForm(true); }}
-            >
+          {canManage && (
+            <button className="ow-btn-new" onClick={openNewForm}>
               <Plus size={16} /> New Order
             </button>
           )}
@@ -152,12 +146,8 @@ export default function Orders() {
         <div className="ow-orders-empty">
           <p className="ow-orders-empty-title">Tidak ada pesanan ditemukan</p>
           <p className="ow-orders-empty-sub">Coba ubah filter atau buat pesanan baru</p>
-          {canDelete && (
-            <button
-              className="ow-btn-new"
-              style={{ marginTop: 16 }}
-              onClick={() => { setEditOrder(null); setShowForm(true); }}
-            >
+          {canManage && (
+            <button className="ow-btn-new" style={{ marginTop: 16 }} onClick={openNewForm}>
               <Plus size={16} /> Buat Pesanan Pertama
             </button>
           )}
@@ -166,15 +156,15 @@ export default function Orders() {
         <OrderListView
           orders={filtered}
           employees={MOCK_EMPLOYEES}
-          role={role}
-          onEdit={(order) => { setEditOrder(order); setShowForm(true); }}
+          canManage={canManage}
+          onEdit={openEditForm}
           onDelete={(id) => setDeleteOrder(orders.find(o => o.id === id))}
           onViewDetail={setDetailOrder}
           onStatusChange={handleStatusChange}
         />
       )}
 
-      {/* Detail */}
+      {/* Detail Modal */}
       {detailOrder && (
         <OrderDetailModal
           order={detailOrder}
@@ -182,7 +172,7 @@ export default function Orders() {
         />
       )}
 
-      {/* Delete */}
+      {/* Delete Modal */}
       {deleteOrder && (
         <div className="ow-modal-overlay" onClick={() => setDeleteOrder(null)}>
           <div className="ow-modal-box small" onClick={e => e.stopPropagation()}>
@@ -203,15 +193,16 @@ export default function Orders() {
         </div>
       )}
 
-      {/* Form */}
+      {/* Form Modal */}
       {showForm && (
         <OrderFormDialog
           order={editOrder}
           employees={MOCK_EMPLOYEES}
           onSave={handleSave}
-          onClose={() => { setShowForm(false); setEditOrder(null); }}
+          onClose={closeForm}
         />
       )}
+
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Sparkles, Loader2, X } from 'lucide-react';
 import { MOCK_CUSTOMERS, MOCK_SERVICES, MOCK_EMPLOYEES } from '../../../data/mockData';
 import './OrderFormDialog.css';
@@ -17,13 +18,13 @@ function calcTotal(service, form) {
 
 export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onSave, onClose }) {
   const fileInputRef = useRef();
-  const [ocrLoading, setOcrLoading]                 = useState(false);
-  const [saving, setSaving]                         = useState(false);
-  const [customers]                                 = useState(MOCK_CUSTOMERS);
-  const [services]                                  = useState(MOCK_SERVICES);
-  const [customerInput, setCustomerInput]           = useState(order?.customer_name || '');
+  const [ocrLoading, setOcrLoading]                     = useState(false);
+  const [saving, setSaving]                             = useState(false);
+  const [customers]                                     = useState(MOCK_CUSTOMERS);
+  const [services]                                      = useState(MOCK_SERVICES);
+  const [customerInput, setCustomerInput]               = useState(order?.customer_name || '');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
-  const [selectedService, setSelectedService]       = useState(null);
+  const [selectedService, setSelectedService]           = useState(null);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -44,10 +45,10 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
     payment_status:    order?.payment_status    || 'unpaid',
     payment_method:    order?.payment_method    || 'cash',
     notes:             order?.notes             || '',
-    pickup_date:       order?.pickup_date       ? order.pickup_date.slice(0, 10) : today,
+    pickup_date:       order?.pickup_date
+      ? order.pickup_date.slice(0, 10) : today,
   });
 
-  // Restore service saat edit
   useEffect(() => {
     if (order?.service_name) {
       const found = MOCK_SERVICES.find(s => s.name === order.service_name);
@@ -55,7 +56,6 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
     }
   }, []);
 
-  // Hitung ulang total saat weight/pcs/service berubah
   useEffect(() => {
     const total = calcTotal(selectedService, form);
     setForm(prev => ({ ...prev, total_amount: total }));
@@ -75,7 +75,7 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
     setForm(prev => ({
       ...prev,
       customer_name:  customer.name,
-      customer_phone: customer.phone  || prev.customer_phone,
+      customer_phone: customer.phone   || prev.customer_phone,
       address:        customer.address || prev.address,
     }));
     setShowCustomerDropdown(false);
@@ -87,7 +87,7 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.customer_name) return alert('Nama customer wajib diisi');
+    if (!form.customer_name)  return alert('Nama customer wajib diisi');
     if (!form.customer_phone) return alert('No. HP wajib diisi');
     const unit = selectedService?.unit || form.unit;
     if (unit === 'kg'  && !(parseFloat(form.weight) > 0))        return alert('Berat harus lebih dari 0');
@@ -108,7 +108,7 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
 
   const unit = selectedService?.unit || form.unit || 'kg';
 
-  return (
+  return createPortal(
     <div className="ofd-overlay" onClick={onClose}>
       <div className="ofd-dialog" onClick={e => e.stopPropagation()}>
 
@@ -121,7 +121,13 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
         {/* OCR */}
         {!order && (
           <div className="ofd-ocr-wrap">
-            <input ref={fileInputRef} type="file" accept="image/*" className="ofd-hidden-input" onChange={() => {}} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="ofd-hidden-input"
+              onChange={() => {}}
+            />
             <button
               type="button"
               className="ofd-ocr-btn"
@@ -143,7 +149,11 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
           <div className="ofd-grid-2">
             <div className="ofd-field">
               <label className="ofd-label">Order ID</label>
-              <input className="ofd-input" value={form.order_id} onChange={e => set('order_id', e.target.value)} />
+              <input
+                className="ofd-input"
+                value={form.order_id}
+                onChange={e => set('order_id', e.target.value)}
+              />
             </div>
             <div className="ofd-field">
               <label className="ofd-label">Tanggal Pickup</label>
@@ -195,18 +205,32 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
           <div className="ofd-grid-2">
             <div className="ofd-field">
               <label className="ofd-label">No. HP *</label>
-              <input className="ofd-input" value={form.customer_phone} onChange={e => set('customer_phone', e.target.value)} required />
+              <input
+                className="ofd-input"
+                value={form.customer_phone}
+                onChange={e => set('customer_phone', e.target.value)}
+                required
+              />
             </div>
             <div className="ofd-field">
               <label className="ofd-label">Alamat *</label>
-              <input className="ofd-input" value={form.address} onChange={e => set('address', e.target.value)} required />
+              <input
+                className="ofd-input"
+                value={form.address}
+                onChange={e => set('address', e.target.value)}
+                required
+              />
             </div>
           </div>
 
           {/* Service */}
           <div className="ofd-field">
             <label className="ofd-label">Layanan</label>
-            <select className="ofd-select" value={form.service_name} onChange={e => handleServiceSelect(e.target.value)}>
+            <select
+              className="ofd-select"
+              value={form.service_name}
+              onChange={e => handleServiceSelect(e.target.value)}
+            >
               <option value="">-- Pilih Layanan --</option>
               {MOCK_SERVICES.map(s => (
                 <option key={s.id} value={s.name}>
@@ -259,15 +283,25 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
           <div className="ofd-grid-2">
             <div className="ofd-field">
               <label className="ofd-label">Status</label>
-              <select className="ofd-select" value={form.status} onChange={e => set('status', e.target.value)}>
+              <select
+                className="ofd-select"
+                value={form.status}
+                onChange={e => set('status', e.target.value)}
+              >
                 {STATUS_OPTIONS.map(s => (
-                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                  <option key={s} value={s}>
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="ofd-field">
               <label className="ofd-label">Karyawan</label>
-              <select className="ofd-select" value={form.assigned_employee} onChange={e => set('assigned_employee', e.target.value)}>
+              <select
+                className="ofd-select"
+                value={form.assigned_employee}
+                onChange={e => set('assigned_employee', e.target.value)}
+              >
                 <option value="">-- Pilih Karyawan --</option>
                 {employees.map(e => (
                   <option key={e.id} value={e.name}>{e.name}</option>
@@ -280,15 +314,25 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
           <div className="ofd-grid-2">
             <div className="ofd-field">
               <label className="ofd-label">Status Pembayaran</label>
-              <select className="ofd-select" value={form.payment_status} onChange={e => set('payment_status', e.target.value)}>
+              <select
+                className="ofd-select"
+                value={form.payment_status}
+                onChange={e => set('payment_status', e.target.value)}
+              >
                 {PAYMENT_STATUSES.map(s => (
-                  <option key={s} value={s}>{s === 'paid' ? 'Lunas' : 'Belum Bayar'}</option>
+                  <option key={s} value={s}>
+                    {s === 'paid' ? 'Lunas' : 'Belum Bayar'}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="ofd-field">
               <label className="ofd-label">Metode Pembayaran</label>
-              <select className="ofd-select" value={form.payment_method} onChange={e => set('payment_method', e.target.value)}>
+              <select
+                className="ofd-select"
+                value={form.payment_method}
+                onChange={e => set('payment_method', e.target.value)}
+              >
                 {PAYMENT_METHODS.map(m => (
                   <option key={m} value={m}>{m.toUpperCase()}</option>
                 ))}
@@ -299,12 +343,19 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
           {/* Notes */}
           <div className="ofd-field">
             <label className="ofd-label">Catatan</label>
-            <input className="ofd-input" value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Instruksi khusus..." />
+            <input
+              className="ofd-input"
+              value={form.notes}
+              onChange={e => set('notes', e.target.value)}
+              placeholder="Instruksi khusus..."
+            />
           </div>
 
           {/* Footer */}
           <div className="ofd-footer">
-            <button type="button" className="ofd-btn-cancel" onClick={onClose}>Batal</button>
+            <button type="button" className="ofd-btn-cancel" onClick={onClose}>
+              Batal
+            </button>
             <button type="submit" className="ofd-btn-save" disabled={saving}>
               {saving ? 'Menyimpan...' : order ? 'Update' : 'Buat Order'}
             </button>
@@ -312,6 +363,7 @@ export default function OrderFormDialog({ order, employees = MOCK_EMPLOYEES, onS
 
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,14 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useApp } from "../../context/AppContext";
-import Logo from "../../assets/Logo_Laundrop.png"; // 
+import { useRole } from "../../context/RoleContext"; // ✅ ganti dari useApp
+import Logo from "../../assets/Logo_Laundrop.png";
 import "./auth.css";
-
-// Akun dummy
-const DUMMY_ACCOUNTS = [
-  { email: "desyana@laundrop.com", password: "123456", name: "Desyana Dewi" },
-  { email: "user@laundrop.com",    password: "123456", name: "User" },
-];
 
 function GoogleIcon() {
   return (
@@ -36,9 +30,16 @@ function EyeIcon({ open }) {
   );
 }
 
+// ✅ Redirect berdasarkan role
+const REDIRECT_BY_ROLE = {
+  customer: '/customer',
+  employee: '/employee/dashboard',
+  owner:    '/owner/dashboard',
+};
+
 export default function Login() {
-  const navigate  = useNavigate();
-  const { login } = useApp();
+  const navigate    = useNavigate();
+  const { login }   = useRole(); // ✅ ganti dari useApp
 
   const [showPass, setShowPass]   = useState(false);
   const [form, setForm]           = useState({ email: "", password: "" });
@@ -49,29 +50,23 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    const account = DUMMY_ACCOUNTS.find(
-      a => a.email === form.email && a.password === form.password
-    );
+    try {
+      const user = login(form.email, form.password); // ✅ login dari RoleContext
 
-    if (!account) {
-      setError("Email atau password salah.");
-      return;
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+        navigate(REDIRECT_BY_ROLE[user.role]); // ✅ redirect sesuai role
+      }, 1500);
+
+    } catch (err) {
+      setError(err.message); // ✅ pesan error dari RoleContext
     }
-
-    login({ name: account.name, email: account.email });
-
-    // Tampilkan toast
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-      navigate("/customer/dashboard");
-    }, 1500);
   };
 
   return (
     <div className="auth-page">
 
-      {/* Toast Berhasil */}
       {showToast && (
         <div className="auth-toast">
           ✓ Berhasil masuk! Mengalihkan...
@@ -81,7 +76,6 @@ export default function Login() {
       <main className="auth-main">
         <div className="auth-card">
 
-          {/* Logo */}
           <div className="auth-logo" onClick={() => navigate("/")}>
             <img src={Logo} alt="Laundrop" className="auth-logo-img" />
             <span className="auth-logo-text">Laundrop</span>
@@ -130,12 +124,7 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Error message */}
-            {error && (
-              <div className="auth-error">
-                {error}
-              </div>
-            )}
+            {error && <div className="auth-error">{error}</div>}
 
             <div className="auth-forgot">
               <button
@@ -152,11 +141,12 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Hint akun dummy */}
+          {/* ✅ Update hint sesuai akun di RoleContext */}
           <div className="auth-hint">
             <p>Gunakan akun demo:</p>
-            <p>Email: <strong>desyana@laundrop.com</strong></p>
-            <p>Password: <strong>123456</strong></p>
+            <p>Customer &nbsp;— <strong>user@laundrop.id</strong> / <strong>1234</strong></p>
+            <p>Employee &nbsp;— <strong>emp@laundrop.id</strong> / <strong>1234</strong></p>
+            <p>Owner &nbsp;&nbsp;&nbsp;&nbsp;— <strong>owner@laundrop.id</strong> / <strong>1234</strong></p>
           </div>
 
           <div className="auth-bottom">

@@ -1,48 +1,34 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useRole } from '../../../context/RoleContext'; // ✅ tambah ini
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import './AppLayout.css';
 
-const OWNER_USER = {
-  name:  'Admin Owner',
-  email: 'owner@laundrop.com',
-};
-
-const EMPLOYEE_USER = {
-  name:  'Karyawan',
-  email: 'employee@laundrop.com',
-};
-
-export default function AppLayout({ role = 'owner' }) {
+export default function AppLayout() { // ✅ hapus prop role
+  const { role, currentUser } = useRole(); // ✅ ambil dari context
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const currentUser = role === 'owner' ? OWNER_USER : EMPLOYEE_USER;
 
   return (
     <div className="app-layout">
 
-      {/* Sidebar Desktop */}
       <div className="sidebar-desktop">
-        <Sidebar role={role} />
+        <Sidebar role={role} /> {/* ✅ kirim role dari context */}
       </div>
 
-      {/* Overlay Mobile */}
       {mobileOpen && (
         <div className="mobile-overlay" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar Mobile */}
       <div className={`sidebar-mobile ${mobileOpen ? 'open' : ''}`}>
         <Sidebar role={role} onNavigate={() => setMobileOpen(false)} />
       </div>
 
-      {/* Konten Utama */}
       <div className="app-main">
         <Topbar
           onMenuClick={() => setMobileOpen(true)}
           role={role}
-          currentUser={currentUser}
+          currentUser={currentUser} // ✅ data asli dari login
           unreadCount={3}
         />
         <main className="app-content">

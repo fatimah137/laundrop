@@ -24,12 +24,15 @@ export default function OwnerDashboard() {
   const pendingPayments = MOCK_ORDERS
     .filter(o => o.payment_status === 'unpaid').length;
 
+    const welcomeSubtitle = {
+    owner:    'Masuk sebagai Owner — Berikut ringkasan hari ini.',
+    employee: 'Masuk sebagai Employee — Berikut tugas hari ini.',
+  };
+
   return (
-    <div className="dashboard-wrapper">
-      <PageHeader
-        title={`Selamat Datang, ${currentUser?.name?.split(' ')[0] || 'Admin'} 👋`}
-        subtitle={`Masuk sebagai ${role || 'Owner'} — Berikut ringkasan hari ini.`}
-      />
+    <div>
+      <h1>Selamat Datang, {currentUser?.name} 👋</h1>
+      <p>{welcomeSubtitle[role]}</p>
 
       <div className="stats-grid">
         <StatCard

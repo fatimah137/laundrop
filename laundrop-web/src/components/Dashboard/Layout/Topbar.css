@@ -1,15 +1,15 @@
 .owner-topbar {
   height: 64px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.95);
+  /* backdrop-filter: blur(12px); */
+  border-bottom: 1px solid hsl(214, 32%, 91%);
   display: flex;
   align-items: center;
   padding: 0 24px;
   gap: 12px;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 10;
   box-sizing: border-box;
 }
 
