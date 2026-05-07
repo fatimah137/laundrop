@@ -1,0 +1,238 @@
+.ofd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ofd-dialog {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* Header */
+.ofd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+  border-radius: 20px 20px 0 0;
+}
+
+.ofd-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.ofd-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.2s;
+}
+
+.ofd-close:hover { background: #e2e8f0; }
+
+/* OCR */
+.ofd-ocr-wrap {
+  padding: 16px 24px 0;
+}
+
+.ofd-hidden-input { display: none; }
+
+.ofd-ocr-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px dashed #93c5fd;
+  background: #eff6ff;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ofd-ocr-btn:hover    { background: #dbeafe; }
+.ofd-ocr-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ofd-spin {
+  animation: ofd-spin 1s linear infinite;
+}
+
+@keyframes ofd-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Form */
+.ofd-form {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ofd-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .ofd-grid-2 { grid-template-columns: 1fr; }
+}
+
+.ofd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ofd-relative { position: relative; }
+
+.ofd-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.ofd-input,
+.ofd-select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: inherit;
+}
+
+.ofd-input:focus,
+.ofd-select:focus {
+  border-color: #93c5fd;
+  background: #fff;
+}
+
+.ofd-input::placeholder { color: #94a3b8; }
+
+.ofd-input-readonly {
+  background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 600;
+  cursor: default;
+}
+
+.ofd-select {
+  appearance: none;
+  cursor: pointer;
+}
+
+/* Customer Dropdown */
+.ofd-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  z-index: 20;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.ofd-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.ofd-dropdown-item:hover { background: #f8fafc; }
+
+.ofd-dropdown-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.ofd-dropdown-phone {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* Footer */
+.ofd-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.ofd-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ofd-btn-cancel:hover { background: #f1f5f9; }
+
+.ofd-btn-save {
+  padding: 10px 24px;
+  border: none;
+  background: #0ea5e9;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.ofd-btn-save:hover    { opacity: 0.85; }
+.ofd-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }

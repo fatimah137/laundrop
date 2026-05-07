@@ -18,10 +18,10 @@ export default function Header({ onMenuClick }) {
 
       <div className="header-right">
         {/* Notifikasi */}
-        <button className="bell-btn" onClick={() => navigate('/customer/notifications')}>
+        <Link to="/customer/notification" className="bell-btn">
           <Bell size={20} />
           {unreadCount > 0 && <span className="bell-badge">{unreadCount}</span>}
-        </button>
+        </Link>
 
         {/* Profil User */}
         <Link to="/customer/profile" className="profile-link">

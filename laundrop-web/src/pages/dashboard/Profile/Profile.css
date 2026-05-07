@@ -1,0 +1,285 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --prf-blue:        #2563EB;
+  --prf-blue-dark:   #1D4ED8;
+  --prf-blue-light:  #EFF6FF;
+  --prf-blue-border: #BFDBFE;
+  --prf-gray-50:     #F8FAFC;
+  --prf-gray-100:    #F1F5F9;
+  --prf-gray-200:    #E2E8F0;
+  --prf-gray-300:    #CBD5E1;
+  --prf-gray-400:    #94A3B8;
+  --prf-gray-500:    #64748B;
+  --prf-gray-700:    #334155;
+  --prf-gray-900:    #0F172A;
+  --prf-white:       #FFFFFF;
+  --prf-green:       #15803D;
+  --prf-red:         #B91C1C;
+  --prf-font:        'Plus Jakarta Sans', sans-serif;
+  --prf-radius:      14px;
+  --prf-shadow:      0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* ── Page ───────────────────────────────────────── */
+.prf-page {
+  font-family: var(--prf-font);
+  animation: prfFade 0.2s ease;
+}
+
+@keyframes prfFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Layout ─────────────────────────────────────── */
+.prf-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .prf-layout { grid-template-columns: 1fr; }
+}
+
+/* ── Card ───────────────────────────────────────── */
+.prf-card {
+  background: var(--prf-white);
+  border: 1px solid var(--prf-gray-200);
+  border-radius: var(--prf-radius);
+  padding: 24px;
+  box-shadow: var(--prf-shadow);
+}
+
+/* ── Avatar Card ───────────────────────────────── */
+.prf-avatar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.prf-avatar {
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.prf-av-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--prf-gray-900);
+  margin: 0 0 4px;
+}
+
+.prf-av-email {
+  font-size: 12px;
+  color: var(--prf-gray-500);
+  margin: 0 0 12px;
+  word-break: break-all;
+}
+
+.prf-role-badge {
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--prf-blue-light);
+  color: var(--prf-blue);
+  border: 1px solid var(--prf-blue-border);
+  text-transform: capitalize;
+  margin-bottom: 4px;
+}
+
+.prf-av-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--prf-gray-100);
+  margin: 18px 0 14px;
+}
+
+.prf-av-info-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+
+.prf-av-info-label { color: var(--prf-gray-500); }
+.prf-av-info-val   { font-weight: 600; color: var(--prf-gray-900); }
+
+/* ── Forms ─────────────────────────────────────── */
+.prf-forms {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.prf-form-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 20px;
+}
+
+.prf-form-title h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--prf-gray-900);
+  margin: 0;
+}
+
+.prf-form-icon {
+  color: var(--prf-blue);
+}
+
+/* ── Grid ──────────────────────────────────────── */
+.prf-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.prf-grid-3 input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--dash-border, #e2e8f0);
+  border-radius: 10px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .prf-grid-2 { grid-template-columns: 1fr; }
+  .prf-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ── Field ─────────────────────────────────────── */
+.prf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prf-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dash-text, #1e293b);
+}
+
+.prf-field input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--dash-border, #e2e8f0);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--dash-text, #1e293b);
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.prf-field input:focus {
+  border-color: var(--dash-primary, #1A7BF2);
+  box-shadow: 0 0 0 3px rgba(26, 123, 242, 0.1);
+}
+
+.prf-field input::placeholder { color: var(--dash-text-muted, #94a3b8); }
+
+.prf-field input.disabled,
+.prf-field input:disabled {
+  background: var(--dash-bg, #f8fafc);
+  color: var(--dash-text-muted, #94a3b8);
+  cursor: not-allowed;
+}
+
+/* ── Buttons ───────────────────────────────────── */
+.prf-btn-save {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--dash-primary, #1A7BF2);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.prf-btn-save:hover { opacity: 0.85; }
+
+.prf-btn-outline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: #fff;
+  color: var(--dash-text, #1e293b);
+  border: 1px solid var(--dash-border, #e2e8f0);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.prf-btn-outline:hover { background: var(--dash-bg, #f8fafc); }
+
+/* ── Toast (FINAL - sama semua halaman) ───────── */
+.prf-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  animation: prf-slide-down 0.3s ease;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.prf-toast.success { background: #059669; }
+.prf-toast.danger  { background: #ef4444; }
+
+.prf-toast-close {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+
+.prf-toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes prf-slide-down {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

@@ -1,0 +1,50 @@
+/* Container utama */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px; /* Sama dengan py-16 px-6 */
+  text-align: center;
+}
+
+/* Lingkaran pembungkus ikon */
+.empty-state-icon-wrapper {
+  width: 56px; /* 14 * 4px */
+  height: 56px;
+  border-radius: 16px; /* 2xl */
+  background-color: rgba(124, 58, 237, 0.1); /* Warna aksen transparan */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+/* Ikon Lucide */
+.empty-state-icon {
+  width: 24px;
+  height: 24px;
+  color: #7c3aed; /* Warna ungu aksen */
+}
+
+/* Judul */
+.empty-state-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin: 0;
+  color: #18181b;
+}
+
+/* Deskripsi */
+.empty-state-description {
+  font-size: 14px;
+  color: #71717a;
+  margin-top: 4px;
+  max-width: 320px; /* max-w-xs */
+  line-height: 1.5;
+}
+
+/* Slot untuk tombol aksi */
+.empty-state-action {
+  margin-top: 20px;
+}

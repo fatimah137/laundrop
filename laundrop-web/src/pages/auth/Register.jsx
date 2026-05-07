@@ -1,22 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Logo from "../../assets/Logo_Laundrop.png"; // 👈
 import "./auth.css";
-
-function LogoIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="8" fill="url(#logo-grad-r)"/>
-      <path d="M10 24c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-      <circle cx="18" cy="14" r="3.5" fill="#fff"/>
-      <defs>
-        <linearGradient id="logo-grad-r" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#60A5FA"/>
-          <stop offset="1" stopColor="#2563EB"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
 
 function GoogleIcon() {
   return (
@@ -54,7 +39,6 @@ export default function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: connect to API
     navigate("/login");
   };
 
@@ -65,14 +49,12 @@ export default function Register() {
 
           {/* Logo */}
           <div className="auth-logo" onClick={() => navigate("/")}>
-            <LogoIcon />
+            <img src={Logo} alt="Laundrop" className="auth-logo-img" /> {/* 👈 */}
             <span className="auth-logo-text">Laundrop</span>
           </div>
 
-          {/* Title */}
           <h1 className="auth-title">Sign Up</h1>
 
-          {/* Google */}
           <button className="btn-google" type="button">
             <GoogleIcon />
             Sign Up using <strong>Google</strong>
@@ -80,9 +62,7 @@ export default function Register() {
 
           <div className="auth-divider">or sign Up with your email</div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit}>
-
             <div className="auth-field">
               <label>Nama Lengkap</label>
               <input
@@ -171,7 +151,7 @@ export default function Register() {
       </main>
 
       <footer className="auth-footer">
-        <span className="auth-footer-copy">© 2022 yourapp.com</span>
+        <span className="auth-footer-copy">© 2026 laundrop.com</span> {/* 👈 fix tahun */}
         <div className="auth-footer-links">
           <a href="#">Contact Us</a>
           <a href="#">Terms &amp; Conditions</a>

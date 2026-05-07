@@ -1,13 +1,14 @@
 import './StatCard.css';
+
 export default function StatCard({ icon: Icon, label, value, colorClass }) {
   return (
-    <div className={`stat-card ${colorClass}`}>
-      <div className="stat-icon-wrapper">
-        <Icon size={20} />
+    <div className="customer-stat-card">
+      <div className={`customer-stat-icon ${colorClass}`}>
+        <Icon size={22} strokeWidth={2} />
       </div>
-      <div className="stat-info">
-        <p className="stat-label">{label}</p>
-        <h3 className="stat-value">{value}</h3>
+      <div className="customer-stat-info">
+        <p className="customer-stat-label">{label}</p>
+        <p className="customer-stat-value">{value}</p>
       </div>
     </div>
   );
