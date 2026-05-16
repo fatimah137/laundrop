@@ -321,6 +321,83 @@
 .ow-btn-delete:hover  { opacity: 0.88; }
 .ow-btn-delete:active { transform: scale(0.98); }
 
+/* ── Search bar ──────────────────────────────────────────────────── */
+.ow-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ow-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--ow-gray-400);
+  pointer-events: none;
+}
+
+.ow-search-input {
+  width: 100%;
+  padding: 10px 36px;
+  border: 1.5px solid var(--ow-gray-200);
+  border-radius: var(--ow-radius);
+  font-size: 13px;
+  font-family: var(--ow-font);
+  color: var(--ow-gray-900);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: var(--ow-white);
+}
+
+.ow-search-input:focus {
+  border-color: var(--ow-blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+}
+
+.ow-search-input::placeholder { color: var(--ow-gray-400); }
+
+.ow-search-clear {
+  position: absolute;
+  right: 10px;
+  background: var(--ow-gray-100);
+  border: none;
+  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ow-gray-500);
+  transition: background 0.15s;
+}
+
+.ow-search-clear:hover { background: var(--ow-gray-200); }
+
+/* ── Scan QR button ──────────────────────────────────────────────── */
+.ow-btn-qr {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1.5px solid #bfdbfe;
+  border-radius: var(--ow-radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--ow-font);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.ow-btn-qr:hover {
+  background: #2563eb;
+  color: var(--ow-white);
+  border-color: #2563eb;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .ow-orders-topbar    { flex-direction: column; align-items: flex-start; }
