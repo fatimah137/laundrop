@@ -86,7 +86,7 @@ export default function Profile() {
       <Toast toast={toast} onClose={() => setToast(null)} />
 
       <PageHeader
-        title="Profil Saya"
+        title="Profile"
         subtitle="Kelola informasi pribadi dan keamanan akun."
       />
 

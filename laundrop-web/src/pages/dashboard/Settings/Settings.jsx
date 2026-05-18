@@ -72,7 +72,7 @@ export default function Settings() {
       <Toast toast={toast} onClose={() => setToast(null)} />
 
       <PageHeader
-        title="Pengaturan Bisnis"
+        title="Settings"
         subtitle="Kelola profil perusahaan dan informasi branding."
       />
 

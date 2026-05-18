@@ -3,7 +3,35 @@ import { CreditCard, Wallet, CheckCircle, X, ChevronDown, Search } from 'lucide-
 import { MOCK_ORDERS } from '../../../data/mockData';
 import { formatIDR } from '../../../data/format';
 import StatusBadge from '../../../components/shared/StatusBadge';
+import Pagination from '../../../components/shared/Pagination';
+import Toast from '../../../components/shared/Toast';
 import './Payment.css';
+
+const STATUS_OPTIONS = [
+  { value: 'all',    label: 'All Status'  },
+  { value: 'paid',   label: 'Paid'        },
+  { value: 'unpaid', label: 'Unpaid'      },
+];
+
+const METHOD_OPTIONS = [
+  { value: 'all',      label: 'All Methods' },
+  { value: 'cash',     label: 'Cash'        },
+  { value: 'qris',     label: 'QRIS'        },
+  { value: 'transfer', label: 'Transfer'    },
+];
+
+const ITEMS_PER_PAGE = 10;
+
+const generatePayments = () =>
+  MOCK_ORDERS.map(o => ({
+    id:            o.id,
+    order_id:      o.order_number,
+    customer_name: o.customer_name,
+    amount:        o.total_amount,
+    status:        o.payment_status,
+    method:        o.paymentMethod || 'cash',
+    date:          o.pickup_date,
+  }));
 
 function CustomSelect({ value, onChange, options }) {
   const [open, setOpen] = useState(false);
@@ -48,75 +76,51 @@ function CustomSelect({ value, onChange, options }) {
   );
 }
 
-const STATUS_OPTIONS = [
-  { value: 'all',    label: 'All Status'  },
-  { value: 'paid',   label: 'Paid'        },
-  { value: 'unpaid', label: 'Unpaid'      },
-];
-
-const METHOD_OPTIONS = [
-  { value: 'all',      label: 'All Methods' },
-  { value: 'cash',     label: 'Cash'        },
-  { value: 'qris',     label: 'QRIS'        },
-  { value: 'transfer', label: 'Transfer'    },
-];
-
-const generatePayments = () =>
-  MOCK_ORDERS.map(o => ({
-    id:            o.id,
-    order_id:      o.order_number,
-    customer_name: o.customer_name,
-    amount:        o.total_amount,
-    status:        o.payment_status,
-    method:        o.paymentMethod || 'cash',
-    date:          o.pickup_date,
-  }));
-
 export default function Payment() {
   const [payments, setPayments]         = useState(generatePayments);
   const [statusFilter, setStatusFilter] = useState('all');
   const [methodFilter, setMethodFilter] = useState('all');
   const [search, setSearch]             = useState('');
+  const [page, setPage]                 = useState(1);
   const [toast, setToast]               = useState(null);
 
-  const filtered = useMemo(() => payments.filter(p => {
-    const matchStatus = statusFilter === 'all' || p.status === statusFilter;
-    const matchMethod = methodFilter === 'all' || p.method === methodFilter;
-    const matchSearch = !search ||
-      p.order_id?.toLowerCase().includes(search.toLowerCase()) ||
-      p.customer_name?.toLowerCase().includes(search.toLowerCase());
-    return matchStatus && matchMethod && matchSearch;
-  }), [payments, statusFilter, methodFilter, search]);
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const filtered = useMemo(() => {
+    setPage(1);
+    return payments.filter(p => {
+      const matchStatus = statusFilter === 'all' || p.status === statusFilter;
+      const matchMethod = methodFilter === 'all' || p.method === methodFilter;
+      const matchSearch = !search ||
+        p.order_id?.toLowerCase().includes(search.toLowerCase()) ||
+        p.customer_name?.toLowerCase().includes(search.toLowerCase());
+      return matchStatus && matchMethod && matchSearch;
+    });
+  }, [payments, statusFilter, methodFilter, search]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated  = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const totalPaid   = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0);
   const totalUnpaid = payments.filter(p => p.status === 'unpaid').reduce((s, p) => s + (p.amount || 0), 0);
 
   const markPaid = (id) => {
-    setPayments(prev => prev.map(p =>
-      p.id === id ? { ...p, status: 'paid' } : p
-    ));
-    setToast('Pembayaran berhasil dikonfirmasi!');
-    setTimeout(() => setToast(null), 3000);
+    setPayments(prev => prev.map(p => p.id === id ? { ...p, status: 'paid' } : p));
+    showToast('Pembayaran berhasil dikonfirmasi!');
   };
 
   return (
     <div className="pay-page">
 
-      {/* Toast */}
-      {toast && (
-        <div className="pay-toast">
-          <CheckCircle size={18} />
-          <span>{toast}</span>
-          <button className="pay-toast-close" onClick={() => setToast(null)}>
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      <Toast toast={toast} onClose={() => setToast(null)} />
 
       {/* Header */}
       <div className="pay-header">
         <h1 className="pay-title">Payment</h1>
-        <p className="pay-subtitle">Kelola pembayaran pesanan</p>
+        <p className="pay-subtitle">{filtered.length} dari {payments.length} transaksi</p>
       </div>
 
       {/* Summary Cards */}
@@ -146,7 +150,6 @@ export default function Payment() {
 
       {/* Filter Bar */}
       <div className="pay-filter-bar">
-        {/* Search */}
         <div className="pay-search-wrap">
           <Search size={15} className="pay-search-icon" />
           <input
@@ -162,18 +165,9 @@ export default function Payment() {
           )}
         </div>
 
-        {/* Dropdowns */}
         <div className="pay-filters">
-          <CustomSelect
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={STATUS_OPTIONS}
-          />
-          <CustomSelect
-            value={methodFilter}
-            onChange={setMethodFilter}
-            options={METHOD_OPTIONS}
-          />
+          <CustomSelect value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} />
+          <CustomSelect value={methodFilter} onChange={setMethodFilter} options={METHOD_OPTIONS} />
         </div>
       </div>
 
@@ -183,36 +177,40 @@ export default function Payment() {
           <p>Tidak ada data pembayaran ditemukan.</p>
         </div>
       ) : (
-        <div className="pay-list">
-          {filtered.map(p => (
-            <div key={p.id} className={`pay-card ${p.status === 'unpaid' ? 'unpaid' : ''}`}>
-              <div className="pay-card-left">
-                <div className="pay-card-top">
-                  <span className="pay-order-id">{p.order_id}</span>
-                  <StatusBadge status={p.status} type="payment" />
+        <>
+          <div className="pay-list">
+            {paginated.map(p => (
+              <div key={p.id} className={`pay-card ${p.status === 'unpaid' ? 'unpaid' : ''}`}>
+                <div className="pay-card-left">
+                  <div className="pay-card-top">
+                    <span className="pay-order-id">{p.order_id}</span>
+                    <StatusBadge status={p.status} type="payment" />
+                  </div>
+                  <p className="pay-customer">{p.customer_name}</p>
+                  <p className="pay-method">
+                    Metode: <strong>{(p.method || 'N/A').toUpperCase()}</strong>
+                    {p.date && <span className="pay-date"> · {p.date}</span>}
+                  </p>
                 </div>
-                <p className="pay-customer">{p.customer_name}</p>
-                <p className="pay-method">
-                  Metode: <strong>{(p.method || 'N/A').toUpperCase()}</strong>
-                  {p.date && <span className="pay-date"> · {p.date}</span>}
-                </p>
+                <div className="pay-card-right">
+                  <span className="pay-amount">{formatIDR(p.amount || 0)}</span>
+                  {p.status === 'unpaid' && (
+                    <button className="pay-btn-paid" onClick={() => markPaid(p.id)}>
+                      <CheckCircle size={14} /> Mark Paid
+                    </button>
+                  )}
+                  {p.status === 'paid' && (
+                    <span className="pay-paid-label">
+                      <CheckCircle size={13} /> Lunas
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="pay-card-right">
-                <span className="pay-amount">{formatIDR(p.amount || 0)}</span>
-                {p.status === 'unpaid' && (
-                  <button className="pay-btn-paid" onClick={() => markPaid(p.id)}>
-                    <CheckCircle size={14} /> Mark Paid
-                  </button>
-                )}
-                {p.status === 'paid' && (
-                  <span className="pay-paid-label">
-                    <CheckCircle size={13} /> Lunas
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <Pagination current={page} total={totalPages} onChange={setPage} />
+        </>
       )}
 
     </div>

@@ -1,24 +1,23 @@
-import { useState } from 'react';
-import { Plus, Edit, Trash2, MoreHorizontal, UserCog, X, Phone, Mail } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { Plus, Edit, Trash2, MoreHorizontal, UserCog, X, Phone, Mail, Search } from 'lucide-react';
 import { useRole } from '../../../context/RoleContext';
 import { MOCK_EMPLOYEES } from '../../../data/mockData';
-import EmptyState from '../../../components/shared/EmptyState';
-import Toast from '../../../components/shared/Toast'; // ✅ tambah ini
+import Pagination from '../../../components/shared/Pagination';
+import Toast from '../../../components/shared/Toast';
 import './Employees.css';
 
-const ROLE_LABELS = {
-  owner: 'Owner',
-  employee: 'Employee',
-};
-
+const ROLE_LABELS  = { owner: 'Owner', employee: 'Karyawan' };
 const ROLE_OPTIONS = ['owner', 'employee'];
-
-const BLANK = { name: '', phone: '', email: '', role: 'employee', is_active: true };
+const BLANK        = { name: '', phone: '', email: '', role: 'employee', is_active: true };
+const ITEMS_PER_PAGE = 9;
 
 export default function Employees() {
   const { role } = useRole();
 
   const [employees, setEmployees]   = useState(MOCK_EMPLOYEES);
+  const [search, setSearch]         = useState('');
+  const [page, setPage]             = useState(1);
   const [showForm, setShowForm]     = useState(false);
   const [editItem, setEditItem]     = useState(null);
   const [form, setForm]             = useState(BLANK);
@@ -31,13 +30,24 @@ export default function Employees() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const filtered = useMemo(() => {
+    setPage(1);
+    return employees.filter(e =>
+      !search || [e.name, e.phone, e.email]
+        .some(v => (v || '').toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [employees, search]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated  = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
   const openForm = (item = null) => {
     setEditItem(item);
     setForm(item ? {
-      name: item.name,
-      phone: item.phone || '',
-      email: item.email || '',
-      role: item.role || 'employee',
+      name:      item.name,
+      phone:     item.phone     || '',
+      email:     item.email     || '',
+      role:      item.role      || 'employee',
       is_active: item.is_active !== false,
     } : BLANK);
     setShowForm(true);
@@ -67,11 +77,10 @@ export default function Employees() {
     showToast('Karyawan berhasil dihapus!', 'danger');
   };
 
-  const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const set      = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const initials = (name) => name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
 
-  const initials = (name) =>
-    name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
-
+  // Restricted untuk non-owner
   if (role !== 'owner') {
     return (
       <div className="emp-restricted">
@@ -85,105 +94,113 @@ export default function Employees() {
   return (
     <div className="emp-page">
 
-      {/* ✅ Toast baru */}
       <Toast toast={toast} onClose={() => setToast(null)} />
 
       {/* Header */}
       <div className="emp-header">
         <div>
           <h1 className="emp-title">Employee Management</h1>
-          <p className="emp-subtitle">{employees.length} employees</p>
+          <p className="emp-subtitle">{filtered.length} dari {employees.length} employees</p>
         </div>
         <button className="emp-btn-add" onClick={() => openForm()}>
           <Plus size={16} /> Add Employee
         </button>
       </div>
 
-      {/* Grid */}
-      {employees.length === 0 ? (
-        <EmptyState
-          icon={UserCog}
-          title="No employees"
-          description="Add your team members"
-          action={
-            <button className="emp-btn-add" onClick={() => openForm()}>
-              <Plus size={16} /> Add Employee
-            </button>
-          }
+      {/* Search */}
+      <div className="emp-search-wrap">
+        <Search size={15} className="emp-search-icon" />
+        <input
+          className="emp-search-input"
+          placeholder="Cari nama, email, atau no. HP..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
         />
-      ) : (
-        <div className="emp-grid">
-          {employees.map(emp => (
-            <div key={emp.id} className="emp-card">
-              <div className="emp-card-top">
-                <div className="emp-card-info">
-                  <div className={`emp-avatar ${emp.is_active === false ? 'inactive' : ''}`}>
-                    {initials(emp.name)}
-                  </div>
-                  <div>
-                    <div className="emp-name-row">
-                      <p className="emp-name">{emp.name}</p>
-                      {emp.is_active === false && (
-                        <span className="emp-badge-inactive">Inactive</span>
-                      )}
-                    </div>
-                    <p className="emp-role">{ROLE_LABELS[emp.role] || emp.role}</p>
-                  </div>
-                </div>
+        {search && (
+          <button className="emp-search-clear" onClick={() => setSearch('')}>
+            <X size={13} />
+          </button>
+        )}
+      </div>
 
-                <div className="emp-menu-wrap">
-                  <button
-                    className="emp-menu-btn"
-                    onClick={() => setOpenMenuId(openMenuId === emp.id ? null : emp.id)}
-                  >
-                    <MoreHorizontal size={16} />
-                  </button>
-                  {openMenuId === emp.id && (
-                    <>
-                      <div className="emp-menu-backdrop" onClick={() => setOpenMenuId(null)} />
-                      <div className="emp-dropdown">
-                        <button
-                          className="emp-dropdown-item"
-                          onClick={() => { openForm(emp); setOpenMenuId(null); }}
-                        >
-                          <Edit size={14} /> Edit
-                        </button>
-                        <div className="emp-dropdown-divider" />
-                        <button
-                          className="emp-dropdown-item danger"
-                          onClick={() => { setDeleting(emp); setOpenMenuId(null); }}
-                        >
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {emp.phone && (
-                <div className="emp-contact">
-                  <Phone size={12} /><span>{emp.phone}</span>
-                </div>
-              )}
-              {emp.email && (
-                <div className="emp-contact">
-                  <Mail size={12} /><span>{emp.email}</span>
-                </div>
-              )}
-            </div>
-          ))}
+      {/* Grid */}
+      {filtered.length === 0 ? (
+        <div className="emp-empty">
+          <UserCog size={40} className="emp-empty-icon" />
+          <p className="emp-empty-title">Tidak ada karyawan ditemukan</p>
+          <p className="emp-empty-sub">Coba ubah kata kunci pencarian</p>
         </div>
+      ) : (
+        <>
+          <div className="emp-grid">
+            {paginated.map(emp => (
+              <div key={emp.id} className="emp-card">
+                <div className="emp-card-top">
+                  <div className="emp-card-info">
+                    <div className={`emp-avatar ${emp.is_active === false ? 'inactive' : ''}`}>
+                      {initials(emp.name)}
+                    </div>
+                    <div>
+                      <div className="emp-name-row">
+                        <p className="emp-name">{emp.name}</p>
+                        {emp.is_active === false && (
+                          <span className="emp-badge-inactive">Inactive</span>
+                        )}
+                      </div>
+                      <p className="emp-role">{ROLE_LABELS[emp.role] || emp.role}</p>
+                    </div>
+                  </div>
+
+                  <div className="emp-menu-wrap">
+                    <button
+                      className="emp-menu-btn"
+                      onClick={() => setOpenMenuId(openMenuId === emp.id ? null : emp.id)}
+                    >
+                      <MoreHorizontal size={16} />
+                    </button>
+                    {openMenuId === emp.id && (
+                      <>
+                        <div className="emp-menu-backdrop" onClick={() => setOpenMenuId(null)} />
+                        <div className="emp-dropdown">
+                          <button
+                            className="emp-dropdown-item"
+                            onClick={() => { openForm(emp); setOpenMenuId(null); }}
+                          >
+                            <Edit size={14} /> Edit
+                          </button>
+                          <div className="emp-dropdown-divider" />
+                          <button
+                            className="emp-dropdown-item danger"
+                            onClick={() => { setDeleting(emp); setOpenMenuId(null); }}
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {emp.phone && (
+                  <div className="emp-contact"><Phone size={12} /><span>{emp.phone}</span></div>
+                )}
+                {emp.email && (
+                  <div className="emp-contact"><Mail size={12} /><span>{emp.email}</span></div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <Pagination current={page} total={totalPages} onChange={setPage} />
+        </>
       )}
 
       {/* Form Modal */}
-      {showForm && (
+      {showForm && createPortal(
         <div className="emp-overlay" onClick={() => setShowForm(false)}>
           <div className="emp-dialog" onClick={e => e.stopPropagation()}>
             <div className="emp-dialog-header">
-              <h2 className="emp-dialog-title">
-                {editItem ? 'Edit Employee' : 'New Employee'}
-              </h2>
+              <h2 className="emp-dialog-title">{editItem ? 'Edit Employee' : 'New Employee'}</h2>
               <button className="emp-dialog-close" onClick={() => setShowForm(false)}>
                 <X size={18} />
               </button>
@@ -199,7 +216,6 @@ export default function Employees() {
                   required
                 />
               </div>
-
               <div className="emp-grid-2">
                 <div className="emp-field">
                   <label className="emp-label">Phone</label>
@@ -221,7 +237,6 @@ export default function Employees() {
                   />
                 </div>
               </div>
-
               <div className="emp-field">
                 <label className="emp-label">Role</label>
                 <select
@@ -234,7 +249,6 @@ export default function Employees() {
                   ))}
                 </select>
               </div>
-
               <div className="emp-toggle-row">
                 <label className="emp-label">Active</label>
                 <button
@@ -245,13 +259,8 @@ export default function Employees() {
                   <div className={`emp-toggle-thumb ${form.is_active ? 'on' : ''}`} />
                 </button>
               </div>
-
               <div className="emp-form-footer">
-                <button
-                  type="button"
-                  className="emp-btn-cancel"
-                  onClick={() => setShowForm(false)}
-                >
+                <button type="button" className="emp-btn-cancel" onClick={() => setShowForm(false)}>
                   Cancel
                 </button>
                 <button type="submit" className="emp-btn-save">
@@ -260,11 +269,12 @@ export default function Employees() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Delete Confirm */}
-      {deleting && (
+      {/* Delete Modal */}
+      {deleting && createPortal(
         <div className="emp-overlay" onClick={() => setDeleting(null)}>
           <div className="emp-dialog small" onClick={e => e.stopPropagation()}>
             <div className="emp-dialog-header">
@@ -281,7 +291,8 @@ export default function Employees() {
               <button className="emp-btn-delete" onClick={() => handleDelete(deleting.id)}>Hapus</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

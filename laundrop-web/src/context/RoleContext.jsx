@@ -14,7 +14,7 @@ const DUMMY_USERS = [
 const ROLE_PERMISSIONS = {
   owner: {
     label: 'Owner',
-    menus: ['dashboard', 'orders', 'customers', 'services', 'payment', 'reports', 'notifications', 'profile', 'settings', 'tracking'],
+    menus: ['dashboard', 'orders', 'customers', 'employees', 'services', 'payment', 'reports', 'notifications', 'profile', 'settings', 'tracking'],
   },
   employee: {
     label: 'Employee',
