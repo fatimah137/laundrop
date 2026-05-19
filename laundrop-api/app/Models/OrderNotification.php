@@ -15,7 +15,7 @@ class OrderNotification extends Model
     const TYPE_PAYMENT_SUCCESS = 'payment_success';
     const TYPE_ORDER_CANCELLED = 'order_cancelled';
 
-    protected $table = 'notifications';
+    protected $table = 'order_notifications';
 
     protected $fillable = [
         'user_id',

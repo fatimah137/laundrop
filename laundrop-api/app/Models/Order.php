@@ -15,11 +15,12 @@ class Order extends Model
     const STATUS_CONFIRMED      = 'confirmed';         // Dikonfirmasi karyawan
     const STATUS_PICKING_UP     = 'picking_up';        // Dalam penjemputan
     const STATUS_PICKED_UP      = 'picked_up';         // Pakaian diambil
-    const STATUS_PROCESSING     = 'processing';        // Sedang dicuci
-    const STATUS_DELIVERING     = 'delivering';        // Dalam pengiriman
-    const STATUS_DELIVERED      = 'delivered';         // Terkirim
     const STATUS_BILLED         = 'billed';            // Tagihan tersedia
     const STATUS_PAID           = 'paid';              // Lunas
+    const STATUS_PROCESSING     = 'processing';        // Sedang dicuci
+    const STATUS_READY          = 'ready';             // Siap diantar
+    const STATUS_DELIVERING     = 'delivering';        // Dalam pengiriman
+    const STATUS_DELIVERED      = 'delivered';         // Terkirim
     const STATUS_CANCELLED      = 'cancelled';         // Dibatalkan
 
     const PAYMENT_CASH = 'cash';
@@ -109,11 +110,12 @@ class Order extends Model
             self::STATUS_PENDING    => [self::STATUS_CONFIRMED, self::STATUS_CANCELLED],
             self::STATUS_CONFIRMED  => [self::STATUS_PICKING_UP],
             self::STATUS_PICKING_UP => [self::STATUS_PICKED_UP],
-            self::STATUS_PICKED_UP  => [self::STATUS_PROCESSING],
-            self::STATUS_PROCESSING => [self::STATUS_DELIVERING],
-            self::STATUS_DELIVERING => [self::STATUS_DELIVERED],
-            self::STATUS_DELIVERED  => [self::STATUS_BILLED],
+            self::STATUS_PICKED_UP  => [self::STATUS_BILLED],
             self::STATUS_BILLED     => [self::STATUS_PAID],
+            self::STATUS_PAID       => [self::STATUS_PROCESSING],
+            self::STATUS_PROCESSING => [self::STATUS_READY],
+            self::STATUS_READY      => [self::STATUS_DELIVERING],
+            self::STATUS_DELIVERING => [self::STATUS_DELIVERED],
         ];
 
         return in_array($newStatus, $flow[$this->status] ?? []);

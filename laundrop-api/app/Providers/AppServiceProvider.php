@@ -6,6 +6,11 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    // app/Providers/AuthServiceProvider.php
+    protected $policies = [
+        Order::class => OrderPolicy::class,
+    ];
+
     /**
      * Register any application services.
      */

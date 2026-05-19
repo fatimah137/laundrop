@@ -21,28 +21,32 @@ return new class extends Migration
             // user yang mengubah status (karyawan/owner)
 
             $table->enum('status_before', [
-                'menunggu_konfirmasi',
-                'dalam_penjemputan',
-                'pakaian_diambil',
-                'menunggu_pembayaran',
-                'proses_pencucian',
-                'pencucian_selesai',
-                'dalam_pengantaran',
-                'selesai',
-                'dibatalkan',
+                'pending',
+                'confirmed',
+                'picking_up',
+                'picked_up',
+                'billed',
+                'paid',
+                'processing',
+                'ready',
+                'delivering',
+                'delivered',
+                'cancelled',
             ])->nullable();
             // nullable untuk status awal (pertama kali dibuat)
 
             $table->enum('status_after', [
-                'menunggu_konfirmasi',
-                'dalam_penjemputan',
-                'pakaian_diambil',
-                'menunggu_pembayaran',
-                'proses_pencucian',
-                'pencucian_selesai',
-                'dalam_pengantaran',
-                'selesai',
-                'dibatalkan',
+                'pending',
+                'confirmed',
+                'picking_up',
+                'picked_up',
+                'billed',
+                'paid',
+                'processing',
+                'ready',
+                'delivering',
+                'delivered',
+                'cancelled',
             ]);
 
             $table->text('notes')->nullable();

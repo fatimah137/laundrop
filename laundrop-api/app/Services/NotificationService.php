@@ -35,11 +35,12 @@ class NotificationService
             Order::STATUS_CONFIRMED  => ['Pesanan Dikonfirmasi',      "Pesanan #{$order->order_number} sudah dikonfirmasi, karyawan akan segera menjemput."],
             Order::STATUS_PICKING_UP => ['Karyawan Menuju Lokasi',    "Karyawan sedang dalam perjalanan menjemput pakaian Anda."],
             Order::STATUS_PICKED_UP  => ['Pakaian Berhasil Diambil',  "Pakaian Anda sudah diambil dan sedang menuju laundry."],
-            Order::STATUS_PROCESSING => ['Pakaian Sedang Dicuci',     "Pakaian Anda sedang dalam proses pencucian."],
-            Order::STATUS_DELIVERING => ['Pakaian Sedang Diantarkan', "Pakaian Anda sedang dalam perjalanan ke alamat Anda."],
-            Order::STATUS_DELIVERED  => ['Pakaian Telah Tiba',        "Pakaian Anda sudah sampai. Terima kasih!"],
             Order::STATUS_BILLED     => ['Tagihan Tersedia',          "Tagihan untuk pesanan #{$order->order_number} sudah tersedia. Silakan lakukan pembayaran."],
             Order::STATUS_PAID       => ['Pembayaran Berhasil',       "Pembayaran pesanan #{$order->order_number} telah dikonfirmasi."],
+            Order::STATUS_PROCESSING => ['Pakaian Sedang Dicuci',     "Pakaian Anda sedang dalam proses pencucian."],
+            Order::STATUS_READY      => ['Pakaian Siap Diantar',      "Pakaian Anda sudah selesai dicuci dan siap diantar."],
+            Order::STATUS_DELIVERING => ['Pakaian Sedang Diantarkan', "Pakaian Anda sedang dalam perjalanan ke alamat Anda."],
+            Order::STATUS_DELIVERED  => ['Pakaian Telah Tiba',        "Pakaian Anda sudah sampai. Terima kasih!"],
             Order::STATUS_CANCELLED  => ['Pesanan Dibatalkan',        "Pesanan #{$order->order_number} telah dibatalkan."],
         ];
 
@@ -49,7 +50,7 @@ class NotificationService
 
         [$title, $body] = $messages[$newStatus];
 
-        $this->send($order->customer_id, $order->id, 'status_updated', $title, $body);
+        $this->send($order->customer_id, $order->id, 'status_changed', $title, $body);
     }
 
     // ─── Kirim Web Push via VAPID ─────────────────────────────────────────────

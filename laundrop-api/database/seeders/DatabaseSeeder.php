@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
 
         // ── Employee demo ────────────────────────────────────────────────────
         User::firstOrCreate(
-            ['email' => 'karyawan@laundrop.id'],
+            ['email' => 'employee@laundrop.id'],
             [
                 'name'          => 'Budi Santoso',
                 'phone'         => '08222345678',
