@@ -150,6 +150,61 @@
   color: #991b1b;
 }
 
+/* ── QRIS Payment Alert ──────────────────────────────────────────── */
+.qris-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.qris-alert-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qris-alert-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.qris-alert-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 2px;
+}
+
+.qris-alert-sub {
+  font-size: 12px;
+  color: #3b82f6;
+  margin: 0;
+}
+
+.qris-alert-btn {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.qris-alert-btn:hover { background: #1d4ed8; }
+
 /* Responsive Grid for Mobile */
 @media (max-width: 640px) {
   .stats-grid {

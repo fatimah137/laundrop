@@ -1,25 +1,42 @@
+import { createPortal } from 'react-dom';
+import { QrCode } from 'lucide-react';
 import "./OrderModal.css";
 
 const formatRp = (n) => `Rp ${Number(n).toLocaleString("id-ID")}`;
 
 const TIMELINE_STEPS = [
-  { key: "Dijemput",  label: "Pesanan Dijemput",   desc: "Kurir sedang menjemput pakaian Anda"       },
-  { key: "Diproses",  label: "Sedang Diproses",     desc: "Pakaian sedang dicuci & disetrika"         },
-  { key: "Dikirim",   label: "Dalam Pengiriman",    desc: "Kurir mengantar cucian ke alamat Anda"     },
-  { key: "Selesai",   label: "Selesai",             desc: "Cucian telah diterima"                     },
+  { key: "Waiting Pickup",  label: "Order Diterima",    desc: "Pesanan berhasil dibuat, menunggu penjemputan" },
+  { key: "Pickup",          label: "Pesanan Dijemput",  desc: "Kurir sedang menjemput pakaian Anda"           },
+  { key: "Waiting Payment", label: "Menunggu Bayar",    desc: "Silakan selesaikan pembayaran QRIS"            },
+  { key: "Processing",      label: "Sedang Diproses",   desc: "Pakaian sedang dicuci & disetrika"             },
+  { key: "Ready",           label: "Siap Dikirim",      desc: "Pakaian selesai dan siap untuk dikirim"        },
+  { key: "Delivery",        label: "Dalam Pengiriman",  desc: "Kurir mengantar cucian ke alamat Anda"         },
+  { key: "Completed",       label: "Selesai",           desc: "Cucian telah diterima, terima kasih!"          },
 ];
 
 function getStepIndex(status) {
-  const idx = TIMELINE_STEPS.findIndex(s => s.key === status);
+  const idx = TIMELINE_STEPS.findIndex(
+    s => s.key.toLowerCase() === (status || '').toLowerCase()
+  );
   return idx === -1 ? 0 : idx;
 }
 
-export default function TrackOrderModal({ order, onClose }) {
+export default function TrackOrderModal({ order, onClose, onPayQris }) {
   if (!order) return null;
 
   const activeIdx = getStepIndex(order.status);
 
-  return (
+  // ✅ Tampilkan tombol QRIS kalau sudah verified, metode QRIS, belum bayar
+  const showQrisBtn =
+    order.paymentMethod === 'QRIS' &&
+    order.payment_status !== 'paid';
+
+  // ✅ Harga: estimasi sebelum verified, final setelah verified
+  const displayPrice = order.verified
+    ? formatRp(order.price)
+    : `~${formatRp(order.estimated_price || order.price)}`;
+
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()}>
 
@@ -31,17 +48,53 @@ export default function TrackOrderModal({ order, onClose }) {
               <line x1="6"  y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-          <p className="track-order-id">{order.id}</p>
-          <h2 className="track-order-name">{order.service} &nbsp;·&nbsp; {order.weight} kg</h2>
+          <p className="track-order-id">{order.order_number || order.id}</p>
+          <h2 className="track-order-name">
+            {order.service} &nbsp;·&nbsp; {order.actual_weight || order.weight} kg
+          </h2>
           <div className="track-order-footer">
             <span className="track-status-badge">{order.status}</span>
-            <span className="track-price">{formatRp(order.price)}</span>
+            <span className="track-price">{displayPrice}</span>
           </div>
         </div>
 
-        {/* Timeline */}
         <div className="modal-body">
+
+          {/* ✅ QRIS payment alert — muncul kalau perlu bayar */}
+          {showQrisBtn && (
+            <div className="track-qris-alert">
+              <div className="track-qris-alert-left">
+                <QrCode size={18} className="track-qris-icon" />
+                <div>
+                  <p className="track-qris-title">Pembayaran QRIS Diperlukan</p>
+                  <p className="track-qris-sub">
+                    Selesaikan pembayaran agar laundry mulai diproses
+                  </p>
+                </div>
+              </div>
+              <button
+                className="track-qris-btn"
+                onClick={() => { onClose(); onPayQris?.(order); }}
+              >
+                Bayar QRIS
+              </button>
+            </div>
+          )}
+
+          {/* Progress bar horizontal */}
           <p className="track-section-title">Timeline Pesanan</p>
+          <div className="track-progress-bar">
+            <div
+              className="track-progress-fill"
+              style={{ width: `${(activeIdx / (TIMELINE_STEPS.length - 1)) * 100}%` }}
+            />
+          </div>
+          <div className="track-progress-labels">
+            <span>Menunggu</span>
+            <span>Selesai</span>
+          </div>
+
+          {/* Timeline vertikal */}
           <div className="timeline">
             {TIMELINE_STEPS.map((step, i) => {
               const isDone   = i < activeIdx;
@@ -72,30 +125,81 @@ export default function TrackOrderModal({ order, onClose }) {
             })}
           </div>
 
-          {/* Info pesanan */}
+          {/* ✅ Info pesanan — lengkap dengan status bayar */}
           <div className="track-info-box">
             {[
               ["Layanan",       order.service],
-              ["Jadwal Jemput", `${order.pickupDate} · ${order.pickupTime}`],
+              ["Jadwal Jemput", `${order.pickupDate || order.date} · ${order.pickupTime}`],
               ["Alamat",        order.pickupAddress],
-              ["Pembayaran",    order.paymentMethod],
             ].map(([label, value]) => (
               <div key={label} className="receipt-row">
                 <span className="receipt-row-label">{label}</span>
-                <span className="receipt-row-value">{value}</span>
+                <span className="receipt-row-value">{value || '-'}</span>
               </div>
             ))}
-            <div className="receipt-total-row">
-              <span className="receipt-total-label">Total</span>
-              <span className="receipt-total-val">{formatRp(order.price)}</span>
+
+            {/* ✅ Berat — tampilkan aktual vs estimasi */}
+            <div className="receipt-row">
+              <span className="receipt-row-label">Berat</span>
+              <span className="receipt-row-value">
+                {order.verified && order.actual_weight
+                  ? `${order.actual_weight} kg (aktual)`
+                  : `${order.weight} kg (estimasi)`
+                }
+              </span>
             </div>
+
+            {/* ✅ Metode pembayaran */}
+            <div className="receipt-row">
+              <span className="receipt-row-label">Metode Bayar</span>
+              <span className="receipt-row-value">{order.paymentMethod}</span>
+            </div>
+
+            {/* ✅ Status pembayaran */}
+            <div className="receipt-row">
+              <span className="receipt-row-label">Status Bayar</span>
+              <span className={`receipt-row-value ${order.payment_status === 'paid' ? 'track-paid' : 'track-unpaid'}`}>
+                {order.payment_status === 'paid' ? '✓ Lunas' : '⏳ Belum Bayar'}
+              </span>
+            </div>
+
+            {/* ✅ Total — estimasi kalau belum verified */}
+            <div className="receipt-total-row">
+              <span className="receipt-total-label">
+                Total {!order.verified && <span className="track-est-label">(estimasi)</span>}
+              </span>
+              <span className="receipt-total-val">{displayPrice}</span>
+            </div>
+
+            {!order.verified && (
+              <p className="track-est-note">
+                * Harga final ditentukan setelah employee memverifikasi berat aktual
+              </p>
+            )}
           </div>
 
-          <button className="btn-modal-primary" style={{ width: "100%" }} onClick={onClose}>
-            Tutup
-          </button>
+          {/* Tombol bawah */}
+          <div className="track-bottom-actions">
+            {showQrisBtn && (
+              <button
+                className="track-btn-qris"
+                onClick={() => { onClose(); onPayQris?.(order); }}
+              >
+                <QrCode size={15} /> Bayar QRIS Sekarang
+              </button>
+            )}
+            <button
+              className="btn-modal-primary"
+              style={{ flex: 1 }}
+              onClick={onClose}
+            >
+              Tutup
+            </button>
+          </div>
+
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

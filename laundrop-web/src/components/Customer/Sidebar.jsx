@@ -1,29 +1,33 @@
-import { useState } from 'react'; // 👈 tambah
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, Clock, Bell, User, Settings, X, LogOut } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { LayoutDashboard, ShoppingBag, Clock, Bell, User, X, LogOut } from 'lucide-react';
+import { useRole } from '../../context/RoleContext'; // 
 import Logo from '../../assets/Logo_Laundrop.png';
 import './Sidebar.css';
 
 const navItems = [
-  { path: '/customer/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
-  { path: '/customer/order',         label: 'Order',         icon: ShoppingBag },
-  { path: '/customer/history',       label: 'Order History', icon: Clock },
+  { path: '/customer',              label: 'Dashboard',     icon: LayoutDashboard }, // ✅ ganti path
+  { path: '/customer/order',        label: 'Order',         icon: ShoppingBag },
+  { path: '/customer/history',      label: 'Order History', icon: Clock },
   { path: '/customer/notification', label: 'Notifications', icon: Bell },
-  { path: '/customer/profile',       label: 'Profile',       icon: User },
+  { path: '/customer/profile',      label: 'Profile',       icon: User },
 ];
 
 export default function Sidebar({ open, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { unreadCount, profile, logout } = useApp();
-  const [showLogoutModal, setShowLogoutModal] = useState(false); // 👈 tambah
+  const { currentUser, logout } = useRole(); // ✅ ganti dari useApp
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const initials = profile?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+  const initials = currentUser?.name
+    ?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+
+  // ✅ unreadCount bisa dari props atau state lokal dulu
+  const unreadCount = 0;
 
   const handleLogoutConfirm = () => {
     setShowLogoutModal(false);
-    logout();
+    logout(); // ✅ logout dari RoleContext — clear localStorage sekaligus
     navigate('/login');
   };
 
@@ -32,6 +36,7 @@ export default function Sidebar({ open, onClose }) {
       {open && <div className="mobile-overlay" onClick={onClose} />}
 
       <aside className={`sidebar-container ${open ? 'is-open' : ''}`}>
+
         {/* Header Logo */}
         <div className="sidebar-header">
           <div className="logo-section">
@@ -48,7 +53,12 @@ export default function Sidebar({ open, onClose }) {
         {/* Menu Navigasi */}
         <nav className="sidebar-nav">
           {navItems.map(({ path, label, icon: Icon }) => {
-            const active = location.pathname === path;
+            // ✅ highlight dashboard kalau path persis /customer
+            // highlight menu lain kalau path startsWith
+            const active = path === '/customer'
+              ? location.pathname === '/customer'
+              : location.pathname.startsWith(path);
+
             return (
               <Link
                 key={path}
@@ -71,8 +81,8 @@ export default function Sidebar({ open, onClose }) {
           <div className="user-info-card">
             <div className="user-avatar-small">{initials}</div>
             <div className="user-text">
-              <p className="user-name">{profile?.name || 'User'}</p>
-              <p className="user-email">{profile?.email || ''}</p>
+              <p className="user-name">{currentUser?.name || 'User'}</p>
+              <p className="user-email">{currentUser?.email || ''}</p>
             </div>
           </div>
 
@@ -81,9 +91,10 @@ export default function Sidebar({ open, onClose }) {
             <span>Logout</span>
           </button>
         </div>
+
       </aside>
 
-      {/* Modal Konfirmasi Logout */}
+      {/* Modal Logout */}
       {showLogoutModal && (
         <div className="logout-overlay" onClick={() => setShowLogoutModal(false)}>
           <div className="logout-modal" onClick={e => e.stopPropagation()}>
@@ -95,16 +106,10 @@ export default function Sidebar({ open, onClose }) {
               Apakah Anda yakin ingin keluar dari akun Anda?
             </p>
             <div className="logout-modal-actions">
-              <button
-                className="btn-logout-cancel"
-                onClick={() => setShowLogoutModal(false)}
-              >
+              <button className="btn-logout-cancel" onClick={() => setShowLogoutModal(false)}>
                 Batal
               </button>
-              <button
-                className="btn-logout-confirm"
-                onClick={handleLogoutConfirm}
-              >
+              <button className="btn-logout-confirm" onClick={handleLogoutConfirm}>
                 Ya, Keluar
               </button>
             </div>
