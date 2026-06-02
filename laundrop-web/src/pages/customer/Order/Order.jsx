@@ -5,9 +5,9 @@ import Layout from '../../../components/Customer/Layout';
 import PageTitle from "../../../components/ui/PageTitle";
 import TrackOrderModal from "../../../components/Customer/Orders/TrackOrderModal";
 import OrderReceiptModal from "../../../components/Customer/Orders/OrderReceiptModal";
+import QRISModal from "../../../components/Customer/Orders/QRISModal"; // ✅ tambah
 import "./Order.css";
 
-/* ── Data ────────────────────────────────────────────────────────── */
 const SERVICES = [
   { id: "Cuci + Setrika",   label: "Cuci + Setrika",   desc: "Mencuci dan menyetrika pakaian",       pricePerKg: 10000, unit: "kg",  duration: "2–3 hari" },
   { id: "Cuci Saja",        label: "Cuci Saja",         desc: "Hanya mencuci pakaian",                pricePerKg: 5000,  unit: "kg",  duration: "2–3 hari" },
@@ -15,17 +15,16 @@ const SERVICES = [
   { id: "Express (24 Jam)", label: "Express (24 Jam)",  desc: "Selesai dalam 24 jam",                 pricePerKg: 15000, unit: "kg",  duration: "24 jam"   },
 ];
 
-const ITEMS         = ["Shirts","Pants","Dresses","Jackets","Suits","Bedsheets","Towels","Shoes","Other"];
-const PICKUP_TIMES  = ["10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00"];
+const ITEMS           = ["Shirts","Pants","Dresses","Jackets","Suits","Bedsheets","Towels","Shoes","Other"];
+const PICKUP_TIMES    = ["10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00"];
 const PAYMENT_METHODS = [
-  { id: "Cash", label: "Cash (Tunai)" },
-  { id: "QRIS", label: "QRIS" },
+  { id: "Cash", label: "Cash (Tunai)", desc: "Bayar saat laundry diantar" },
+  { id: "QRIS", label: "QRIS",         desc: "Bayar via QR Code" },
 ];
 
-const today = new Date().toISOString().split("T")[0];
+const today    = new Date().toISOString().split("T")[0];
 const formatRp = (n) => `Rp ${n.toLocaleString("id-ID")}`;
 
-/* ── Icons (inline SVG) ──────────────────────────────────────────── */
 function IconBag() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -126,30 +125,32 @@ function IconQris() {
   );
 }
 
-/* ── Component ───────────────────────────────────────────────────── */
+const BLANK_FORM = {
+  service:         "Cuci + Setrika",
+  pickupAddress:   "",
+  deliveryAddress: "",
+  pickupDate:      today,
+  pickupTime:      "10:00",
+  items:           [],
+  weight:          "",
+  clothesCount:    "",
+  notes:           "",
+  paymentMethod:   "Cash",
+};
+
 export default function Order() {
   const navigate = useNavigate();
-  const { addOrder } = useApp();
+  const { addOrder, confirmPayment } = useApp(); // ✅ tambah confirmPayment
 
   const [placedOrder,   setPlacedOrder]   = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [showReceipt,   setShowReceipt]   = useState(false);
+  const [qrisOrder,     setQrisOrder]     = useState(null); // ✅ tambah
 
-  const [form, setForm] = useState({
-    service:         "Cuci + Setrika",
-    pickupAddress:   "",
-    deliveryAddress: "",
-    pickupDate:      today,
-    pickupTime:      "10:00",
-    items:           [],
-    weight:          "",
-    clothesCount:    "",
-    notes:           "",
-    paymentMethod:   "Cash",
-  });
+  const [form, setForm] = useState(BLANK_FORM);
 
-  const selectedService  = SERVICES.find(s => s.id === form.service);
-  const estimatedPrice   = selectedService && form.weight
+  const selectedService = SERVICES.find(s => s.id === form.service);
+  const estimatedPrice  = selectedService && form.weight
     ? parseFloat(form.weight) * selectedService.pricePerKg
     : 0;
 
@@ -175,268 +176,212 @@ export default function Order() {
     setShowReceipt(true);
   };
 
-return (
-  <Layout>
-    <div className="order-page">
-      <PageTitle
-        title="Place an Order"
-        subtitle="Fill in the details and we'll take care of the rest."
-      />
+  const handleNewOrder = () => {
+    setShowReceipt(false);
+    setPlacedOrder(null);
+    setForm(BLANK_FORM);
+  };
 
-      <form className="order-form" onSubmit={handleSubmit}>
+  return (
+    <Layout>
+      <div className="order-page">
+        <PageTitle
+          title="Place an Order"
+          subtitle="Fill in the details and we'll take care of the rest."
+        />
 
-        {/* 1. Pilih Layanan */}
-        <div className="order-section">
-          <h3 className="section-title">
-            <IconBag /> Select Service
-          </h3>
-          <div className="service-grid">
-            {SERVICES.map(s => (
-              <button
-                key={s.id}
-                type="button"
-                className={`service-card ${form.service === s.id ? "active" : ""}`}
-                onClick={() => set("service", s.id)}
-              >
-                <p className="service-card-name">{s.label}</p>
-                <p className="service-card-desc">{s.desc}</p>
-                <p className="service-card-price">
-                  Rp {s.pricePerKg.toLocaleString("id-ID")}/{s.unit}
-                </p>
-                <p className="service-card-dur">{s.duration}</p>
-              </button>
-            ))}
-          </div>
-        </div>
+        <form className="order-form" onSubmit={handleSubmit}>
 
-        {/* 2. Jadwal Penjemputan */}
-        <div className="order-section">
-          <h3 className="section-title">
-            <IconCalendar /> Jadwal Penjemputan
-          </h3>
-          <div className="pickup-grid">
-            <div className="form-field">
-              <label className="form-label">Tanggal (Hari ini)</label>
-              <input
-                type="date"
-                value={today}
-                readOnly
-                className="form-input disabled"
-              />
-              <span className="form-hint">Hanya tersedia hari ini</span>
-            </div>
-            <div className="form-field">
-              <label className="form-label">Waktu Penjemputan</label>
-              <select
-                required
-                value={form.pickupTime}
-                onChange={e => set("pickupTime", e.target.value)}
-                className="form-select"
-              >
-                {PICKUP_TIMES.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              <span className="form-hint">10:00 – 14:00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. Alamat */}
-        <div className="order-section">
-          <h3 className="section-title">
-            <IconMapPin /> Alamat
-          </h3>
-
-          {/* Map placeholder */}
-          <div className="map-placeholder">
-            <div className="map-grid-lines" />
-            <span className="map-placeholder-icon"><IconMapPinLg /></span>
-            <p className="map-placeholder-title">Map Picker</p>
-            <p className="map-placeholder-sub">Tap to pin your location</p>
-          </div>
-
-          <div className="address-fields">
-            <div className="form-field">
-              <label className="form-label">Alamat Penjemputan</label>
-              <textarea
-                required
-                rows={2}
-                value={form.pickupAddress}
-                onChange={e => set("pickupAddress", e.target.value)}
-                placeholder="Masukkan alamat lengkap penjemputan..."
-                className="form-textarea"
-              />
-            </div>
-            <div className="form-field">
-              <label className="form-label">Alamat Pengiriman</label>
-              <textarea
-                required
-                rows={2}
-                value={form.deliveryAddress}
-                onChange={e => set("deliveryAddress", e.target.value)}
-                placeholder="Masukkan alamat pengiriman..."
-                className="form-textarea"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 4. Detail Cucian */}
-        <div className="order-section">
-          <h3 className="section-title">
-            <IconWeight /> Detail Cucian
-          </h3>
-
-          {/* Item chips */}
-          <div className="form-field" style={{ marginBottom: 14 }}>
-            <label className="form-label">Jenis Pakaian</label>
-            <div className="items-wrap">
-              {ITEMS.map(item => (
+          {/* 1. Pilih Layanan */}
+          <div className="order-section">
+            <h3 className="section-title"><IconBag /> Select Service</h3>
+            <div className="service-grid">
+              {SERVICES.map(s => (
                 <button
-                  key={item}
-                  type="button"
-                  className={`item-chip ${form.items.includes(item) ? "selected" : ""}`}
-                  onClick={() => toggleItem(item)}
+                  key={s.id} type="button"
+                  className={`service-card ${form.service === s.id ? "active" : ""}`}
+                  onClick={() => set("service", s.id)}
                 >
-                  {item}
+                  <p className="service-card-name">{s.label}</p>
+                  <p className="service-card-desc">{s.desc}</p>
+                  <p className="service-card-price">Rp {s.pricePerKg.toLocaleString("id-ID")}/{s.unit}</p>
+                  <p className="service-card-dur">{s.duration}</p>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Weight + count */}
-          <div className="detail-grid">
-            <div className="form-field">
-              <label className="form-label">
-                <IconHash />
-                {selectedService?.unit === "pcs" ? "Jumlah (pcs)" : "Estimasi Berat (kg)"}
-              </label>
-              <input
-                required
-                type="number"
-                min="0.5"
-                step={selectedService?.unit === "pcs" ? "1" : "0.5"}
-                value={form.weight}
-                onChange={e => set("weight", e.target.value)}
-                placeholder={selectedService?.unit === "pcs" ? "e.g. 3" : "e.g. 3.5"}
-                className="form-input"
-              />
-            </div>
-            <div className="form-field">
-              <label className="form-label">
-                <IconHash /> Jumlah Pakaian
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={form.clothesCount}
-                onChange={e => set("clothesCount", e.target.value)}
-                placeholder="e.g. 10"
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="form-field">
-            <label className="form-label">
-              <IconNote /> Catatan (opsional)
-            </label>
-            <textarea
-              rows={2}
-              value={form.notes}
-              onChange={e => set("notes", e.target.value)}
-              placeholder="Instruksi khusus..."
-              className="form-textarea"
-            />
-          </div>
-        </div>
-
-        {/* 5. Metode Pembayaran */}
-        <div className="order-section">
-          <h3 className="section-title">
-            <IconCard /> Metode Pembayaran
-          </h3>
-          <div className="payment-grid">
-            {PAYMENT_METHODS.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                className={`payment-option ${form.paymentMethod === id ? "selected" : ""}`}
-                onClick={() => set("paymentMethod", id)}
-              >
-                <div className="payment-icon">
-                  {id === "Cash" ? <IconCash /> : <IconQris />}
-                </div>
-                <span className="payment-label">{label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 6. Ringkasan Pesanan */}
-        <div className="summary-card">
-          <h3 className="summary-title">📋 Ringkasan Pesanan</h3>
-          <div className="summary-rows">
-            {[
-              { label: "Layanan",        value: selectedService?.label || "-" },
-              { label: "Jadwal",         value: form.pickupTime ? `${today} · ${form.pickupTime}` : "-" },
-              { label: "Berat/Pcs",      value: form.weight ? `${form.weight} ${selectedService?.unit || "kg"}` : "-" },
-              { label: "Jumlah Pakaian", value: form.clothesCount ? `${form.clothesCount} pcs` : "-" },
-              { label: "Alamat",         value: form.pickupAddress || "-" },
-              { label: "Pembayaran",     value: form.paymentMethod },
-            ].map(({ label, value }) => (
-              <div key={label} className="summary-row">
-                <span className="summary-row-label">{label}</span>
-                <span className="summary-row-value">{value}</span>
+          {/* 2. Jadwal Penjemputan */}
+          <div className="order-section">
+            <h3 className="section-title"><IconCalendar /> Jadwal Penjemputan</h3>
+            <div className="pickup-grid">
+              <div className="form-field">
+                <label className="form-label">Tanggal (Hari ini)</label>
+                <input type="date" value={today} readOnly className="form-input disabled" />
+                <span className="form-hint">Hanya tersedia hari ini</span>
               </div>
-            ))}
-
-            <hr className="summary-divider" />
-
-            <div className="summary-total-row">
-              <span className="summary-total-label">Estimasi Harga</span>
-              <span className="summary-total-price">
-                {estimatedPrice > 0 ? formatRp(estimatedPrice) : "-"}
-              </span>
+              <div className="form-field">
+                <label className="form-label">Waktu Penjemputan</label>
+                <select required value={form.pickupTime} onChange={e => set("pickupTime", e.target.value)} className="form-select">
+                  {PICKUP_TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <span className="form-hint">10:00 – 14:00</span>
+              </div>
             </div>
-
-            {estimatedPrice > 0 && (
-              <p className="summary-calc">
-                {form.weight} {selectedService?.unit} × Rp {selectedService?.pricePerKg?.toLocaleString("id-ID")}/{selectedService?.unit}
-              </p>
-            )}
           </div>
-        </div>
 
-        {/* Submit */}
-        <button type="submit" className="btn-confirm">
-          Confirm Order
-        </button>
-      </form>
+          {/* 3. Alamat */}
+          <div className="order-section">
+            <h3 className="section-title"><IconMapPin /> Alamat</h3>
+            <div className="map-placeholder">
+              <div className="map-grid-lines" />
+              <span className="map-placeholder-icon"><IconMapPinLg /></span>
+              <p className="map-placeholder-title">Map Picker</p>
+              <p className="map-placeholder-sub">Tap to pin your location</p>
+            </div>
+            <div className="address-fields">
+              <div className="form-field">
+                <label className="form-label">Alamat Penjemputan</label>
+                <textarea required rows={2} value={form.pickupAddress} onChange={e => set("pickupAddress", e.target.value)} placeholder="Masukkan alamat lengkap penjemputan..." className="form-textarea" />
+              </div>
+              <div className="form-field">
+                <label className="form-label">Alamat Pengiriman</label>
+                <textarea required rows={2} value={form.deliveryAddress} onChange={e => set("deliveryAddress", e.target.value)} placeholder="Masukkan alamat pengiriman..." className="form-textarea" />
+              </div>
+            </div>
+          </div>
 
-      {/* Receipt Modal */}
-      {showReceipt && placedOrder && (
-        <OrderReceiptModal
-          order={placedOrder}
-          onClose={() => setShowReceipt(false)}
-          onNewOrder={() => navigate("/")}
-          onTrack={() => {
-            setShowReceipt(false);
-            setTrackingOrder(placedOrder);
-          }}
-        />
-      )}
+          {/* 4. Detail Cucian */}
+          <div className="order-section">
+            <h3 className="section-title"><IconWeight /> Detail Cucian</h3>
+            <div className="form-field" style={{ marginBottom: 14 }}>
+              <label className="form-label">Jenis Pakaian</label>
+              <div className="items-wrap">
+                {ITEMS.map(item => (
+                  <button key={item} type="button" className={`item-chip ${form.items.includes(item) ? "selected" : ""}`} onClick={() => toggleItem(item)}>
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="detail-grid">
+              <div className="form-field">
+                <label className="form-label"><IconHash /> Estimasi Berat (kg)</label>
+                <input required type="number" min="0.1" step="0.1" value={form.weight} onChange={e => set("weight", e.target.value)} placeholder="e.g. 2.3" className="form-input" />
+                <span className="form-hint">Bisa desimal, cth: 1.5 kg</span>
+              </div>
+              <div className="form-field">
+                <label className="form-label"><IconHash /> Jumlah Pakaian (pcs)</label>
+                <input type="number" min="1" step="1" value={form.clothesCount} onChange={e => set("clothesCount", e.target.value)} placeholder="e.g. 10" className="form-input" />
+                <span className="form-hint">Jumlah item pakaian</span>
+              </div>
+            </div>
+            <div className="form-field">
+              <label className="form-label"><IconNote /> Catatan (opsional)</label>
+              <textarea rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Instruksi khusus, misal: jangan pakai pemutih..." className="form-textarea" />
+            </div>
+          </div>
 
-      {/* Track Modal */}
-      {trackingOrder && (
-        <TrackOrderModal
-          order={trackingOrder}
-          onClose={() => { setTrackingOrder(null); navigate("/history"); }}
-        />
-      )}
-    </div>
-      </Layout> 
+          {/* 5. Metode Pembayaran */}
+          <div className="order-section">
+            <h3 className="section-title"><IconCard /> Metode Pembayaran</h3>
+            <div className="payment-grid">
+              {PAYMENT_METHODS.map(({ id, label, desc }) => (
+                <button key={id} type="button" className={`payment-option ${form.paymentMethod === id ? "selected" : ""}`} onClick={() => set("paymentMethod", id)}>
+                  <div className="payment-icon">
+                    {id === "Cash" ? <IconCash /> : <IconQris />}
+                  </div>
+                  <div className="payment-text">
+                    <span className="payment-label">{label}</span>
+                    <span className="payment-desc">{desc}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 6. Ringkasan */}
+          <div className="summary-card">
+            <h3 className="summary-title">📋 Ringkasan Pesanan</h3>
+            <div className="summary-rows">
+              {[
+                { label: "Layanan",        value: selectedService?.label || "-" },
+                { label: "Jadwal",         value: form.pickupTime ? `${today} · ${form.pickupTime}` : "-" },
+                { label: "Berat",          value: form.weight ? `${form.weight} kg` : "-" },
+                { label: "Jumlah Pakaian", value: form.clothesCount ? `${form.clothesCount} pcs` : "-" },
+                { label: "Alamat",         value: form.pickupAddress || "-" },
+                { label: "Pembayaran",     value: form.paymentMethod },
+              ].map(({ label, value }) => (
+                <div key={label} className="summary-row">
+                  <span className="summary-row-label">{label}</span>
+                  <span className="summary-row-value">{value}</span>
+                </div>
+              ))}
+              <hr className="summary-divider" />
+              <div className="summary-total-row">
+                <span className="summary-total-label">Estimasi Harga</span>
+                <span className="summary-total-price">
+                  {estimatedPrice > 0 ? formatRp(estimatedPrice) : "-"}
+                </span>
+              </div>
+              {estimatedPrice > 0 && (
+                <p className="summary-calc">
+                  {form.weight} kg × Rp {selectedService?.pricePerKg?.toLocaleString("id-ID")}/kg
+                </p>
+              )}
+              <p className="summary-note">
+                * Harga final ditentukan setelah employee memverifikasi berat aktual
+              </p>
+            </div>
+          </div>
+
+          <button type="submit" className="btn-confirm">
+            Confirm Order
+          </button>
+
+        </form>
+
+        {/* Receipt Modal */}
+        {showReceipt && placedOrder && (
+          <OrderReceiptModal
+            order={placedOrder}
+            onClose={() => setShowReceipt(false)}
+            onNewOrder={handleNewOrder}
+            onTrack={() => {
+              setShowReceipt(false);
+              setTrackingOrder(placedOrder);
+            }}
+          />
+        )}
+
+        {/* ✅ Track Modal — pass onPayQris */}
+        {trackingOrder && (
+          <TrackOrderModal
+            order={trackingOrder}
+            onClose={() => {
+              setTrackingOrder(null);
+              navigate("/customer/history");
+            }}
+            onPayQris={(o) => {       // ✅ buka QRIS modal dari track modal
+              setTrackingOrder(null);
+              setQrisOrder(o);
+            }}
+          />
+        )}
+
+        {/* ✅ QRIS Modal */}
+        {qrisOrder && (
+          <QRISModal
+            order={qrisOrder}
+            onSuccess={() => {
+              confirmPayment(qrisOrder.id);
+              setQrisOrder(null);
+            }}
+            onClose={() => setQrisOrder(null)}
+          />
+        )}
+
+      </div>
+    </Layout>
   );
 }
