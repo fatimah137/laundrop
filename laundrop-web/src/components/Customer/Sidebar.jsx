@@ -1,35 +1,26 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, Clock, Bell, User, X, LogOut } from 'lucide-react';
-import { useRole } from '../../context/RoleContext'; // 
+import { LayoutDashboard, ShoppingBag, Clock, Bell, User, Settings, X, LogOut } from 'lucide-react';
+import { useRole } from '../../context/RoleContext';
 import Logo from '../../assets/Logo_Laundrop.png';
 import './Sidebar.css';
 
+// ✅ Semua menu ada di sidebar termasuk notif
 const navItems = [
-  { path: '/customer',              label: 'Dashboard',     icon: LayoutDashboard }, // ✅ ganti path
-  { path: '/customer/order',        label: 'Order',         icon: ShoppingBag },
-  { path: '/customer/history',      label: 'Order History', icon: Clock },
-  { path: '/customer/notification', label: 'Notifications', icon: Bell },
-  { path: '/customer/profile',      label: 'Profile',       icon: User },
+  { path: '/customer',              label: 'Dashboard',     icon: LayoutDashboard },
+  { path: '/customer/order',        label: 'Order',         icon: ShoppingBag     },
+  { path: '/customer/history',      label: 'Order History', icon: Clock           },
+  { path: '/customer/notification', label: 'Notifications', icon: Bell            },
+  { path: '/customer/profile',      label: 'Profile',       icon: User            },
+  { path: '/customer/setting',      label: 'Settings',      icon: Settings        },
 ];
 
-export default function Sidebar({ open, onClose }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { currentUser, logout } = useRole(); // ✅ ganti dari useApp
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+export default function Sidebar({ open, onClose, onLogout }) {
+  const location               = useLocation();
+  const { currentUser, unreadCount } = useRole();
 
   const initials = currentUser?.name
     ?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
-
-  // ✅ unreadCount bisa dari props atau state lokal dulu
-  const unreadCount = 0;
-
-  const handleLogoutConfirm = () => {
-    setShowLogoutModal(false);
-    logout(); // ✅ logout dari RoleContext — clear localStorage sekaligus
-    navigate('/login');
-  };
 
   return (
     <>
@@ -53,12 +44,9 @@ export default function Sidebar({ open, onClose }) {
         {/* Menu Navigasi */}
         <nav className="sidebar-nav">
           {navItems.map(({ path, label, icon: Icon }) => {
-            // ✅ highlight dashboard kalau path persis /customer
-            // highlight menu lain kalau path startsWith
             const active = path === '/customer'
               ? location.pathname === '/customer'
               : location.pathname.startsWith(path);
-
             return (
               <Link
                 key={path}
@@ -86,36 +74,14 @@ export default function Sidebar({ open, onClose }) {
             </div>
           </div>
 
-          <button className="logout-btn" onClick={() => setShowLogoutModal(true)}>
+          {/* ✅ Logout ada di sidebar */}
+          <button className="logout-btn" onClick={onLogout}>
             <LogOut size={20} />
             <span>Logout</span>
           </button>
         </div>
 
       </aside>
-
-      {/* Modal Logout */}
-      {showLogoutModal && (
-        <div className="logout-overlay" onClick={() => setShowLogoutModal(false)}>
-          <div className="logout-modal" onClick={e => e.stopPropagation()}>
-            <div className="logout-modal-icon">
-              <LogOut size={28} />
-            </div>
-            <h3 className="logout-modal-title">Keluar dari Akun?</h3>
-            <p className="logout-modal-desc">
-              Apakah Anda yakin ingin keluar dari akun Anda?
-            </p>
-            <div className="logout-modal-actions">
-              <button className="btn-logout-cancel" onClick={() => setShowLogoutModal(false)}>
-                Batal
-              </button>
-              <button className="btn-logout-confirm" onClick={handleLogoutConfirm}>
-                Ya, Keluar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

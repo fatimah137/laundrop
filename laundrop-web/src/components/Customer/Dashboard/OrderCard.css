@@ -104,3 +104,84 @@
 .order-list .order-item:last-child {
   border-bottom: none;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .order-item {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .order-top {
+    margin-bottom: 10px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .order-id-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .order-id {
+    font-size: 13px;
+  }
+
+  .order-price {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .status-badge {
+    font-size: 10px;
+    padding: 3px 10px;
+  }
+
+  .order-mid {
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+
+  .info-detail {
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .info-detail svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  .track-button {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+
+  .track-button svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-item {
+    padding: 12px;
+  }
+
+  .order-id {
+    font-size: 12px;
+  }
+
+  .order-price {
+    font-size: 13px;
+  }
+
+  .info-detail {
+    font-size: 10px;
+  }
+}
