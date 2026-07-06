@@ -74,6 +74,76 @@
   box-sizing: border-box;
 }
 
+/* ── Bottom Navbar Mobile ────────────────────────────────────────── */
+.bottom-navbar {
+  display: none; /* hidden di desktop */
+}
+
+@media (max-width: 1023px) {
+  /* Beri ruang di bawah konten supaya tidak tertutup navbar */
+  .app-content {
+    padding-bottom: 72px;
+  }
+
+  .bottom-navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  }
+
+  /* Sembunyikan sidebar mobile drawer di desktop */
+  .sidebar-desktop { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .bottom-navbar  { display: none; }
+  .sidebar-desktop { display: block; }
+}
+
+/* ── Bottom nav item ─────────────────────────────────────────────── */
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  padding: 8px 4px;
+  color: #94a3b8;
+  text-decoration: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s;
+  min-width: 0;
+}
+
+.bottom-nav-item span {
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.bottom-nav-item:hover { color: #475569; }
+
+.bottom-nav-item.active {
+  color: #2563eb;
+}
+
+.bottom-nav-item.active span {
+  font-weight: 700;
+}
+
 @media (min-width: 768px) {
   .app-content {
     padding: 24px;

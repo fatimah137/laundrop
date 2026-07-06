@@ -206,8 +206,321 @@
 .qris-alert-btn:hover { background: #1d4ed8; }
 
 /* Responsive Grid for Mobile */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .dashboard-container {
+    gap: 14px;
+    padding: 16px 12px 60px;
+  }
+
+  .greeting-banner {
+    padding: 20px 16px;
+    border-radius: 14px;
+    box-shadow: 0 6px 12px rgba(0, 142, 204, 0.1);
+  }
+
+  .greeting-title {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .greeting-subtitle {
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+
+  .greeting-description {
+    font-size: 12px;
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .content-card {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .card-header {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .card-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .recent-order-item {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .recent-info {
+    width: 100%;
+  }
+
+  .recent-id {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .recent-sub {
+    font-size: 10px;
+    color: #94a3b8;
+  }
+
+  .recent-right {
+    gap: 10px;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .recent-price {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .view-all-link {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .qris-alert {
+    padding: 12px 12px;
+    flex-direction: column;
+    gap: 10px;
+    border-radius: 10px;
+  }
+
+  .qris-alert-left {
+    width: 100%;
+  }
+
+  .qris-alert-title {
+    font-size: 11px;
+  }
+
+  .qris-alert-sub {
+    font-size: 10px;
+  }
+
+  .qris-alert-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+    width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .badge-blue {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    gap: 12px;
+    padding: 12px 10px 60px;
+  }
+
+  .greeting-banner {
+    padding: 16px 12px;
+    border-radius: 12px;
+  }
+
+  .greeting-title {
+    font-size: 20px;
+  }
+
+  .greeting-subtitle {
+    font-size: 11px;
+  }
+
+  .greeting-description {
+    font-size: 11px;
+  }
+
+  .stats-grid {
+    gap: 8px;
+  }
+
+  .card-header {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+  }
+
+  .card-header h3 {
+    font-size: 12px;
+  }
+
+  .recent-order-item {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .recent-id {
+    font-size: 11px;
+  }
+
+  .recent-sub {
+    font-size: 9px;
+  }
+
+  .recent-price {
+    font-size: 11px;
+  }
+
+  .recent-right {
+    gap: 8px;
+  }
+
+  .qris-alert {
+    padding: 10px 10px;
+  }
+
+  .qris-alert-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    gap: 12px;
+    padding: 0;
+    padding-bottom: 60px;
+  }
+
+  .greeting-banner {
+    padding: 16px;
+    border-radius: 12px;
+    margin: 0;
+  }
+
+  .greeting-title {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .greeting-subtitle {
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+
+  .greeting-description {
+    font-size: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 0 8px;
+  }
+
+  .content-card {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin: 0 8px;
+  }
+
+  .card-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .card-header h3 {
+    font-size: 13px;
+  }
+
+  .card-body {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .recent-order-item {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .recent-order-item:last-child {
+    border-bottom: none;
+  }
+
+  .recent-id {
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+
+  .recent-sub {
+    font-size: 10px;
+  }
+
+  .recent-right {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .recent-price {
+    font-size: 12px;
+  }
+
+  .status-text {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  .view-all-link {
+    font-size: 12px;
+    gap: 2px;
+  }
+
+  .view-all-link:hover {
+    gap: 4px;
+  }
+
+  .qris-alert {
+    margin: 0 8px 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    flex-direction: column;
+  }
+
+  .qris-alert-left {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .qris-alert-icon {
+    font-size: 18px;
+  }
+
+  .qris-alert-title {
+    font-size: 11px;
+  }
+
+  .qris-alert-sub {
+    font-size: 10px;
+  }
+
+  .qris-alert-btn {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 11px;
+  }
+
+  .badge-blue {
+    font-size: 10px;
+    padding: 2px 8px;
   }
 }

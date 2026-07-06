@@ -1,26 +1,27 @@
-/* CONTAINER UTAMA */
+/* ── Container Utama ─────────────────────────────────────────────── */
 .layout-container {
   display: flex;
   height: 100vh;
   width: 100%;
 }
 
-/* SIDEBAR */
+/* ── Sidebar ─────────────────────────────────────────────────────── */
 .sidebar-wrapper {
   width: 260px;
   background-color: #121926;
-  flex-shrink: 0; /* biar tidak mengecil */
+  flex-shrink: 0;
 }
 
-/* MAIN WRAPPER */
+/* ── Main Wrapper ────────────────────────────────────────────────── */
 .main-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
 }
 
-/* AREA KONTEN */
+/* ── Area Konten ─────────────────────────────────────────────────── */
 .content-area {
   flex: 1;
   padding: 24px;
@@ -28,37 +29,41 @@
   background-color: #f8fafc;
 }
 
-/* BATASI LEBAR KONTEN (OPSIONAL) */
 .content-container {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
 }
 
-/* OVERLAY (MOBILE) */
+/* ── Overlay Mobile ──────────────────────────────────────────────── */
 .sidebar-overlay {
   display: none;
 }
 
-/* RESPONSIVE */
-@media (max-width: 1024px) {
-  .sidebar-wrapper {
-    position: fixed;
-    left: -260px;
-    top: 0;
-    height: 100vh;
-    z-index: 50;
-    transition: 0.3s;
+/* ── Bottom Navbar — default hidden ──────────────────────────────── */
+.customer-bottom-nav {
+  display: none;
+}
+
+/* ── Mobile (<1024px) ────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+
+  /* Ruang bawah supaya konten tidak tertutup navbar */
+  .content-area {
+    padding-bottom: 72px;
   }
 
-  .sidebar-wrapper.active {
-    left: 0;
+  /* Sembunyikan sidebar */
+  .sidebar-container {
+    display: none !important;
   }
 
-  .main-wrapper {
-    margin-left: 0;
+  /* Sembunyikan tombol hamburger di header */
+  .header-menu-btn {
+    display: none;
   }
 
+  /* Sidebar overlay */
   .sidebar-overlay {
     display: block;
     position: fixed;
@@ -66,4 +71,57 @@
     background: rgba(0,0,0,0.5);
     z-index: 40;
   }
+
+  /* Tampilkan bottom navbar */
+  .customer-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #fff;              /* ✅ putih — sama dengan employee */
+    border-top: 1px solid #e2e8f0; /* ✅ border terang */
+    z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  }
 }
+
+/* ── Bottom Nav Item ─────────────────────────────────────────────── */
+.customer-bottom-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  padding: 6px 4px;
+  color: #94a3b8;        /* ✅ abu-abu — sama dengan employee */
+  text-decoration: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s;
+  min-width: 0;
+}
+
+.customer-bottom-item span {
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.customer-bottom-item:hover { color: #475569; }
+
+.customer-bottom-item.active {
+  color: #2563eb;        /* ✅ biru — sama dengan employee */
+}
+
+.customer-bottom-item.active span { font-weight: 700; }
+
+/* Warna merah untuk logout */
+.customer-bottom-logout       { color: #f87171; }
+.customer-bottom-logout:hover { color: #ef4444; }

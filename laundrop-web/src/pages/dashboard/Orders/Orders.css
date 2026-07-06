@@ -399,9 +399,212 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .ow-orders-topbar    { flex-direction: column; align-items: flex-start; }
-  .ow-orders-topbar-right { width: 100%; justify-content: flex-end; }
-  .ow-status-filters   { gap: 6px; }
-  .ow-filter-chip      { font-size: 12px; padding: 6px 12px; }
+@media (max-width: 768px) {
+  /* Topbar adjustments */
+  .ow-orders-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .ow-orders-topbar-right {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .ow-orders-title {
+    font-size: 20px;
+  }
+
+  .ow-orders-subtitle {
+    font-size: 12px;
+  }
+
+  /* View toggle button adjustments */
+  .ow-view-toggle {
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .ow-view-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    gap: 5px;
+  }
+
+  .ow-view-btn svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  /* Filter chips - more compact but still readable */
+  .ow-status-filters {
+    gap: 6px;
+    margin-bottom: 16px;
+    max-height: 120px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .ow-filter-chip {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .ow-filter-count {
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+    padding: 0 4px;
+  }
+
+  /* Search bar adjustments */
+  .ow-search-wrap {
+    margin-bottom: 14px;
+  }
+
+  .ow-search-input {
+    padding: 9px 32px;
+    font-size: 13px;
+  }
+
+  .ow-search-icon {
+    left: 10px;
+  }
+
+  .ow-search-clear {
+    right: 8px;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Buttons sizing */
+  .ow-btn-new,
+  .ow-btn-qr {
+    padding: 8px 14px;
+    font-size: 12px;
+    gap: 5px;
+  }
+
+  .ow-btn-new svg,
+  .ow-btn-qr svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ow-orders-topbar {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .ow-orders-topbar-right {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .ow-orders-title {
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+
+  .ow-orders-subtitle {
+    font-size: 11px;
+  }
+
+  .ow-view-toggle {
+    padding: 3px;
+  }
+
+  .ow-view-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .ow-view-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Horizontal scrollable filter chips for small screens */
+  .ow-status-filters {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    max-height: 45px;
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .ow-status-filters::-webkit-scrollbar {
+    height: 2px;
+  }
+
+  .ow-status-filters::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .ow-status-filters::-webkit-scrollbar-thumb {
+    background: var(--ow-gray-300, #cbd5e1);
+    border-radius: 2px;
+  }
+
+  .ow-filter-chip {
+    font-size: 11px;
+    padding: 5px 11px;
+    border-radius: 18px;
+    flex-shrink: 0;
+  }
+
+  .ow-filter-count {
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+    padding: 0 3px;
+  }
+
+  .ow-search-input {
+    padding: 8px 28px;
+    font-size: 12px;
+  }
+
+  .ow-search-icon {
+    left: 8px;
+  }
+
+  .ow-search-clear {
+    right: 6px;
+    width: 16px;
+    height: 16px;
+    font-size: 11px;
+  }
+
+  .ow-btn-new,
+  .ow-btn-qr {
+    padding: 7px 12px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .ow-btn-new svg,
+  .ow-btn-qr svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .ow-btn-new {
+    white-space: normal;
+    text-align: center;
+  }
 }
