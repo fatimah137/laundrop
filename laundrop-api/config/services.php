@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // config/services.php
+    'ocr_space' => [
+        'api_key' => env('OCR_SPACE_API_KEY'),
+        'url'     => env('OCR_SPACE_URL', 'https://api.ocr.space/parse/image'),
+    ],
+
 ];

@@ -14,3 +14,6 @@ laundrop-web/.env
 Thumbs.db
 .vscode
 .idea
+
+# .gitignore
+storage/app/google/vision-key.json
