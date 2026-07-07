@@ -145,9 +145,40 @@
   color: #92400e;
 }
 
+.status-text.waiting-pickup,
+.status-text.pickup,
+.status-text.waiting-payment,
+.status-text.processing,
+.status-text.ready,
+.status-text.delivery {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 .status-text.cancelled {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.dashboard-error {
+  padding: 14px 18px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  margin: 12px;
+  font-size: 13px;
+}
+
+.empty-dashboard-state {
+  padding: 18px 24px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.empty-dashboard-state.small {
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 /* ── QRIS Payment Alert ──────────────────────────────────────────── */

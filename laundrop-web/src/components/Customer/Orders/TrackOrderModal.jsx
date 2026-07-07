@@ -28,6 +28,7 @@ export default function TrackOrderModal({ order, onClose, onPayQris }) {
 
   // ✅ Tampilkan tombol QRIS kalau sudah verified, metode QRIS, belum bayar
   const showQrisBtn =
+    typeof onPayQris === 'function' &&
     order.paymentMethod === 'QRIS' &&
     order.payment_status !== 'paid';
 

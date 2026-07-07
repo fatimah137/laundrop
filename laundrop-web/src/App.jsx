@@ -22,6 +22,7 @@ import CustomerOrder from './pages/customer/Order/Order'
 import CustomerHistory from './pages/customer/History/History'
 import CustomerNotification from './pages/customer/Notification/Notification'
 import CustomerProfile from './pages/customer/Profile/Profile'
+import CustomerSettings from './pages/customer/Settings/Settings'
 
 // Dashboard Pages (Owner & Employee)
 import OwnerDashboard from './pages/dashboard/OwnerDashboard/OwnerDashboard'
@@ -80,6 +81,12 @@ function App() {
                 <CustomerProfile />
               </ProtectedRoute>
             } />
+            <Route path="/customer/settings" element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <CustomerSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/customer/setting" element={<Navigate to="/customer/settings" replace />} />
 
             {/* ─── Owner ─── */}
             <Route path="/owner" element={

@@ -12,7 +12,7 @@ const navItems = [
   { path: '/customer/history',      label: 'Order History', icon: Clock           },
   { path: '/customer/notification', label: 'Notifications', icon: Bell            },
   { path: '/customer/profile',      label: 'Profile',       icon: User            },
-  { path: '/customer/setting',      label: 'Settings',      icon: Settings        },
+  { path: '/customer/settings',     label: 'Settings',      icon: Settings        },
 ];
 
 export default function Sidebar({ open, onClose, onLogout }) {

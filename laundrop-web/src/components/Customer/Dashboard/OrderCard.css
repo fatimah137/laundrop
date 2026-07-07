@@ -52,9 +52,25 @@
   color: #3b82f6;
 }
 
+.status-badge.waiting-pickup,
+.status-badge.pickup,
+.status-badge.waiting-payment,
+.status-badge.processing,
+.status-badge.ready,
+.status-badge.delivery,
+.status-badge.pending {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
 .status-badge.completed {
   background-color: #f0fdf4;
   color: #22c55e;
+}
+
+.status-badge.cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 /* Bagian Tengah: Info Tanggal & Alamat */

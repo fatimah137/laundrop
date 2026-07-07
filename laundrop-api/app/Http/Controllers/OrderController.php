@@ -37,7 +37,8 @@ class OrderController extends Controller
         }
         // Owner lihat semua
 
-        $orders = $query->paginate(15);
+        $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
+        $orders = $query->paginate($perPage);
 
         return $this->success($orders);
     }
