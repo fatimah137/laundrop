@@ -39,19 +39,57 @@ const REDIRECT_BY_ROLE = {
 
 export default function Login() {
   const navigate    = useNavigate();
-  const { login }   = useRole(); // ✅ ganti dari useApp
+  const { login, loginWithGoogle }   = useRole(); // ✅ ganti dari useApp
 
   const [showPass, setShowPass]   = useState(false);
   const [form, setForm]           = useState({ email: "", password: "" });
   const [error, setError]         = useState("");
   const [showToast, setShowToast] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleGoogleResponse = async (credentialResponse) => {
+    if (!credentialResponse?.credential) {
+      setError('Gagal memproses login Google');
+      return;
+    }
+
+    try {
+      const user = await loginWithGoogle(credentialResponse.credential);
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+        navigate(REDIRECT_BY_ROLE[user.role]);
+      }, 1500);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleGoogleClick = async () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setError('Google sign-in belum dikonfigurasi. Tambahkan VITE_GOOGLE_CLIENT_ID.');
+      return;
+    }
+
+    if (!window.google?.accounts?.id) {
+      setError('Google sign-in belum siap. Refresh halaman.');
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleGoogleResponse,
+    });
+
+    window.google.accounts.id.prompt();
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      const user = login(form.email, form.password); // ✅ login dari RoleContext
+      const user = await login(form.email, form.password); // ✅ login dari RoleContext
 
       setShowToast(true);
       setTimeout(() => {
@@ -83,7 +121,7 @@ export default function Login() {
 
           <h1 className="auth-title">Sign In</h1>
 
-          <button className="btn-google" type="button">
+          <button className="btn-google" type="button" onClick={handleGoogleClick}>
             <GoogleIcon />
             Sign In using <strong>Google</strong>
           </button>
@@ -141,13 +179,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* ✅ Update hint sesuai akun di RoleContext */}
-          <div className="auth-hint">
-            <p>Gunakan akun demo:</p>
-            <p>Customer &nbsp;— <strong>user@laundrop.id</strong> / <strong>1234</strong></p>
-            <p>Employee &nbsp;— <strong>emp@laundrop.id</strong> / <strong>1234</strong></p>
-            <p>Owner &nbsp;&nbsp;&nbsp;&nbsp;— <strong>owner@laundrop.id</strong> / <strong>1234</strong></p>
-          </div>
 
           <div className="auth-bottom">
             Don't have an account?{" "}

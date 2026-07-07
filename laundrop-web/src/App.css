@@ -43,14 +43,16 @@ body {
   font-weight: 600;
   font-family: 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   display: inline-block;
   text-decoration: none;
+  box-shadow: 0 10px 24px rgba(26, 123, 242, 0.2);
 }
 
 .btn-primary:hover {
   background: var(--primary-dark);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(26, 123, 242, 0.28);
 }
 
 .btn-outline {
@@ -63,7 +65,7 @@ body {
   font-weight: 600;
   font-family: 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
   display: inline-block;
   text-decoration: none;
 }
@@ -71,6 +73,7 @@ body {
 .btn-outline:hover {
   background: var(--primary);
   color: #fff;
+  transform: translateY(-2px);
 }
 
 .section-title {
@@ -79,6 +82,35 @@ body {
   color: var(--text-dark);
   text-align: center;
   margin-bottom: 12px;
+}
+
+.landing-title {
+  font-size: clamp(30px, 3.2vw, 40px) !important;
+  text-align: center !important;
+  display: block;
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto 12px !important;
+}
+
+.services .landing-title,
+.how .landing-title,
+.pricing .landing-title,
+.faq .landing-title {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.services .section-title,
+.how .section-title,
+.pricing .section-title,
+.faq .section-title {
+  font-size: 44px;
+  text-align: center;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .section-subtitle {
@@ -91,5 +123,16 @@ body {
 @media (max-width: 768px) {
   .section-title {
     font-size: 24px;
+  }
+
+  .landing-title {
+    font-size: 28px !important;
+  }
+
+  .services .section-title,
+  .how .section-title,
+  .pricing .section-title,
+  .faq .section-title {
+    font-size: 30px;
   }
 }

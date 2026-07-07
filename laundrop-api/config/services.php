@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
     // config/services.php
     'ocr_space' => [
         'api_key' => env('OCR_SPACE_API_KEY'),

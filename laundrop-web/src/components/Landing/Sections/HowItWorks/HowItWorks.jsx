@@ -14,7 +14,7 @@ export default function HowItWorks() {
   return (
     <section className="how" id="how">
       <div className="container">
-        <h2 className="section-title">Laundry dalam satu Klik!</h2>
+        <h2 className="section-title landing-title">Laundry dalam satu Klik!</h2>
         <p className="section-subtitle">Pesan mudah, simple, dan proses layanan Laundrop.</p>
 
         <div className="steps">

@@ -1,23 +1,8 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import api from "../../services/api";
 import Logo from "../../assets/Logo_Laundrop.png";
 import "./auth.css";
-
-function LogoIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="8" fill="url(#logo-grad-rp)"/>
-      <path d="M10 24c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-      <circle cx="18" cy="14" r="3.5" fill="#fff"/>
-      <defs>
-        <linearGradient id="logo-grad-rp" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#60A5FA"/>
-          <stop offset="1" stopColor="#2563EB"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
 
 function EyeIcon({ open }) {
   return open ? (
@@ -36,18 +21,46 @@ function EyeIcon({ open }) {
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showNew,     setShowNew]     = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({ newPass: "", confirmPass: "" });
 
-  const handleSubmit = (e) => {
+  const token = searchParams.get('token');
+  const email = searchParams.get('email');
+
+  useEffect(() => {
+    if (!token || !email) {
+      setError('Link reset tidak valid atau sudah kadaluarsa. Silakan minta link baru.');
+    }
+  }, [token, email]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
     if (form.newPass !== form.confirmPass) {
-      alert("Password tidak cocok!");
+      setError("Password tidak cocok!");
       return;
     }
-    // TODO: kirim ke API
-    navigate("/reset-success");
+
+    setLoading(true);
+
+    try {
+      await api.post('/auth/reset-password', {
+        token,
+        email,
+        password: form.newPass,
+        password_confirmation: form.confirmPass,
+      });
+      navigate('/reset-success');
+    } catch (err) {
+      setError(err?.response?.data?.message ?? 'Gagal reset password. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,21 +68,19 @@ export default function ResetPassword() {
       <main className="auth-main">
         <div className="auth-card">
 
-          {/* Logo */}
           <div className="auth-logo" onClick={() => navigate("/")}>
-            <LogoIcon />
+            <img src={Logo} alt="Laundrop" className="auth-logo-img" />
             <span className="auth-logo-text">Laundrop</span>
           </div>
 
-          {/* Title */}
           <h1 className="auth-title">Forgot Password?</h1>
 
           <p className="auth-subtitle">Masukkan password baru Anda</p>
 
-          {/* Form */}
+          {error && <div className="auth-error">{error}</div>}
+
           <form onSubmit={handleSubmit}>
 
-            {/* New Password */}
             <div className="auth-field">
               <label>Enter New Password</label>
               <div className="auth-input-wrap">
@@ -79,6 +90,7 @@ export default function ResetPassword() {
                   placeholder="Masukkan password baru Anda"
                   value={form.newPass}
                   onChange={e => setForm({ ...form, newPass: e.target.value })}
+                  disabled={loading || !token || !email}
                   required
                 />
                 <button
@@ -91,7 +103,6 @@ export default function ResetPassword() {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div className="auth-field">
               <label>Re-enter New Password</label>
               <div className="auth-input-wrap">
@@ -101,6 +112,7 @@ export default function ResetPassword() {
                   placeholder="Masukkan password Anda"
                   value={form.confirmPass}
                   onChange={e => setForm({ ...form, confirmPass: e.target.value })}
+                  disabled={loading || !token || !email}
                   required
                 />
                 <button
@@ -113,8 +125,8 @@ export default function ResetPassword() {
               </div>
             </div>
 
-            <button className="btn-auth-primary" type="submit">
-              Confirm
+            <button className="btn-auth-primary" type="submit" disabled={loading || !token || !email}>
+              {loading ? 'Memproses...' : 'Confirm'}
             </button>
           </form>
 

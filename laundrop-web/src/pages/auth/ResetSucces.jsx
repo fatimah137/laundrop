@@ -1,21 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import Logo from "../../assets/Logo_Laundrop.png";
 import "./auth.css";
-
-function LogoIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="8" fill="url(#logo-grad-rs)"/>
-      <path d="M10 24c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-      <circle cx="18" cy="14" r="3.5" fill="#fff"/>
-      <defs>
-        <linearGradient id="logo-grad-rs" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#60A5FA"/>
-          <stop offset="1" stopColor="#2563EB"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
 
 export default function ResetSuccess() {
   const navigate = useNavigate();
@@ -25,9 +10,8 @@ export default function ResetSuccess() {
       <main className="auth-main">
         <div className="auth-card">
 
-          {/* Logo */}
           <div className="auth-logo" onClick={() => navigate("/")}>
-            <LogoIcon />
+            <img src={Logo} alt="Laundrop" className="auth-logo-img" />
             <span className="auth-logo-text">Laundrop</span>
           </div>
 

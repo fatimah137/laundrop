@@ -1,23 +1,24 @@
 import './Services.css'
+import { Wind, Shirt, Zap, Flame } from 'lucide-react'
 
 const services = [
   {
-    icon: '🧺',
+    icon: Wind,
     title: 'Cuci Kering',
     desc: 'Layanan cuci dan kering profesional dengan mesin modern dan deterjen berkualitas tinggi.',
   },
   {
-    icon: '👔',
+    icon: Shirt,
     title: 'Cuci Setrika',
     desc: 'Pakaianmu dicuci bersih dan disetrika rapi sehingga siap pakai langsung.',
   },
   {
-    icon: '⚡',
+    icon: Zap,
     title: 'Laundry Express',
     desc: 'Butuh cepat? Laundry Express kami selesai dalam 6 jam untuk kebutuhanmu yang mendesak.',
   },
   {
-    icon: '🔥',
+    icon: Flame,
     title: 'Setrika Saja',
     desc: 'Cukup setrika saja untuk pakaian yang sudah dicuci namun belum sempat dirapikan.',
   },
@@ -27,7 +28,7 @@ export default function Services() {
   return (
     <section className="services" id="services">
       <div className="container">
-        <h2 className="section-title">Layanan Laundry Profesional Kami</h2>
+        <h2 className="section-title landing-title">Layanan Laundry Profesional Kami</h2>
         <p className="section-subtitle">
           Kami menyediakan berbagai pilihan layanan laundry sesuai kebutuhan Anda.
         </p>
@@ -35,7 +36,7 @@ export default function Services() {
         <div className="services-grid">
           {services.map((s, i) => (
             <div key={i} className="service-card">
-              <div className="service-icon">{s.icon}</div>
+              <div className="service-icon"><s.icon size={28} strokeWidth={2.2} /></div>
               <h3>{s.title}</h3>
               <p>{s.desc}</p>
               <a href="#" className="service-link">Lihat Harga →</a>

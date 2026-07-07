@@ -18,7 +18,7 @@ export default function FAQ() {
   return (
     <section className="faq" id="faq">
       <div className="container">
-        <h2 className="section-title">Frequently Asked Questions</h2>
+        <h2 className="section-title landing-title">Frequently Asked Questions</h2>
         <p className="section-subtitle">Temukan jawaban atas pertanyaan yang paling sering ditanyakan.</p>
 
         <div className="faq-list">

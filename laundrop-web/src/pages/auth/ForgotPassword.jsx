@@ -1,15 +1,30 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "../../assets/Logo_Laundrop.png"; // 👈 sesuaikan nama file
+import Logo from "../../assets/Logo_Laundrop.png";
+import api from "../../services/api";
 import "./auth.css";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/reset-password");
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      const { data } = await api.post('/auth/forgot-password', { email });
+      setSuccess(data?.message ?? 'Link reset password telah dikirim. Cek email Anda.');
+    } catch (err) {
+      setError(err?.response?.data?.message ?? 'Gagal mengirim email reset password.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -17,9 +32,8 @@ export default function ForgotPassword() {
       <main className="auth-main">
         <div className="auth-card">
 
-          {/* Logo */}
           <div className="auth-logo" onClick={() => navigate("/")}>
-            <img src={Logo} alt="Laundrop" className="auth-logo-img" /> {/* 👈 */}
+            <img src={Logo} alt="Laundrop" className="auth-logo-img" />
             <span className="auth-logo-text">Laundrop</span>
           </div>
 
@@ -37,6 +51,7 @@ export default function ForgotPassword() {
                 placeholder="Masukkan email Anda"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                disabled={loading}
                 required
               />
               <p className="input-hint">
@@ -44,8 +59,11 @@ export default function ForgotPassword() {
               </p>
             </div>
 
-            <button className="btn-auth-primary" type="submit">
-              Send
+            {error && <div className="auth-error">{error}</div>}
+            {success && <div className="auth-success">{success}</div>}
+
+            <button className="btn-auth-primary" type="submit" disabled={loading}>
+              {loading ? 'Mengirim...' : 'Send'}
             </button>
           </form>
 

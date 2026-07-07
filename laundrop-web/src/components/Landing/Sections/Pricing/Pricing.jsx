@@ -23,7 +23,7 @@ export default function Pricing() {
   return (
     <section className="pricing" id="pricing">
       <div className="container">
-        <h2 className="section-title">Praktis, Harga Terjangkau</h2>
+        <h2 className="section-title landing-title">Praktis, Harga Terjangkau</h2>
         <p className="section-subtitle">Kami memberikan kualitas terbaik dengan harga yang terjangkau.</p>
 
         <div className="pricing-grid">

@@ -5,7 +5,7 @@ export default function Hero() {
     <section className="hero">
       <div className="container hero-inner">
         <div className="hero-content">
-          <div className="hero-badge">✨ Laundry Service</div>
+          <div className="hero-badge">Laundry Service</div>
           <h1>
             Malas Laundry?<br />
             <span className="hero-accent">Serahkan ke<br />Laundrop!</span>

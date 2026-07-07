@@ -62,7 +62,7 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <div className="container">
-          <p>© 2024 Laundrop. All rights reserved.</p>
+          <p>© 2026 Laundrop. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -16,6 +16,13 @@
   border-radius: 12px;
   border: 1px solid var(--border);
   overflow: hidden;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.faq-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(26, 123, 242, 0.3);
+  box-shadow: 0 10px 20px rgba(26, 123, 242, 0.12);
 }
 
 .faq-question {
@@ -40,6 +47,11 @@
   color: var(--primary);
   flex-shrink: 0;
   line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.faq-item.open .faq-icon {
+  transform: rotate(90deg);
 }
 
 .faq-answer {

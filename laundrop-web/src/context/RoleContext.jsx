@@ -1,15 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const RoleContext = createContext(null);
-
-const DUMMY_USERS = [
-  { id: 1, name: 'Alex Tanaka',  email: 'owner@laundrop.id',  password: '1234', role: 'owner',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop' },
-  { id: 2, name: 'Siti Rahma',   email: 'emp@laundrop.id',    password: '1234', role: 'employee',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop' },
-  { id: 3, name: 'Budi Santoso', email: 'user@laundrop.id',   password: '1234', role: 'customer',
-    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=200&h=200&fit=crop' },
-];
 
 const ROLE_PERMISSIONS = {
   owner: {
@@ -24,6 +16,7 @@ const ROLE_PERMISSIONS = {
 };
 
 const STORAGE_KEY = 'laundrop_user';
+const TOKEN_KEY = 'auth_token';
 
 export function RoleProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -37,20 +30,72 @@ export function RoleProvider({ children }) {
 
   const role = currentUser?.role ?? null;
 
-  function login(email, password) {
-    const found = DUMMY_USERS.find(
-      u => u.email === email && u.password === password
-    );
-    if (!found) throw new Error('Email atau password salah');
-    const { password: _, ...safeUser } = found;
-    setCurrentUser(safeUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
-    return safeUser;
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+    }
+  }, []);
+
+  async function login(email, password) {
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const payload = response?.data?.data;
+
+      if (!payload?.token || !payload?.user) {
+        throw new Error('Respons login tidak valid');
+      }
+
+      const user = payload.user;
+      setCurrentUser(user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(TOKEN_KEY, payload.token);
+      api.defaults.headers.common.Authorization = `Bearer ${payload.token}`;
+
+      return user;
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Login gagal';
+      throw new Error(message);
+    }
   }
 
-  function logout() {
+  async function loginWithGoogle(idToken) {
+    try {
+      const response = await api.post('/auth/google', { id_token: idToken });
+      const payload = response?.data?.data;
+
+      if (!payload?.token || !payload?.user) {
+        throw new Error('Respons Google login tidak valid');
+      }
+
+      const user = payload.user;
+      setCurrentUser(user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(TOKEN_KEY, payload.token);
+      api.defaults.headers.common.Authorization = `Bearer ${payload.token}`;
+
+      return user;
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Google login gagal';
+      throw new Error(message);
+    }
+  }
+
+  async function logout() {
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    if (token) {
+      try {
+        await api.post('/auth/logout');
+      } catch {
+        // abaikan error logout, tetap bersihkan sesi lokal
+      }
+    }
+
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    delete api.defaults.headers.common.Authorization;
   }
 
   const can = (menu) => ROLE_PERMISSIONS[role]?.menus.includes(menu) ?? false;
@@ -61,6 +106,7 @@ export function RoleProvider({ children }) {
       currentUser,
       roleLabel: ROLE_PERMISSIONS[role]?.label ?? 'Customer',
       login,
+      loginWithGoogle,
       logout,
       can,
     }}>

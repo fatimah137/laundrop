@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 import Logo from "../../assets/Logo_Laundrop.png"; // 👈
 import "./auth.css";
 
@@ -32,14 +33,55 @@ function EyeIcon({ open }) {
 export default function Register() {
   const navigate = useNavigate();
   const [showPass, setShowPass] = useState(false);
-  const [agreed, setAgreed]     = useState(true);
-  const [form, setForm]         = useState({
-    nama: "", email: "", phone: "", password: ""
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [agreed, setAgreed] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    password_confirmation: "",
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/login");
+    setError("");
+    setSuccess("");
+
+    if (form.password !== form.password_confirmation) {
+      setError("Konfirmasi password tidak cocok");
+      return;
+    }
+
+    if (form.password.length < 8 || !/\d/.test(form.password) || !/[!@#$%^&*(),.?":{}|<>]/.test(form.password)) {
+      setError("Password minimal 8 karakter, mengandung angka dan simbol");
+      return;
+    }
+
+    try {
+      const response = await api.post("/auth/register", {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        password_confirmation: form.password_confirmation,
+      });
+
+      setSuccess(response?.data?.message || "Akun berhasil dibuat");
+      setTimeout(() => navigate("/login"), 1200);
+    } catch (err) {
+      const apiMessage = err?.response?.data?.message;
+      const validationErrors = err?.response?.data?.errors;
+
+      if (validationErrors && typeof validationErrors === "object") {
+        const firstError = Object.values(validationErrors)[0];
+        setError(Array.isArray(firstError) ? firstError[0] : firstError);
+      } else {
+        setError(apiMessage || "Gagal membuat akun");
+      }
+    }
   };
 
   return (
@@ -69,8 +111,8 @@ export default function Register() {
                 className="auth-input-plain"
                 type="text"
                 placeholder="Masukkan nama lengkap Anda"
-                value={form.nama}
-                onChange={e => setForm({ ...form, nama: e.target.value })}
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
                 required
               />
             </div>
@@ -119,6 +161,30 @@ export default function Register() {
                 </button>
               </div>
             </div>
+
+            <div className="auth-field">
+              <label>Konfirmasi Password</label>
+              <div className="auth-input-wrap">
+                <input
+                  className="auth-input"
+                  type={showConfirmPass ? "text" : "password"}
+                  placeholder="Ulangi password Anda"
+                  value={form.password_confirmation}
+                  onChange={e => setForm({ ...form, password_confirmation: e.target.value })}
+                  required
+                />
+                <button
+                  type="button"
+                  className="eye-toggle"
+                  onClick={() => setShowConfirmPass(v => !v)}
+                >
+                  <EyeIcon open={showConfirmPass} />
+                </button>
+              </div>
+            </div>
+
+            {error && <div className="auth-error">{error}</div>}
+            {success && <div className="auth-success">{success}</div>}
 
             <div className="auth-checkbox-row">
               <input

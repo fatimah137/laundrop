@@ -15,12 +15,14 @@
   padding: 24px 20px;
   border: 2px solid var(--border);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
   background: #fff;
 }
 
 .step:hover {
   border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(26, 123, 242, 0.14);
 }
 
 .step.active {
