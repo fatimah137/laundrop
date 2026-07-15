@@ -4,7 +4,26 @@ import StatusBadge from '../../shared/StatusBadge';
 import OrderDetailModal from './OrderDetailModal';
 import './OrderListView.css';
 
-const STATUS_FLOW = ['pending', 'pickup', 'proses', 'siap', 'delivery', 'selesai'];
+const STATUS_FLOW = [
+  'waiting_confirmation',
+  'pickup',
+  'picked_up',
+  'waiting_payment',
+  'washing',
+  'washing_finished',
+  'delivery',
+  'completed',
+];
+
+const STATUS_BUTTON_LABEL = {
+  waiting_confirmation: 'Pickup',
+  pickup: 'Picked Up',
+  picked_up: 'Bill',
+  waiting_payment: 'Start Wash',
+  washing: 'Finish Wash',
+  washing_finished: 'Delivery',
+  delivery: 'Complete',
+};
 
 export default function OrderListView({
   orders = [],
@@ -14,6 +33,9 @@ export default function OrderListView({
   onDelete,
   onViewDetail,
   onStatusChange,
+  getStatusBlockReason,
+  onBill,
+  onConfirmCashPayment,
 }) {
   const [openMenuId, setOpenMenuId]       = useState(null);
   const [viewingDetail, setViewingDetail] = useState(null);
@@ -28,7 +50,16 @@ export default function OrderListView({
           const currentIdx = STATUS_FLOW.indexOf(order.status);
           const nextStatus = currentIdx < STATUS_FLOW.length - 1
             ? STATUS_FLOW[currentIdx + 1] : null;
+          const blockReason = nextStatus
+            ? (getStatusBlockReason?.(order, nextStatus) || '')
+            : '';
+          const canAdvance = Boolean(nextStatus) && !blockReason;
           const isMenuOpen = openMenuId === order.id;
+          const canBill = order.status === 'picked_up';
+          const canConfirmCashPayment =
+            order.status === 'delivery' &&
+            String(order.payment_method || '').toLowerCase() === 'cash' &&
+            String(order.payment_status || 'unpaid').toLowerCase() !== 'paid';
 
           return (
             <div key={order.id} className="olv-card">
@@ -59,10 +90,30 @@ export default function OrderListView({
                   {nextStatus && (
                     <button
                       className="olv-btn-next"
-                      onClick={() => onStatusChange?.(order.id, nextStatus)}
+                      onClick={() => canAdvance && onStatusChange?.(order.id, nextStatus)}
+                      disabled={!canAdvance}
+                      title={blockReason}
                     >
                       <ChevronRight size={13} />
-                      {nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1)}
+                      {STATUS_BUTTON_LABEL[order.status] || 'Next'}
+                    </button>
+                  )}
+
+                  {canBill && (
+                    <button
+                      className="olv-btn-bill"
+                      onClick={() => onBill?.(order)}
+                    >
+                      Input Berat
+                    </button>
+                  )}
+
+                  {canConfirmCashPayment && (
+                    <button
+                      className="olv-btn-cash-paid"
+                      onClick={() => onConfirmCashPayment?.(order)}
+                    >
+                      Pembayaran Diterima
                     </button>
                   )}
 

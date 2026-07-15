@@ -1,25 +1,24 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { getStatusConfig } from '../../../data/statusConfig';
 import './StatusBreakdown.css';
 
-export default function StatusBreakdown({ orders = [] }) {
-  const statusCounts = orders.reduce((acc, order) => {
-    const status = order.status || 'pending';
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {});
+export default function StatusBreakdown({ data = {} }) {
+  const chartData = useMemo(() => {
+    if (!data || Object.keys(data).length === 0) return [];
+    
+    // data is an object: { status: count, ... }
+    return Object.keys(data).map(status => {
+      const cfg = getStatusConfig(status);
+      return {
+        name:  cfg.label,
+        value: data[status],
+        color: cfg.color,
+      };
+    });
+  }, [data]);
 
-  const data = Object.keys(statusCounts).map(key => {
-    const cfg = getStatusConfig(key);
-    return {
-      name:  cfg.label,
-      value: statusCounts[key],
-      color: cfg.color,
-    };
-  });
-
-  if (data.length === 0) {
+  if (chartData.length === 0) {
     return (
       <div className="status-card">
         <h3 className="status-title">Status Breakdown</h3>
@@ -38,13 +37,13 @@ export default function StatusBreakdown({ orders = [] }) {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={chartData}
                 innerRadius={35}
                 outerRadius={65}
                 paddingAngle={5}
                 dataKey="value"
               >
-                {data.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
@@ -54,7 +53,7 @@ export default function StatusBreakdown({ orders = [] }) {
         </div>
 
         <div className="legend-list">
-          {data.map((item, index) => (
+          {chartData.map((item, index) => (
             <div key={index} className="legend-item">
               <div className="legend-info">
                 <div className="status-dot" style={{ backgroundColor: item.color }} />

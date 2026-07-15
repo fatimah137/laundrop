@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderStatusLog;
+use App\Models\Payment;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
@@ -23,7 +25,12 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        $query = Order::with(['customer:id,name,phone', 'service:id,name,price_per_kg', 'employee:id,name'])
+        $query = Order::with([
+            'customer:id,name,phone',
+            'service:id,name,price_per_kg',
+            'employee:id,name',
+            'transaction.payment',
+        ])
             ->latest();
 
         if ($user->isCustomer()) {
@@ -66,7 +73,7 @@ class OrderController extends Controller
         $order = Order::create([
             ...$validator->validated(),
             'customer_id' => $request->user()->id,
-            'status'      => Order::STATUS_PENDING,
+            'status'      => Order::STATUS_WAITING_CONFIRMATION,
         ]);
 
         $order->load(['service:id,name,price_per_kg']);
@@ -93,7 +100,6 @@ class OrderController extends Controller
             'service',
             'statusLogs.changedBy:id,name',
             'transaction.payment',
-            'latestOcrScan',
         ])->findOrFail($id);
 
         // Customer hanya bisa lihat pesanan miliknya
@@ -125,10 +131,27 @@ class OrderController extends Controller
             return $this->error("Tidak dapat mengubah status dari '{$order->status}' ke '{$newStatus}'", 422);
         }
 
+        $order->loadMissing('transaction.payment');
+        $paymentStatus = strtolower((string) optional(optional($order->transaction)->payment)->status);
+        $isPaid = $paymentStatus === Payment::STATUS_PAID;
+        $isNonCash = strtolower((string) $order->payment_method) !== Order::PAYMENT_CASH;
+
+        if ($newStatus === Order::STATUS_DELIVERY && $isNonCash && ! $isPaid) {
+            return $this->error('Order non-cash hanya bisa masuk pengantaran setelah pembayaran lunas', 422);
+        }
+
+        if ($newStatus === Order::STATUS_COMPLETED && ! $isPaid) {
+            if (! $isNonCash) {
+                return $this->error('Order cash hanya bisa selesai setelah pembayaran dikonfirmasi saat pengantaran', 422);
+            }
+
+            return $this->error('Order hanya bisa selesai setelah pembayaran lunas', 422);
+        }
+
         $oldStatus = $order->status;
 
         // Assign employee jika belum ada saat konfirmasi
-        if ($newStatus === Order::STATUS_CONFIRMED && ! $order->employee_id) {
+        if ($newStatus === Order::STATUS_PICKUP && ! $order->employee_id) {
             $order->employee_id = $request->user()->id;
         }
 
@@ -155,8 +178,132 @@ class OrderController extends Controller
         return $this->success($order, 'Status pesanan berhasil diperbarui');
     }
 
+    // ─── POST /api/orders/{id}/bill ─────────────────────────────────────────
+    // Employee/Owner input berat real + (opsional) upload foto timbangan
+
+    public function bill(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'actual_weight' => 'required|numeric|min:0.1|max:100',
+            'notes'         => 'nullable|string|max:500',
+            'photo_scale'   => 'nullable|image|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), 422);
+        }
+
+        $order = Order::with('service:id,price_per_kg')->findOrFail($id);
+
+        if ($order->status !== Order::STATUS_PICKED_UP) {
+            return $this->error('Tagihan hanya bisa dibuat setelah status pakaian_diambil', 422);
+        }
+
+        $actualWeight = (float) $request->actual_weight;
+        $pricePerKg = (float) ($order->service->price_per_kg ?? 0);
+        $subtotal = Transaction::calculateSubtotal($actualWeight, $pricePerKg);
+
+        $transaction = Transaction::updateOrCreate(
+            ['order_id' => $order->id],
+            [
+                'actual_weight' => $actualWeight,
+                'price_per_kg'  => $pricePerKg,
+                'subtotal'      => $subtotal,
+                'total_amount'  => $subtotal,
+            ]
+        );
+
+        $updatePayload = [
+            'actual_weight' => $actualWeight,
+            'status'        => Order::STATUS_WAITING_PAYMENT,
+        ];
+
+        if ($request->hasFile('photo_scale')) {
+            $updatePayload['photo_scale'] = $request->file('photo_scale')->store("orders/{$order->id}", 'public');
+        }
+
+        $oldStatus = $order->status;
+        $order->update($updatePayload);
+
+        OrderStatusLog::create([
+            'order_id'      => $order->id,
+            'changed_by'    => $request->user()->id,
+            'status_before' => $oldStatus,
+            'status_after'  => Order::STATUS_WAITING_PAYMENT,
+            'notes'         => $request->notes ?? 'Berat real diinput manual dan tagihan dibuat',
+        ]);
+
+        $this->notifService->sendStatusUpdate($order->fresh(), Order::STATUS_WAITING_PAYMENT);
+
+        return $this->success($transaction->load('payment'), 'Tagihan berhasil dibuat secara manual');
+    }
+
+    // ─── POST /api/orders/{id}/confirm-cash-payment ───────────────────────
+    // Konfirmasi pembayaran cash saat pengantaran + opsional foto bukti
+
+    public function confirmCashPayment(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'notes'          => 'nullable|string|max:500',
+            'photo_delivery' => 'nullable|image|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), 422);
+        }
+
+        $order = Order::with('transaction.payment')->findOrFail($id);
+
+        if (strtolower((string) $order->payment_method) !== Order::PAYMENT_CASH) {
+            return $this->error('Konfirmasi ini hanya untuk order dengan metode cash', 422);
+        }
+
+        if ($order->status !== Order::STATUS_DELIVERY) {
+            return $this->error('Pembayaran cash hanya bisa dikonfirmasi saat status dalam pengantaran', 422);
+        }
+
+        $transaction = $order->transaction;
+        if (! $transaction) {
+            return $this->error('Tagihan belum tersedia untuk order ini', 422);
+        }
+
+        $proofPath = null;
+        if ($request->hasFile('photo_delivery')) {
+            $proofPath = $request->file('photo_delivery')->store("orders/{$order->id}", 'public');
+        }
+
+        Payment::updateOrCreate(
+            ['transaction_id' => $transaction->id],
+            array_filter([
+                'payment_method' => Payment::METHOD_CASH,
+                'status'         => Payment::STATUS_PAID,
+                'paid_at'        => now(),
+                'proof_path'     => $proofPath,
+            ], static fn ($value) => $value !== null)
+        );
+
+        $oldStatus = $order->status;
+        $updatePayload = ['status' => Order::STATUS_COMPLETED];
+        if ($proofPath) {
+            $updatePayload['photo_delivery'] = $proofPath;
+        }
+        $order->update($updatePayload);
+
+        OrderStatusLog::create([
+            'order_id'      => $order->id,
+            'changed_by'    => $request->user()->id,
+            'status_before' => $oldStatus,
+            'status_after'  => Order::STATUS_COMPLETED,
+            'notes'         => $request->notes ?? 'Pembayaran cash diterima saat pengantaran',
+        ]);
+
+        $this->notifService->sendStatusUpdate($order->fresh(), Order::STATUS_COMPLETED);
+
+        return $this->success($order->fresh(['transaction.payment']), 'Pembayaran cash dikonfirmasi dan pesanan selesai');
+    }
+
     // ─── PATCH /api/orders/{id}/cancel ───────────────────────────────────────
-    // Hanya customer, hanya saat status pending
+    // Hanya customer, hanya saat status waiting_confirmation
 
     public function cancel(Request $request, int $id): JsonResponse
     {

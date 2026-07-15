@@ -10,18 +10,16 @@ class Order extends Model
 {
     use HasFactory;
 
-    // Status enum values — sesuai alur SRS
-    const STATUS_PENDING        = 'pending';           // Menunggu konfirmasi
-    const STATUS_CONFIRMED      = 'confirmed';         // Dikonfirmasi karyawan
-    const STATUS_PICKING_UP     = 'picking_up';        // Dalam penjemputan
-    const STATUS_PICKED_UP      = 'picked_up';         // Pakaian diambil
-    const STATUS_BILLED         = 'billed';            // Tagihan tersedia
-    const STATUS_PAID           = 'paid';              // Lunas
-    const STATUS_PROCESSING     = 'processing';        // Sedang dicuci
-    const STATUS_READY          = 'ready';             // Siap diantar
-    const STATUS_DELIVERING     = 'delivering';        // Dalam pengiriman
-    const STATUS_DELIVERED      = 'delivered';         // Terkirim
-    const STATUS_CANCELLED      = 'cancelled';         // Dibatalkan
+    // Status enum values — sesuai alur bisnis terbaru
+    const STATUS_WAITING_CONFIRMATION = 'waiting_confirmation';
+    const STATUS_PICKUP               = 'pickup';
+    const STATUS_PICKED_UP            = 'picked_up';
+    const STATUS_WAITING_PAYMENT      = 'waiting_payment';
+    const STATUS_WASHING              = 'washing';
+    const STATUS_WASHING_FINISHED     = 'washing_finished';
+    const STATUS_DELIVERY             = 'delivery';
+    const STATUS_COMPLETED            = 'completed';
+    const STATUS_CANCELLED            = 'cancelled';
 
     const PAYMENT_CASH = 'cash';
     const PAYMENT_QRIS = 'qris';
@@ -79,12 +77,12 @@ class Order extends Model
 
     public function scopePending($query)
     {
-        return $query->where('status', self::STATUS_PENDING);
+        return $query->where('status', self::STATUS_WAITING_CONFIRMATION);
     }
 
     public function scopeActive($query)
     {
-        return $query->whereNotIn('status', [self::STATUS_PAID, self::STATUS_CANCELLED]);
+        return $query->whereNotIn('status', [self::STATUS_COMPLETED, self::STATUS_CANCELLED]);
     }
 
     public function scopeForCustomer($query, int $customerId)
@@ -101,21 +99,19 @@ class Order extends Model
 
     public function isCancellable(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === self::STATUS_WAITING_CONFIRMATION;
     }
 
     public function canUpdateStatus(string $newStatus): bool
     {
         $flow = [
-            self::STATUS_PENDING    => [self::STATUS_CONFIRMED, self::STATUS_CANCELLED],
-            self::STATUS_CONFIRMED  => [self::STATUS_PICKING_UP],
-            self::STATUS_PICKING_UP => [self::STATUS_PICKED_UP],
-            self::STATUS_PICKED_UP  => [self::STATUS_BILLED],
-            self::STATUS_BILLED     => [self::STATUS_PAID],
-            self::STATUS_PAID       => [self::STATUS_PROCESSING],
-            self::STATUS_PROCESSING => [self::STATUS_READY],
-            self::STATUS_READY      => [self::STATUS_DELIVERING],
-            self::STATUS_DELIVERING => [self::STATUS_DELIVERED],
+            self::STATUS_WAITING_CONFIRMATION => [self::STATUS_PICKUP, self::STATUS_CANCELLED],
+            self::STATUS_PICKUP               => [self::STATUS_PICKED_UP],
+            self::STATUS_PICKED_UP            => [self::STATUS_WAITING_PAYMENT],
+            self::STATUS_WAITING_PAYMENT      => [self::STATUS_WASHING],
+            self::STATUS_WASHING              => [self::STATUS_WASHING_FINISHED],
+            self::STATUS_WASHING_FINISHED     => [self::STATUS_DELIVERY],
+            self::STATUS_DELIVERY             => [self::STATUS_COMPLETED],
         ];
 
         return in_array($newStatus, $flow[$this->status] ?? []);
@@ -141,16 +137,6 @@ class Order extends Model
     public function statusLogs()
     {
         return $this->hasMany(OrderStatusLog::class, 'order_id')->latest();
-    }
-
-    public function ocrScans()
-    {
-        return $this->hasMany(OcrScan::class, 'order_id');
-    }
-
-    public function latestOcrScan()
-    {
-        return $this->hasOne(OcrScan::class, 'order_id')->latest();
     }
 
     public function transaction()

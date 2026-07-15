@@ -2,7 +2,7 @@ import { X, MapPin, Package } from 'lucide-react';
 import StatusBadge from '../../ui/StatusBadge';
 import './OrderDetailModal.css';
 
-export default function OrderDetailModal({ order, onClose }) {
+export default function OrderDetailModal({ order, onClose, onCancel, canCancel = false, cancelling = false }) {
   if (!order) return null;
 
   return (
@@ -107,6 +107,19 @@ export default function OrderDetailModal({ order, onClose }) {
               ))}
             </div>
           </div>
+
+          {canCancel && typeof onCancel === 'function' && (
+            <div className="detail-actions">
+              <button
+                type="button"
+                className="detail-cancel-btn"
+                onClick={onCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? 'Membatalkan...' : 'Cancel Order'}
+              </button>
+            </div>
+          )}
 
         </div>
       </div>

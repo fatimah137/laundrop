@@ -3,9 +3,10 @@ import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingBag, Users, Sparkles, Wallet,
-  BarChart3, Bell, UserCircle, Settings, UsersRound, Waves, LogOut
+  BarChart3, Bell, UserCircle, Settings, UsersRound, LogOut
 } from 'lucide-react';
 import { useRole } from '../../../context/RoleContext';
+import Logo from '../../../assets/Logo_Laundrop.png';
 import './Sidebar.css';
 
 const ALL_MENUS = [
@@ -50,7 +51,7 @@ export default function Sidebar({ onNavigate }) {
         {/* Logo */}
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">
-            <Waves size={20} strokeWidth={2.5} />
+            <img src={Logo} alt="Laundrop" className="logo-img" />
           </div>
           <div>
             <div className="sidebar-logo-name">Laundrop</div>

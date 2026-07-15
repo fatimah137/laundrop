@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     const STATUS_PENDING  = 'pending';
-    const STATUS_SUCCESS  = 'success';
+    const STATUS_PAID     = 'paid';
     const STATUS_FAILED   = 'failed';
+    const STATUS_CANCELLED = 'cancelled';
     const STATUS_EXPIRED  = 'expired';
-    const STATUS_REFUNDED = 'refunded';
 
     const METHOD_CASH = 'cash';
     const METHOD_QRIS = 'qris';
@@ -34,13 +34,13 @@ class Payment extends Model
 
     public function isPaid(): bool
     {
-        return $this->status === self::STATUS_SUCCESS;
+        return $this->status === self::STATUS_PAID;
     }
 
     public function markAsPaid(string $midtransTxnId = null): void
     {
         $this->update([
-            'status'          => self::STATUS_SUCCESS,
+            'status'          => self::STATUS_PAID,
             'midtrans_txn_id' => $midtransTxnId,
             'paid_at'         => now(),
         ]);

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { useApp } from "../../../context/AppContext";
+import { useRole } from "../../../context/RoleContext";
 import api from "../../../services/api";
 import Layout from '../../../components/Customer/Layout';
 import PageTitle from "../../../components/ui/PageTitle";
@@ -12,13 +13,6 @@ import QRISModal from "../../../components/Customer/Orders/QRISModal"; // ✅ ta
 import "leaflet/dist/leaflet.css";
 import "./Order.css";
 
-const FALLBACK_SERVICES = [
-  { id: "Cuci + Setrika",   label: "Cuci + Setrika",   desc: "Mencuci dan menyetrika pakaian",       pricePerKg: 10000, unit: "kg",  duration: "2–3 hari" },
-  { id: "Cuci Saja",        label: "Cuci Saja",         desc: "Hanya mencuci pakaian",                pricePerKg: 5000,  unit: "kg",  duration: "2–3 hari" },
-  { id: "Dry Cleaning",     label: "Dry Cleaning",      desc: "Untuk pakaian premium dan formal",     pricePerKg: 40000, unit: "pcs", duration: "3–5 hari" },
-  { id: "Express (24 Jam)", label: "Express (24 Jam)",  desc: "Selesai dalam 24 jam",                 pricePerKg: 15000, unit: "kg",  duration: "24 jam"   },
-];
-
 const ITEMS           = ["Shirts","Pants","Dresses","Jackets","Suits","Bedsheets","Towels","Shoes","Other"];
 const PICKUP_TIMES    = ["10:00","11:00","12:00","13:00","14:00"];
 const PAYMENT_METHODS = [
@@ -26,8 +20,16 @@ const PAYMENT_METHODS = [
   { id: "QRIS", label: "QRIS",         desc: "Bayar via QR Code" },
 ];
 const SERVICE_DISTRICTS = ["tembalang", "banyumanik"];
+const KNOWN_SUBDISTRICTS = [
+  // Banyumanik sub-districts
+  "srondol wetan", "srondol", "mangunharjo", "podorejo", "banyumanik", "ngesrep", "padangsari",
+  // Tembalang sub-districts
+  "tembalang", "sambirejo", "rowosari", "meteseh", "tandang",
+];
 const LAUNDRY_COORDINATE = { lat: -7.0715116551644055, lng: 110.41728959200246 };
 const DELIVERY_FEE_PER_KM = 3000;
+const SAVED_ADDRESS_STORAGE_KEY = "laundrop_saved_addresses_v1";
+const MAX_SAVED_ADDRESSES = 8;
 
 const today    = new Date().toISOString().split("T")[0];
 const tomorrow = new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString().split("T")[0];
@@ -76,6 +78,15 @@ const mapMarkerIcon = L.icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const deliveryMarkerIcon = L.icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -237,7 +248,7 @@ function IconQris() {
 }
 
 const createBlankForm = () => ({
-  service:         "Cuci + Setrika",
+  service:         "",
   pickupAddress:   "",
   deliveryAddress: "",
   pickupDistrict:  "",
@@ -257,7 +268,8 @@ const createBlankForm = () => ({
 
 export default function Order() {
   const navigate = useNavigate();
-  const { addOrder, confirmPayment } = useApp(); // ✅ tambah confirmPayment
+  const { confirmPayment } = useApp();
+  const { currentUser } = useRole();
 
   const [placedOrder,   setPlacedOrder]   = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
@@ -266,21 +278,26 @@ export default function Order() {
 
   const [form, setForm] = useState(createBlankForm);
   const [now, setNow] = useState(() => new Date());
-  const [sameAsPickup, setSameAsPickup] = useState(true);
-  const [services, setServices] = useState(FALLBACK_SERVICES);
-  const [loadingServices, setLoadingServices] = useState(true);
+  const [services, setServices] = useState([]);
   const [servicesError, setServicesError] = useState("");
   const [mapError, setMapError] = useState("");
   const [serviceAreaPolygons, setServiceAreaPolygons] = useState([]);
   const [loadingServiceArea, setLoadingServiceArea] = useState(true);
   const [manualGeocodingLoading, setManualGeocodingLoading] = useState(false);
   const [lastGeocodedAddress, setLastGeocodedAddress] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+
+  const savedAddressStorageSlot = useMemo(() => {
+    const userKey = currentUser?.id || currentUser?.email || "guest";
+    return `${SAVED_ADDRESS_STORAGE_KEY}:${userKey}`;
+  }, [currentUser?.email, currentUser?.id]);
 
   useEffect(() => {
     let mounted = true;
 
     const fetchServices = async () => {
-      setLoadingServices(true);
       setServicesError("");
       try {
         const response = await api.get("/services");
@@ -299,15 +316,13 @@ export default function Order() {
         if (mapped.length > 0) {
           setServices(mapped);
         } else {
-          setServices(FALLBACK_SERVICES);
-          setServicesError("Belum ada layanan aktif dari database.");
+          setServices([]);
+          setServicesError("");
         }
       } catch {
         if (!mounted) return;
-        setServices(FALLBACK_SERVICES);
-        setServicesError("Gagal mengambil layanan dari database. Menampilkan data cadangan.");
-      } finally {
-        if (mounted) setLoadingServices(false);
+        setServices([]);
+        setServicesError("Gagal mengambil layanan.");
       }
     };
 
@@ -325,6 +340,30 @@ export default function Order() {
 
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(savedAddressStorageSlot);
+      const parsed = raw ? JSON.parse(raw) : [];
+      setSavedAddresses(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setSavedAddresses([]);
+    }
+  }, [savedAddressStorageSlot]);
+
+  // Load selected address from sessionStorage after returning from SavedAddresses page
+  useEffect(() => {
+    const selectedAddr = sessionStorage.getItem('selected_saved_address');
+    if (selectedAddr) {
+      try {
+        const addressEntry = JSON.parse(selectedAddr);
+        applySavedAddress(addressEntry);
+        sessionStorage.removeItem('selected_saved_address');
+      } catch (e) {
+        console.error('Invalid saved address:', e);
+      }
+    }
+  }, [location]);
 
   useEffect(() => {
     let mounted = true;
@@ -408,15 +447,19 @@ export default function Order() {
           payload?.address?.county ||
           "";
         const district = String(districtRaw || "").trim();
+        const normalizedDist = district.toLowerCase();
         const isInsideServiceAreaByDistrict = SERVICE_DISTRICTS.some((name) =>
-          district.toLowerCase().includes(name)
+          normalizedDist.includes(name)
+        );
+        const isInsideServiceAreaBySubdistrict = KNOWN_SUBDISTRICTS.some((name) =>
+          normalizedDist.includes(name)
         );
         const isInsideServiceAreaByPolygon = serviceAreaPolygons.length > 0
           ? isPointInAnyPolygon({ lat, lng }, serviceAreaPolygons)
           : false;
         const isServiceAreaValid = serviceAreaPolygons.length > 0
           ? isInsideServiceAreaByPolygon
-          : isInsideServiceAreaByDistrict;
+          : (isInsideServiceAreaByDistrict || isInsideServiceAreaBySubdistrict);
 
         setForm((prev) => ({
           ...prev,
@@ -507,13 +550,56 @@ export default function Order() {
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
+  const persistSavedAddresses = (nextAddresses) => {
+    setSavedAddresses(nextAddresses);
+    localStorage.setItem(savedAddressStorageSlot, JSON.stringify(nextAddresses));
+  };
+
+  const isServiceAreaAllowed = (lat, lng, district = "") => {
+    const normalizedDistrict = String(district || "").toLowerCase();
+    const isInsideByDistrict = SERVICE_DISTRICTS.some((name) => normalizedDistrict.includes(name));
+    const isInsideBySubdistrict = KNOWN_SUBDISTRICTS.some((name) => normalizedDistrict.includes(name));
+    const isInsideByPolygon = serviceAreaPolygons.length > 0
+      ? isPointInAnyPolygon({ lat, lng }, serviceAreaPolygons)
+      : false;
+
+    // Use polygon check if available, otherwise fallback to district or subdistrict matching
+    return serviceAreaPolygons.length > 0 
+      ? isInsideByPolygon 
+      : (isInsideByDistrict || isInsideBySubdistrict);
+  };
+
+  const applySavedAddress = (addressEntry) => {
+    if (!addressEntry) return;
+
+    const lat = Number(addressEntry.lat ?? 0);
+    const lng = Number(addressEntry.lng ?? 0);
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      setMapError("Koordinat alamat tersimpan tidak valid.");
+      return;
+    }
+
+    // Set address text first
+    setForm((prev) => ({
+      ...prev,
+      pickupAddress: addressEntry.address || "",
+    }));
+
+    // Then trigger reverse geocoding to get the correct district and validate area
+    updatePickupFromCoordinates(lat, lng);
+  };
+
+  const openSavedAddressesPage = () => {
+    navigate('/customer/addresses');
+  };
+
   useEffect(() => {
-    if (!sameAsPickup) return;
     setForm((prev) => ({
       ...prev,
       deliveryAddress: prev.pickupAddress,
     }));
-  }, [form.pickupAddress, sameAsPickup]);
+  }, [form.pickupAddress]);
 
   useEffect(() => {
     if (availablePickupTimes.length === 0) return;
@@ -531,36 +617,102 @@ export default function Order() {
     }));
   };
 
+  const submitOrder = async () => {
+    if (!selectedService) return;
+
+    setSubmitting(true);
+    setMapError("");
+
+    try {
+      const payload = {
+        service_id: Number(selectedService.id),
+        pickup_address: form.pickupAddress,
+        pickup_lat: form.pickupLat,
+        pickup_lng: form.pickupLng,
+        pickup_date: form.pickupDate,
+        pickup_time: form.pickupTime,
+        estimated_weight: Number(form.weight),
+        payment_method: String(form.paymentMethod || "").toLowerCase(),
+        notes: form.notes || null,
+      };
+
+      const response = await api.post("/orders", payload);
+      const created = response?.data?.data;
+
+      if (!created) {
+        throw new Error("Response order tidak valid");
+      }
+
+      const uiOrder = {
+        id: created.order_number || `ORD-${created.id}`,
+        rawId: created.id,
+        order_number: created.order_number || `ORD-${created.id}`,
+        service: created?.service?.name || selectedService.label,
+          status: "Menunggu Konfirmasi",
+          backend_status: "waiting_confirmation",
+        payment_status: "unpaid",
+        paymentMethod: String(created.payment_method || form.paymentMethod || "").toUpperCase(),
+        verified: false,
+        estimated_price: estimatedPrice,
+        actual_weight: null,
+        weight: Number(form.weight),
+        clothesCount: form.clothesCount,
+        pickupAddress: created.pickup_address || form.pickupAddress,
+        deliveryAddress: created.pickup_address || form.pickupAddress,
+        pickupDate: form.pickupDate,
+        pickupTime: form.pickupTime,
+        notes: form.notes,
+        items: form.items,
+        extraFee: Number(form.extraFee || 0),
+        laundryPrice: estimatedPrice,
+        distanceFromLaundryKm: Number(form.distanceFromLaundryKm || 0),
+        price: grandTotal,
+        date: new Date(created.created_at || Date.now()).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+      };
+
+      setPlacedOrder(uiOrder);
+      setShowReceipt(true);
+    } catch (err) {
+      const message = err?.response?.data?.message || "Gagal membuat pesanan ke server";
+      setMapError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!selectedService) return;
+    if (!selectedService) {
+      setServicesError("Layanan belum tersedia. Silakan coba refresh halaman.");
+      return;
+    }
     if (!form.isServiceAreaValid) {
       setMapError("Order hanya tersedia untuk area kecamatan Tembalang dan Banyumanik.");
       return;
     }
 
-    const order = addOrder({
-      ...form,
-      deliveryAddress: sameAsPickup ? form.pickupAddress : form.deliveryAddress,
-      service: selectedService.label,
-      service_id: selectedService.id,
-      laundryPrice: estimatedPrice,
-      extraFee: Number(form.extraFee || 0),
-      isServiceAreaValid: Boolean(form.isServiceAreaValid),
-      distanceFromLaundryKm: Number(form.distanceFromLaundryKm || 0),
-      weight: parseFloat(form.weight),
-      price:  grandTotal,
-    });
-    setPlacedOrder(order);
-    setShowReceipt(true);
+    if (typeof form.pickupLat !== "number" || typeof form.pickupLng !== "number") {
+      setMapError("Silakan pilih titik penjemputan di map terlebih dahulu.");
+      return;
+    }
+
+    setShowVerifyModal(true);
+  };
+
+  const handleVerifyAndSubmit = async () => {
+    setShowVerifyModal(false);
+    await submitOrder();
   };
 
   const handleNewOrder = () => {
     setShowReceipt(false);
     setPlacedOrder(null);
     setForm(createBlankForm());
-    setSameAsPickup(true);
   };
 
   return (
@@ -576,14 +728,14 @@ export default function Order() {
           {/* 1. Pilih Layanan */}
           <div className="order-section">
             <h3 className="section-title"><IconBag /> Select Service</h3>
-            {loadingServices && <span className="form-hint">Memuat layanan dari database...</span>}
             {servicesError && <span className="form-hint">{servicesError}</span>}
             <div className="service-grid">
-              {services.map(s => (
+              {services.map((s) => (
                 <button
-                  key={s.id} type="button"
-                  className={`service-card ${form.service === s.id ? "active" : ""}`}
-                  onClick={() => set("service", s.id)}
+                  key={s.id}
+                  type="button"
+                  className={`service-card ${String(form.service) === String(s.id) ? "active" : ""}`}
+                  onClick={() => set("service", String(s.id))}
                 >
                   <p className="service-card-name">{s.label}</p>
                   <p className="service-card-desc">{s.desc}</p>
@@ -642,7 +794,16 @@ export default function Order() {
 
           {/* 3. Alamat */}
           <div className="order-section">
-            <h3 className="section-title"><IconMapPin /> Alamat</h3>
+            <div className="section-header-with-action">
+              <h3 className="section-title"><IconMapPin /> Alamat</h3>
+              <button
+                type="button"
+                className="btn-pick-saved-address"
+                onClick={openSavedAddressesPage}
+              >
+                Pilih Alamat Tersimpan
+              </button>
+            </div>
             {mapError && <div className="map-error-box">{mapError}</div>}
             {loadingServiceArea && (
               <p className="form-hint" style={{ marginBottom: 8 }}>
@@ -672,11 +833,17 @@ export default function Order() {
                     },
                   }}
                 />
+                {form.pickupLat && form.pickupLng && (
+                  <Marker
+                    icon={deliveryMarkerIcon}
+                    position={[form.pickupLat, form.pickupLng]}
+                  />
+                )}
                 <MapClickHandler onSelect={updatePickupFromCoordinates} />
               </MapContainer>
             </div>
             <p className="map-coord-hint">
-              Koordinat titik: {form.pickupLat ?? "-"}, {form.pickupLng ?? "-"}
+              Koordinat: {form.pickupLat ?? "-"}, {form.pickupLng ?? "-"}
             </p>
             {form.pickupDistrict && (
               <p className="map-area-hint">
@@ -715,35 +882,6 @@ export default function Order() {
                     ? "Mencari lokasi dari alamat manual..."
                     : "Alamat manual akan sinkron ke map saat field selesai diisi"}
                 </span>
-              </div>
-              <label className="same-address-toggle">
-                <input
-                  type="checkbox"
-                  checked={sameAsPickup}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setSameAsPickup(checked);
-                    if (checked) {
-                      setForm((prev) => ({
-                        ...prev,
-                        deliveryAddress: prev.pickupAddress,
-                      }));
-                    }
-                  }}
-                />
-                <span>Sama dengan alamat penjemputan</span>
-              </label>
-              <div className="form-field">
-                <label className="form-label">Alamat Pengiriman</label>
-                <textarea
-                  required
-                  rows={2}
-                  value={form.deliveryAddress}
-                  onChange={e => set("deliveryAddress", e.target.value)}
-                  placeholder="Masukkan alamat pengiriman..."
-                  className="form-textarea"
-                  disabled={sameAsPickup}
-                />
               </div>
             </div>
           </div>
@@ -844,8 +982,8 @@ export default function Order() {
             </div>
           </div>
 
-          <button type="submit" className="btn-confirm" disabled={!canSubmitOrder}>
-            Confirm Order
+          <button type="submit" className="btn-confirm" disabled={!canSubmitOrder || submitting}>
+            {submitting ? "Menyimpan Pesanan..." : "Confirm Order"}
           </button>
 
         </form>
@@ -888,6 +1026,51 @@ export default function Order() {
             }}
             onClose={() => setQrisOrder(null)}
           />
+        )}
+
+        {showVerifyModal && (
+          <div className="verify-overlay" onClick={() => setShowVerifyModal(false)}>
+            <div className="verify-modal" onClick={(e) => e.stopPropagation()}>
+              <h3 className="verify-title">Verifikasi Pesanan</h3>
+              <p className="verify-subtitle">Pastikan data order sudah sesuai sebelum dibuat.</p>
+
+              <div className="verify-list">
+                <div className="verify-row">
+                  <span>Layanan</span>
+                  <strong>{selectedService?.label || "-"}</strong>
+                </div>
+                <div className="verify-row">
+                  <span>Jadwal Jemput</span>
+                  <strong>{`${formatDateLabel(form.pickupDate)} · ${form.pickupTime}`}</strong>
+                </div>
+                <div className="verify-row">
+                  <span>Berat Estimasi</span>
+                  <strong>{form.weight ? `${form.weight} kg` : "-"}</strong>
+                </div>
+                <div className="verify-row">
+                  <span>Alamat Jemput</span>
+                  <strong className="verify-address">{form.pickupAddress || "-"}</strong>
+                </div>
+                <div className="verify-row">
+                  <span>Pembayaran</span>
+                  <strong>{form.paymentMethod}</strong>
+                </div>
+                <div className="verify-row verify-total-row">
+                  <span>Total</span>
+                  <strong>{grandTotal > 0 ? formatRp(grandTotal) : "-"}</strong>
+                </div>
+              </div>
+
+              <div className="verify-actions">
+                <button type="button" className="verify-btn verify-btn-cancel" onClick={() => setShowVerifyModal(false)}>
+                  Cek Lagi
+                </button>
+                <button type="button" className="verify-btn verify-btn-confirm" onClick={handleVerifyAndSubmit}>
+                  Ya, Buat Order
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
       </div>

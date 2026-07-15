@@ -96,9 +96,9 @@ class PaymentController extends Controller
         if ($transactionStatus === 'settlement' || ($transactionStatus === 'capture' && $fraudStatus === 'accept')) {
             $payment->markAsPaid($notification['transaction_id']);
 
-            // Update status order → paid
+            // Pembayaran digital sukses -> otomatis masuk proses cuci
             $order = $payment->transaction->order;
-            $order->update(['status' => Order::STATUS_PAID]);
+            $order->update(['status' => Order::STATUS_WASHING]);
 
             // Notifikasi customer
             $this->notifService->send(
@@ -150,12 +150,12 @@ class PaymentController extends Controller
 
         $payment->update([
             'proof_path' => $path,
-            'status'     => Payment::STATUS_SUCCESS,
+            'status'     => Payment::STATUS_PAID,
             'paid_at'    => now(),
         ]);
 
-        // Update status order
-        $payment->transaction->order->update(['status' => Order::STATUS_PAID]);
+        // Cash proof di-approve -> lanjut proses cuci
+        $payment->transaction->order->update(['status' => Order::STATUS_WASHING]);
 
         return $this->success(['proof_path' => $path], 'Bukti pembayaran berhasil diupload');
     }

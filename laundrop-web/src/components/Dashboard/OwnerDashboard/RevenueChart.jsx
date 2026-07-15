@@ -6,21 +6,15 @@ import {
 import { formatIDR } from '../../../data/format';
 import './RevenueChart.css';
 
-export default function RevenueChart({ orders = [] }) {
-  const data = useMemo(() => {
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key   = d.toISOString().split('T')[0];
-      const label = d.toLocaleDateString('en-US', { weekday: 'short' });
-      const revenue = orders
-        .filter(o => o.pickup_date === key && o.payment_status === 'paid')
-        .reduce((s, o) => s + (o.total_amount || 0), 0);
-      days.push({ name: label, revenue });
-    }
-    return days;
-  }, [orders]);
+export default function RevenueChart({ data = [] }) {
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    // data should already be in format: [{ date: 'Mon 01', revenue: 1000 }, ...]
+    return data.map(item => ({
+      name: item.date,
+      revenue: item.revenue,
+    }));
+  }, [data]);
 
   return (
     <div className="rev-card">
@@ -32,7 +26,7 @@ export default function RevenueChart({ orders = [] }) {
       </div>
       <div className="rev-chart">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
             <defs>
               <linearGradient id="rev-grad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%"   stopColor="#0ea5e9" stopOpacity={0.35} />

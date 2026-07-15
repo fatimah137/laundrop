@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanySettingController;
-use App\Http\Controllers\OcrScanController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderNotificationController;
 use App\Http\Controllers\OrderStatusLogController;
@@ -38,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('auth/me',   [AuthController::class, 'me']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
+
+    // Dashboard stats
+    Route::middleware('role:employee,owner')->get('dashboard/stats', [DashboardController::class, 'stats']);
 
     // Push Subscription
     Route::post('push/subscribe',   [PushSubscriptionController::class, 'subscribe']);
@@ -79,10 +82,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:employee,owner')->group(function () {
         Route::patch('orders/{id}/status',          [OrderController::class, 'updateStatus']);
+        Route::post('orders/{id}/bill',             [OrderController::class, 'bill']);
+        Route::post('orders/{id}/confirm-cash-payment', [OrderController::class, 'confirmCashPayment']);
         Route::post('orders/{id}/photos',           [OrderController::class, 'uploadPhoto']);
-        Route::post('ocr/scan',                     [OcrScanController::class, 'scan']);
-        Route::patch('ocr/{id}/correct',            [OcrScanController::class, 'correct']);
-        Route::post('ocr/{id}/finalize',            [OcrScanController::class, 'finalize']);
         Route::post('payments/{id}/proof',          [PaymentController::class, 'uploadProof']);
     });
 

@@ -5,14 +5,47 @@ import "./OrderModal.css";
 const formatRp = (n) => `Rp ${Number(n).toLocaleString("id-ID")}`;
 
 const TIMELINE_STEPS = [
-  { key: "Waiting Pickup",  label: "Order Diterima",    desc: "Pesanan berhasil dibuat, menunggu penjemputan" },
-  { key: "Pickup",          label: "Pesanan Dijemput",  desc: "Kurir sedang menjemput pakaian Anda"           },
-  { key: "Waiting Payment", label: "Menunggu Bayar",    desc: "Silakan selesaikan pembayaran QRIS"            },
-  { key: "Processing",      label: "Sedang Diproses",   desc: "Pakaian sedang dicuci & disetrika"             },
-  { key: "Ready",           label: "Siap Dikirim",      desc: "Pakaian selesai dan siap untuk dikirim"        },
-  { key: "Delivery",        label: "Dalam Pengiriman",  desc: "Kurir mengantar cucian ke alamat Anda"         },
-  { key: "Completed",       label: "Selesai",           desc: "Cucian telah diterima, terima kasih!"          },
+  { key: 'waiting_confirmation', label: 'Menunggu Konfirmasi', desc: 'Admin mengecek slot dan ketersediaan kurir' },
+  { key: 'pickup',               label: 'Dalam Penjemputan',   desc: 'Kurir sedang menuju lokasi Anda' },
+  { key: 'picked_up',            label: 'Pakaian Diambil',     desc: 'Kurir telah mengambil pakaian Anda' },
+  { key: 'waiting_payment',      label: 'Menunggu Pembayaran', desc: 'Tagihan tersedia, menunggu pembayaran' },
+  { key: 'washing',              label: 'Proses Pencucian',    desc: 'Pakaian sedang dicuci' },
+  { key: 'washing_finished',     label: 'Pencucian Selesai',   desc: 'Pakaian sudah bersih, rapi, dan siap kirim' },
+  { key: 'delivery',             label: 'Dalam Pengantaran',   desc: 'Kurir sedang mengantarkan pakaian Anda' },
+  { key: 'completed',            label: 'Selesai',             desc: 'Pakaian sudah diterima. Terima kasih!' },
 ];
+
+const STATUS_LABELS = {
+  waiting_confirmation: 'Menunggu Konfirmasi',
+  pickup: 'Dalam Penjemputan',
+  picked_up: 'Pakaian Diambil',
+  waiting_payment: 'Menunggu Pembayaran',
+  washing: 'Proses Pencucian',
+  washing_finished: 'Pencucian Selesai',
+  delivery: 'Dalam Pengantaran',
+  completed: 'Selesai',
+  cancelled: 'Dibatalkan',
+};
+
+function normalizeStatus(status, backendStatus) {
+  if (backendStatus) return String(backendStatus).toLowerCase();
+
+  const key = String(status || '').toLowerCase();
+  const aliasMap = {
+    'waiting pickup': 'waiting_confirmation',
+    pickup: 'pickup',
+    'waiting payment': 'waiting_payment',
+    processing: 'washing',
+    ready: 'washing_finished',
+    delivery: 'delivery',
+    completed: 'completed',
+    cancelled: 'cancelled',
+    pending: 'waiting_confirmation',
+    'on progress': 'pickup',
+  };
+
+  return aliasMap[key] || key;
+}
 
 function getStepIndex(status) {
   const idx = TIMELINE_STEPS.findIndex(
@@ -21,14 +54,23 @@ function getStepIndex(status) {
   return idx === -1 ? 0 : idx;
 }
 
-export default function TrackOrderModal({ order, onClose, onPayQris }) {
+export default function TrackOrderModal({
+  order,
+  onClose,
+  onPayQris,
+  onCancel,
+  canCancel = false,
+  cancelling = false,
+}) {
   if (!order) return null;
 
-  const activeIdx = getStepIndex(order.status);
+  const statusKey = normalizeStatus(order.status, order.backend_status);
+  const activeIdx = getStepIndex(statusKey);
 
   // ✅ Tampilkan tombol QRIS kalau sudah verified, metode QRIS, belum bayar
   const showQrisBtn =
     typeof onPayQris === 'function' &&
+    statusKey === 'waiting_payment' &&
     order.paymentMethod === 'QRIS' &&
     order.payment_status !== 'paid';
 
@@ -36,6 +78,8 @@ export default function TrackOrderModal({ order, onClose, onPayQris }) {
   const displayPrice = order.verified
     ? formatRp(order.price)
     : `~${formatRp(order.estimated_price || order.price)}`;
+
+  const canCancelOrder = typeof onCancel === 'function' && canCancel;
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
@@ -54,7 +98,7 @@ export default function TrackOrderModal({ order, onClose, onPayQris }) {
             {order.service} &nbsp;·&nbsp; {order.actual_weight || order.weight} kg
           </h2>
           <div className="track-order-footer">
-            <span className="track-status-badge">{order.status}</span>
+            <span className="track-status-badge">{STATUS_LABELS[statusKey] || order.status}</span>
             <span className="track-price">{displayPrice}</span>
           </div>
         </div>
@@ -181,6 +225,15 @@ export default function TrackOrderModal({ order, onClose, onPayQris }) {
 
           {/* Tombol bawah */}
           <div className="track-bottom-actions">
+            {canCancelOrder && (
+              <button
+                className="track-btn-cancel"
+                onClick={() => onCancel?.()}
+                disabled={cancelling}
+              >
+                {cancelling ? 'Membatalkan...' : 'Cancel Order'}
+              </button>
+            )}
             {showQrisBtn && (
               <button
                 className="track-btn-qris"

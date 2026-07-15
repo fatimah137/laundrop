@@ -189,6 +189,26 @@
   min-height: 400px;
 }
 
+.ow-orders-loading,
+.ow-orders-error {
+  background: var(--ow-white);
+  border: 1px solid var(--ow-gray-200);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.ow-orders-loading {
+  color: var(--ow-gray-500);
+}
+
+.ow-orders-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
 /* ── Empty state ─────────────────────────────────────────────────── */
 .ow-orders-empty {
   display: flex;
@@ -320,6 +340,45 @@
 
 .ow-btn-delete:hover  { opacity: 0.88; }
 .ow-btn-delete:active { transform: scale(0.98); }
+
+.ow-bill-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ow-bill-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ow-gray-600, #475569);
+  font-weight: 600;
+}
+
+.ow-cash-helper {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ow-gray-500);
+  line-height: 1.45;
+}
+
+.ow-bill-input,
+.ow-bill-file,
+.ow-bill-textarea {
+  width: 100%;
+  border: 1px solid var(--ow-gray-200);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 13px;
+  font-family: var(--ow-font);
+  color: var(--ow-gray-900);
+  background: var(--ow-white);
+}
+
+.ow-bill-textarea {
+  resize: vertical;
+}
 
 /* ── Search bar ──────────────────────────────────────────────────── */
 .ow-search-wrap {

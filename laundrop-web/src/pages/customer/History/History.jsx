@@ -12,29 +12,25 @@ import './History.css';
 const FILTERS = ['All', 'Pending', 'On Progress', 'Completed', 'Cancelled'];
 
 const STATUS_LABEL_MAP = {
-  pending: 'Pending',
-  confirmed: 'Pending',
-  picking_up: 'On Progress',
+  waiting_confirmation: 'Pending',
+  pickup: 'On Progress',
   picked_up: 'On Progress',
-  billed: 'On Progress',
-  paid: 'On Progress',
-  processing: 'On Progress',
-  ready: 'On Progress',
-  delivering: 'On Progress',
-  delivered: 'Completed',
+  waiting_payment: 'On Progress',
+  washing: 'On Progress',
+  washing_finished: 'On Progress',
+  delivery: 'On Progress',
+  completed: 'Completed',
   cancelled: 'Cancelled',
 };
 
 const TRACKABLE_BACKEND_STATUS = new Set([
-  'pending',
-  'confirmed',
-  'picking_up',
+  'waiting_confirmation',
+  'pickup',
   'picked_up',
-  'billed',
-  'paid',
-  'processing',
-  'ready',
-  'delivering',
+  'waiting_payment',
+  'washing',
+  'washing_finished',
+  'delivery',
 ]);
 
 function formatDate(value) {
@@ -57,24 +53,25 @@ function buildTimeline(status) {
   const isCancelled = key === 'cancelled';
 
   const steps = [
-    { key: 'pending', label: 'Order dibuat' },
+    { key: 'waiting_confirmation', label: 'Menunggu konfirmasi' },
+    { key: 'pickup', label: 'Dalam penjemputan' },
     { key: 'picked_up', label: 'Pakaian dijemput' },
-    { key: 'processing', label: 'Laundry diproses' },
-    { key: 'delivering', label: 'Dalam pengantaran' },
-    { key: 'delivered', label: 'Selesai' },
+    { key: 'waiting_payment', label: 'Menunggu pembayaran' },
+    { key: 'washing', label: 'Proses pencucian' },
+    { key: 'washing_finished', label: 'Pencucian selesai' },
+    { key: 'delivery', label: 'Dalam pengantaran' },
+    { key: 'completed', label: 'Selesai' },
   ];
 
   const progressRank = {
-    pending: 1,
-    confirmed: 1,
-    picking_up: 2,
-    picked_up: 2,
-    billed: 3,
-    paid: 3,
-    processing: 3,
-    ready: 3,
-    delivering: 4,
-    delivered: 5,
+    waiting_confirmation: 1,
+    pickup: 2,
+    picked_up: 3,
+    waiting_payment: 4,
+    washing: 5,
+    washing_finished: 6,
+    delivery: 7,
+    completed: 8,
     cancelled: 0,
   };
 
@@ -82,7 +79,7 @@ function buildTimeline(status) {
 
   if (isCancelled) {
     return [
-      { label: 'Order dibuat', done: true, time: '' },
+      { label: 'Menunggu konfirmasi', done: true, time: '' },
       { label: 'Dibatalkan', done: true, time: '' },
     ];
   }
@@ -98,9 +95,14 @@ export default function OrderHistory() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [cancellingId, setCancellingId] = useState(null);
+  const [cancelCandidate, setCancelCandidate] = useState(null);
   const [filter, setFilter] = useState('All');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
+
+  const isPendingOrder = (order) => String(order?.backend_status || '').toLowerCase() === 'waiting_confirmation';
 
   useEffect(() => {
     let mounted = true;
@@ -135,7 +137,7 @@ export default function OrderHistory() {
             pickupDate: formatDate(row?.pickup_date),
             pickupTime: formatTime(row?.pickup_time),
             paymentMethod: (row?.payment_method || '').toUpperCase(),
-            payment_status: row?.status === 'delivered' ? 'paid' : 'unpaid',
+            payment_status: row?.status === 'completed' ? 'paid' : 'unpaid',
             verified: actualWeight > 0,
             estimated_price: unitPrice * estimatedWeight,
             deliveryAddress: row?.pickup_address ?? '-',
@@ -160,6 +162,49 @@ export default function OrderHistory() {
       mounted = false;
     };
   }, []);
+
+  const handleCancelOrder = (order) => {
+    if (!order || !isPendingOrder(order) || !order.rawId) return;
+
+    setCancelCandidate(order);
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!cancelCandidate?.rawId || !isPendingOrder(cancelCandidate)) {
+      setCancelCandidate(null);
+      return;
+    }
+
+    const order = cancelCandidate;
+
+    try {
+      setActionError('');
+      setCancellingId(order.rawId);
+      await api.patch(`/orders/${order.rawId}/cancel`);
+
+      setOrders((prev) => prev.map((item) => {
+        if (item.rawId !== order.rawId) return item;
+        return {
+          ...item,
+          status: 'Cancelled',
+          backend_status: 'cancelled',
+          timeline: buildTimeline('cancelled'),
+        };
+      }));
+
+      if (selectedOrder?.rawId === order.rawId) {
+        setSelectedOrder(null);
+      }
+      if (trackingOrder?.rawId === order.rawId) {
+        setTrackingOrder(null);
+      }
+      setCancelCandidate(null);
+    } catch (err) {
+      setActionError(err?.response?.data?.message || 'Gagal membatalkan pesanan');
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (filter === 'All') return orders;
@@ -187,6 +232,12 @@ export default function OrderHistory() {
         {error && (
           <div className="history-error">
             {error}
+          </div>
+        )}
+
+        {actionError && (
+          <div className="history-error">
+            {actionError}
           </div>
         )}
 
@@ -241,6 +292,15 @@ export default function OrderHistory() {
                     >
                       <Truck size={14} /> Track Order
                     </button>
+                    {isPendingOrder(order) && (
+                      <button
+                        className="cancel-btn"
+                        onClick={() => handleCancelOrder(order)}
+                        disabled={cancellingId === order.rawId}
+                      >
+                        {cancellingId === order.rawId ? 'Membatalkan...' : 'Cancel Order'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -248,12 +308,51 @@ export default function OrderHistory() {
           </div>
         )}
 
-        <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+        <OrderDetailModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onCancel={() => handleCancelOrder(selectedOrder)}
+          canCancel={isPendingOrder(selectedOrder)}
+          cancelling={cancellingId === selectedOrder?.rawId}
+        />
         {trackingOrder && (
           <TrackOrderModal
             order={trackingOrder}
             onClose={() => setTrackingOrder(null)}
+            onCancel={() => handleCancelOrder(trackingOrder)}
+            canCancel={isPendingOrder(trackingOrder)}
+            cancelling={cancellingId === trackingOrder?.rawId}
           />
+        )}
+
+        {cancelCandidate && (
+          <div className="cancel-modal-overlay" onClick={() => setCancelCandidate(null)}>
+            <div className="cancel-modal" onClick={(e) => e.stopPropagation()}>
+              <h3 className="cancel-modal-title">Batalkan Pesanan?</h3>
+              <p className="cancel-modal-text">
+                Pesanan <strong>{cancelCandidate.order_number || cancelCandidate.id}</strong> belum dikonfirmasi.
+                Jika dibatalkan, pesanan tidak bisa dilanjutkan.
+              </p>
+              <div className="cancel-modal-actions">
+                <button
+                  type="button"
+                  className="cancel-modal-btn cancel-modal-btn-secondary"
+                  onClick={() => setCancelCandidate(null)}
+                  disabled={cancellingId === cancelCandidate.rawId}
+                >
+                  Kembali
+                </button>
+                <button
+                  type="button"
+                  className="cancel-modal-btn cancel-modal-btn-danger"
+                  onClick={confirmCancelOrder}
+                  disabled={cancellingId === cancelCandidate.rawId}
+                >
+                  {cancellingId === cancelCandidate.rawId ? 'Membatalkan...' : 'Ya, Batalkan'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </Layout>

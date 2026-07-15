@@ -20,10 +20,31 @@ export default function QRScannerModal({ orders = [], onStatusChange, onClose })
   const [newStatus, setNewStatus]     = useState('');
   const [saved, setSaved]             = useState(false);
   const [cameraError, setCameraError] = useState('');
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState(null);
 
   const scannerRef  = useRef(null);
   const fileInputRef = useRef(null);
   const SCANNER_ID  = 'qr-camera-region';
+
+  // Ambil daftar kamera yang tersedia
+  const getAvailableCameras = async () => {
+    try {
+      console.log('[QRScanner] Getting available cameras...');
+      const devices = await Html5Qrcode.getCameras();
+      console.log('[QRScanner] Cameras found:', devices);
+      if (devices && devices.length > 0) {
+        setAvailableCameras(devices);
+        setSelectedCameraId(devices[0].id); // Pilih kamera pertama sebagai default
+        console.log('[QRScanner] Set camera state:', devices.length, 'cameras');
+      } else {
+        console.warn('[QRScanner] No cameras found');
+      }
+    } catch (err) {
+      console.error('[QRScanner] Error getting cameras:', err);
+      setCameraError('Tidak dapat mengakses kamera. Pastikan izin kamera diaktifkan.');
+    }
+  };
 
   // Cari order berdasarkan QR value
   const findOrder = (qrValue) => {
@@ -52,10 +73,21 @@ export default function QRScannerModal({ orders = [], onStatusChange, onClose })
     // Tunggu DOM render dulu
     setTimeout(async () => {
       try {
+        // Ambil daftar kamera jika belum ada
+        if (availableCameras.length === 0) {
+          await getAvailableCameras();
+        }
+
         const scanner = new Html5Qrcode(SCANNER_ID);
         scannerRef.current = scanner;
+        
+        // Gunakan kamera yang dipilih atau fallback ke facingMode
+        const config = selectedCameraId 
+          ? { deviceId: { exact: selectedCameraId } }
+          : { facingMode: 'environment' };
+
         await scanner.start(
-          { facingMode: 'environment' },
+          config,
           { fps: 10, qrbox: { width: 220, height: 220 } },
           (decodedText) => findOrder(decodedText),
           () => {} // ignore errors per frame
@@ -139,6 +171,13 @@ export default function QRScannerModal({ orders = [], onStatusChange, onClose })
 
   // Cleanup kamera saat close
   useEffect(() => {
+    // Ambil daftar kamera yang tersedia saat modal dibuka
+    const initCameras = async () => {
+      console.log('[QRScanner] Modal opened, initializing cameras...');
+      await getAvailableCameras();
+    };
+    initCameras();
+    
     return () => { stopCamera(); };
   }, []);
 
@@ -211,6 +250,27 @@ export default function QRScannerModal({ orders = [], onStatusChange, onClose })
                   {cameraError && (
                     <div className="qr-error">
                       <X size={14} /> {cameraError}
+                    </div>
+                  )}
+
+                  {/* Camera Selector */}
+                  {availableCameras.length >= 1 && scanMode === 'idle' && (
+                    <div className="qr-camera-selector">
+                      <label>
+                        {availableCameras.length > 1 ? 'Pilih Kamera:' : 'Kamera yang Digunakan:'}
+                      </label>
+                      <select
+                        value={selectedCameraId || ''}
+                        onChange={(e) => setSelectedCameraId(e.target.value)}
+                        className="qr-camera-select"
+                        disabled={availableCameras.length === 1}
+                      >
+                        {availableCameras.map((camera) => (
+                          <option key={camera.id} value={camera.id}>
+                            {camera.label || `Kamera ${availableCameras.indexOf(camera) + 1}`}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   )}
 

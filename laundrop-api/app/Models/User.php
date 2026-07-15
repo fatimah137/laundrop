@@ -93,11 +93,6 @@ class User extends Authenticatable
         return $this->hasMany(OrderStatusLog::class, 'changed_by');
     }
 
-    public function ocrScans()
-    {
-        return $this->hasMany(OcrScan::class, 'scanned_by');
-    }
-
     public function notifications()
     {
         return $this->hasMany(OrderNotification::class, 'user_id');

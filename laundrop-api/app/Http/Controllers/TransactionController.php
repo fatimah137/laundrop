@@ -32,7 +32,6 @@ class TransactionController extends Controller
         $transaction = Transaction::with([
             'order.customer:id,name,phone',
             'order.service:id,name',
-            'ocrScan',
             'payment',
         ])->findOrFail($id);
 

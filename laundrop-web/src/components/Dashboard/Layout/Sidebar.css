@@ -23,13 +23,13 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: #0ea5e9;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar-logo-name {

@@ -15,12 +15,14 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         $status = fake()->randomElement([
-            Order::STATUS_PENDING,
-            Order::STATUS_CONFIRMED,
-            Order::STATUS_PICKING_UP,
+            Order::STATUS_WAITING_CONFIRMATION,
+            Order::STATUS_PICKUP,
             Order::STATUS_PICKED_UP,
-            Order::STATUS_PROCESSING,
-            Order::STATUS_PAID,
+            Order::STATUS_WAITING_PAYMENT,
+            Order::STATUS_WASHING,
+            Order::STATUS_WASHING_FINISHED,
+            Order::STATUS_DELIVERY,
+            Order::STATUS_COMPLETED,
         ]);
 
         return [
@@ -44,13 +46,13 @@ class OrderFactory extends Factory
 
     public function pending(): static
     {
-        return $this->state(['status' => Order::STATUS_PENDING]);
+        return $this->state(['status' => Order::STATUS_WAITING_CONFIRMATION]);
     }
 
     public function confirmed(): static
     {
         return $this->state([
-            'status'      => Order::STATUS_CONFIRMED,
+            'status'      => Order::STATUS_PICKUP,
             'employee_id' => User::factory()->employee(),
         ]);
     }
@@ -58,7 +60,7 @@ class OrderFactory extends Factory
     public function paid(): static
     {
         return $this->state([
-            'status'        => Order::STATUS_PAID,
+            'status'        => Order::STATUS_WASHING,
             'employee_id'   => User::factory()->employee(),
             'actual_weight' => fake()->randomFloat(1, 1, 15),
         ]);

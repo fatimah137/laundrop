@@ -40,18 +40,16 @@ return new class extends Migration
             // berat real setelah ditimbang karyawan
 
             $table->enum('status', [
-                'pending',
-                'confirmed',
-                'picking_up',
+                'waiting_confirmation',
+                'pickup',
                 'picked_up',
-                'billed',
-                'paid',
-                'processing',
-                'ready',
-                'delivering',
-                'delivered',
+                'waiting_payment',
+                'washing',
+                'washing_finished',
+                'delivery',
+                'completed',
                 'cancelled',
-            ])->default('pending');
+            ])->default('waiting_confirmation');
 
             $table->enum('payment_method', ['cash', 'qris']);
 

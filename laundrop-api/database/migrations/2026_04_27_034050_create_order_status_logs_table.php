@@ -21,31 +21,27 @@ return new class extends Migration
             // user yang mengubah status (karyawan/owner)
 
             $table->enum('status_before', [
-                'pending',
-                'confirmed',
-                'picking_up',
+                'waiting_confirmation',
+                'pickup',
                 'picked_up',
-                'billed',
-                'paid',
-                'processing',
-                'ready',
-                'delivering',
-                'delivered',
+                'waiting_payment',
+                'washing',
+                'washing_finished',
+                'delivery',
+                'completed',
                 'cancelled',
             ])->nullable();
             // nullable untuk status awal (pertama kali dibuat)
 
             $table->enum('status_after', [
-                'pending',
-                'confirmed',
-                'picking_up',
+                'waiting_confirmation',
+                'pickup',
                 'picked_up',
-                'billed',
-                'paid',
-                'processing',
-                'ready',
-                'delivering',
-                'delivered',
+                'waiting_payment',
+                'washing',
+                'washing_finished',
+                'delivery',
+                'completed',
                 'cancelled',
             ]);
 

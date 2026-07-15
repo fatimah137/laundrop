@@ -8,7 +8,6 @@ class Transaction extends Model
 {
     protected $fillable = [
         'order_id',
-        'ocr_scan_id',
         'actual_weight',
         'price_per_kg',
         'subtotal',
@@ -34,11 +33,6 @@ class Transaction extends Model
     public function order()
     {
         return $this->belongsTo(Order::class, 'order_id');
-    }
-
-    public function ocrScan()
-    {
-        return $this->belongsTo(OcrScan::class, 'ocr_scan_id');
     }
 
     public function payment()

@@ -14,7 +14,7 @@ class UpdateOrderStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status'      => 'required|in:confirmed,picking_up,picked_up,processing,ready,delivering,delivered',
+            'status'      => 'required|in:waiting_confirmation,pickup,picked_up,waiting_payment,washing,washing_finished,delivery,completed,cancelled',
             'notes'       => 'nullable|string|max:500',
             'photo'       => 'nullable|image|max:5120', // 5MB
         ];

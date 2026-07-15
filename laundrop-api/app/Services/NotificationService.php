@@ -32,16 +32,14 @@ class NotificationService
     public function sendStatusUpdate(Order $order, string $newStatus): void
     {
         $messages = [
-            Order::STATUS_CONFIRMED  => ['Pesanan Dikonfirmasi',      "Pesanan #{$order->order_number} sudah dikonfirmasi, karyawan akan segera menjemput."],
-            Order::STATUS_PICKING_UP => ['Karyawan Menuju Lokasi',    "Karyawan sedang dalam perjalanan menjemput pakaian Anda."],
-            Order::STATUS_PICKED_UP  => ['Pakaian Berhasil Diambil',  "Pakaian Anda sudah diambil dan sedang menuju laundry."],
-            Order::STATUS_BILLED     => ['Tagihan Tersedia',          "Tagihan untuk pesanan #{$order->order_number} sudah tersedia. Silakan lakukan pembayaran."],
-            Order::STATUS_PAID       => ['Pembayaran Berhasil',       "Pembayaran pesanan #{$order->order_number} telah dikonfirmasi."],
-            Order::STATUS_PROCESSING => ['Pakaian Sedang Dicuci',     "Pakaian Anda sedang dalam proses pencucian."],
-            Order::STATUS_READY      => ['Pakaian Siap Diantar',      "Pakaian Anda sudah selesai dicuci dan siap diantar."],
-            Order::STATUS_DELIVERING => ['Pakaian Sedang Diantarkan', "Pakaian Anda sedang dalam perjalanan ke alamat Anda."],
-            Order::STATUS_DELIVERED  => ['Pakaian Telah Tiba',        "Pakaian Anda sudah sampai. Terima kasih!"],
-            Order::STATUS_CANCELLED  => ['Pesanan Dibatalkan',        "Pesanan #{$order->order_number} telah dibatalkan."],
+            Order::STATUS_PICKUP               => ['Dalam Penjemputan',       'Kurir sedang menuju lokasi penjemputan Anda.'],
+            Order::STATUS_PICKED_UP            => ['Pakaian Diambil',         'Kurir telah mengambil pakaian Anda.'],
+            Order::STATUS_WAITING_PAYMENT      => ['Menunggu Pembayaran',     "Tagihan pesanan #{$order->order_number} sudah tersedia."],
+            Order::STATUS_WASHING              => ['Proses Pencucian',        'Pakaian Anda sedang dicuci.'],
+            Order::STATUS_WASHING_FINISHED     => ['Pencucian Selesai',       'Pakaian Anda sudah selesai dicuci dan siap dikirim.'],
+            Order::STATUS_DELIVERY             => ['Dalam Pengantaran',       'Kurir sedang mengantarkan pakaian Anda.'],
+            Order::STATUS_COMPLETED            => ['Pesanan Selesai',         'Pesanan Anda telah selesai. Terima kasih!'],
+            Order::STATUS_CANCELLED            => ['Pesanan Dibatalkan',      "Pesanan #{$order->order_number} telah dibatalkan."],
         ];
 
         if (! isset($messages[$newStatus])) {

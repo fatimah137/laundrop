@@ -262,6 +262,40 @@
 }
 .qr-select:focus { border-color: #2563eb; }
 
+/* Camera Selector */
+.qr-camera-selector {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 8px;
+}
+
+.qr-camera-selector label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0369a1;
+  margin-bottom: 8px;
+}
+
+.qr-camera-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid #bae6fd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #0f172a;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.qr-camera-select:focus { 
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
 /* Actions */
 .qr-actions {
   display: flex;
