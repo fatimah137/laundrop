@@ -18,6 +18,15 @@ class ServiceController extends Controller
         return $this->success($services);
     }
 
+    // ─── GET /api/admin/services ─────────────────────────────────────────────
+    // Owner: semua layanan termasuk inactive
+
+    public function adminIndex(): JsonResponse
+    {
+        $services = Service::latest()->get();
+        return $this->success($services);
+    }
+
     // ─── POST /api/services ───────────────────────────────────────────────────
     // Owner only
 

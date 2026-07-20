@@ -40,6 +40,31 @@
   margin: 0;
 }
 
+.odm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.odm-btn-print {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f0f9ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #0ea5e9;
+  transition: all 0.2s;
+}
+
+.odm-btn-print:hover {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
 .odm-close {
   width: 32px;
   height: 32px;

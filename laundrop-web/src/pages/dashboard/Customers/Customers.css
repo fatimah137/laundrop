@@ -419,6 +419,46 @@
 
 .cust-input::placeholder { color: var(--dash-text-muted, #94a3b8); }
 
+.cust-hidden-autofill {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  border: 0;
+  padding: 0;
+}
+
+.cust-password-wrap {
+  position: relative;
+}
+
+.cust-password-input {
+  padding-right: 42px;
+}
+
+.cust-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.cust-password-toggle:hover {
+  background: #f8fafc;
+  color: #64748b;
+}
+
 .cust-textarea {
   resize: vertical;
   line-height: 1.5;

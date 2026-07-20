@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Edit2, Check, X, Lock, Eye, EyeOff, Camera, LogOut } from 'lucide-react';
-import { useApp } from '../../../context/AppContext';
+import { User, Mail, Phone, Edit2, Check, X, Lock, Eye, EyeOff, Camera, LogOut } from 'lucide-react';
 import { useRole } from '../../../context/RoleContext';
+import api from '../../../services/api';
 import Layout from '../../../components/Customer/Layout';
 import './Profile.css';
 
@@ -40,21 +40,30 @@ function PasswordField({ label, value, onChange, show, onToggle }) {
 }
 
 export default function Profile() {
-  const { profile, updateProfile } = useApp();
-  const { logout }                 = useRole();
+  const { currentUser, logout, updateCurrentUser } = useRole();
   const navigate                   = useNavigate();
 
   const [editing, setEditing]               = useState(false);
-  const [form, setForm]                     = useState(profile || {});
+  const [form, setForm]                     = useState({});
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [photo, setPhoto]                   = useState(() => localStorage.getItem('laundrop_photo') || null);
   const [photoPreview, setPhotoPreview]     = useState(null);
   const photoInputRef                       = useRef(null);
+  const [saveError, setSaveError]           = useState('');
+  const [saveSuccess, setSaveSuccess]       = useState(false);
 
   const [pwForm, setPwForm]       = useState({ old: '', new: '', confirm: '' });
   const [pwShow, setPwShow]       = useState({ old: false, new: false, confirm: false });
   const [pwError, setPwError]     = useState('');
   const [pwSuccess, setPwSuccess] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      name: currentUser?.name || '',
+      email: currentUser?.email || '',
+      phone: currentUser?.phone || '',
+    });
+  }, [currentUser]);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -70,26 +79,69 @@ export default function Profile() {
     setPhotoPreview(null);
   };
 
-  const handleSave = () => {
-    if (updateProfile) updateProfile(form);
-    setEditing(false);
+  const handleSave = async () => {
+    setSaveError('');
+    setSaveSuccess(false);
+
+    try {
+      const payload = {
+        name: form.name || '',
+        email: form.email || '',
+        phone: form.phone || '',
+      };
+
+      const response = await api.patch('/auth/me', payload);
+      const updatedUser = response?.data?.data || payload;
+      updateCurrentUser?.(updatedUser);
+      setForm((prev) => ({ ...prev, ...updatedUser }));
+      setEditing(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    } catch (err) {
+      setSaveError(err?.response?.data?.message || 'Gagal menyimpan profil.');
+    }
   };
 
   const handleCancel = () => {
-    setForm(profile || {});
+    setForm({
+      name: currentUser?.name || '',
+      email: currentUser?.email || '',
+      phone: currentUser?.phone || '',
+    });
+    setSaveError('');
     setEditing(false);
   };
 
-  const handlePasswordUpdate = (e) => {
+  const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     setPwError('');
     setPwSuccess(false);
-    if (!pwForm.old)                        { setPwError('Please enter your current password.'); return; }
-    if (pwForm.new.length < 6)              { setPwError('New password must be at least 6 characters.'); return; }
-    if (pwForm.new !== pwForm.confirm)      { setPwError('Passwords do not match.'); return; }
-    setPwSuccess(true);
-    setPwForm({ old: '', new: '', confirm: '' });
-    setTimeout(() => setPwSuccess(false), 3000);
+
+    if (!pwForm.old)                   { setPwError('Masukkan password saat ini.'); return; }
+    if (!pwForm.new)                   { setPwError('Masukkan password baru.'); return; }
+    if (pwForm.new !== pwForm.confirm) { setPwError('Konfirmasi password tidak cocok.'); return; }
+
+    try {
+      await api.patch('/auth/change-password', {
+        current_password: pwForm.old,
+        new_password: pwForm.new,
+        new_password_confirmation: pwForm.confirm,
+      });
+
+      setPwSuccess(true);
+      setPwForm({ old: '', new: '', confirm: '' });
+      setTimeout(() => setPwSuccess(false), 3000);
+    } catch (err) {
+      const errors = err?.response?.data?.errors;
+      if (errors && typeof errors === 'object') {
+        const firstKey = Object.keys(errors)[0];
+        const firstMsg = Array.isArray(errors[firstKey]) ? errors[firstKey][0] : errors[firstKey];
+        setPwError(firstMsg || 'Gagal mengubah password.');
+        return;
+      }
+
+      setPwError(err?.response?.data?.message || 'Gagal mengubah password.');
+    }
   };
 
   const handleLogoutConfirm = () => {
@@ -98,8 +150,8 @@ export default function Profile() {
     navigate('/login');
   };
 
-  const initials = profile?.name
-    ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = currentUser?.name
+    ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
 
   return (
@@ -134,8 +186,8 @@ export default function Profile() {
               </div>
             )}
 
-            <h2 className="avatar-name">{profile?.name || 'User'}</h2>
-            <p className="avatar-email">{profile?.email || ''}</p>
+            <h2 className="avatar-name">{currentUser?.name || 'User'}</h2>
+            <p className="avatar-email">{currentUser?.email || ''}</p>
           </div>
 
           {/* Personal Info */}
@@ -158,13 +210,19 @@ export default function Profile() {
               )}
             </div>
 
+            {saveError && (
+              <div className="pw-error" style={{ marginBottom: 12 }}><X size={14} /> {saveError}</div>
+            )}
+            {saveSuccess && (
+              <div className="pw-success" style={{ marginBottom: 12 }}><Check size={14} /> Profil berhasil diperbarui!</div>
+            )}
+
             {editing ? (
               <div className="edit-form">
                 {[
                   { key: 'name',    label: 'Full Name', icon: User,   type: 'text'  },
                   { key: 'email',   label: 'Email',     icon: Mail,   type: 'email' },
                   { key: 'phone',   label: 'Phone',     icon: Phone,  type: 'text'  },
-                  { key: 'address', label: 'Address',   icon: MapPin, type: 'text'  },
                 ].map(({ key, label, icon: Icon, type }) => (
                   <div key={key} className="form-group">
                     <label className="form-label">
@@ -181,10 +239,9 @@ export default function Profile() {
               </div>
             ) : (
               <div className="fields-list">
-                <Field icon={User}   label="Full Name" value={profile?.name}    />
-                <Field icon={Mail}   label="Email"     value={profile?.email}   />
-                <Field icon={Phone}  label="Phone"     value={profile?.phone}   />
-                <Field icon={MapPin} label="Address"   value={profile?.address} />
+                <Field icon={User}   label="Full Name" value={currentUser?.name}    />
+                <Field icon={Mail}   label="Email"     value={currentUser?.email}   />
+                <Field icon={Phone}  label="Phone"     value={currentUser?.phone}   />
               </div>
             )}
           </div>
@@ -221,7 +278,7 @@ export default function Profile() {
                 <div className="pw-error"><X size={14} /> {pwError}</div>
               )}
               {pwSuccess && (
-                <div className="pw-success"><Check size={14} /> Password updated successfully!</div>
+                <div className="pw-success"><Check size={14} /> Password berhasil diperbarui!</div>
               )}
 
               <button type="submit" className="btn-update-password">

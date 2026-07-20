@@ -18,6 +18,8 @@ class OrderResource extends JsonResource
             'pickup_lng'       => $this->pickup_lng,
             'pickup_date'      => $this->pickup_date?->format('Y-m-d'),
             'pickup_time'      => $this->pickup_time,
+            'delivery_distance_km' => $this->delivery_distance_km,
+            'delivery_fee'     => $this->delivery_fee,
             'estimated_weight' => $this->estimated_weight,
             'actual_weight'    => $this->actual_weight,
             'notes'            => $this->notes,

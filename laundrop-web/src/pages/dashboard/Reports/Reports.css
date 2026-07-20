@@ -50,6 +50,55 @@
   border-color: #0ea5e9;
 }
 
+.reports-date-input {
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  min-width: 140px;
+}
+
+.reports-date-input:focus {
+  border-color: #0ea5e9;
+}
+
+.reports-apply-btn,
+.reports-clear-btn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.reports-apply-btn {
+  border: 1px solid #bae6fd;
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+.reports-apply-btn:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
+.reports-clear-btn {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+}
+
+.reports-clear-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
 .reports-export-btn {
   display: flex;
   align-items: center;

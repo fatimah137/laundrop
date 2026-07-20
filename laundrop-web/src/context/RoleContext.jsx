@@ -6,7 +6,7 @@ const RoleContext = createContext(null);
 const ROLE_PERMISSIONS = {
   owner: {
     label: 'Owner',
-    menus: ['dashboard', 'orders', 'customers', 'employees', 'services', 'payment', 'reports', 'notifications', 'profile', 'settings', 'tracking'],
+    menus: ['dashboard', 'orders', 'customers', 'employees', 'services', 'payment', 'reports', 'ml-dashboard', 'notifications', 'profile', 'settings', 'tracking'],
   },
   employee: {
     label: 'Employee',
@@ -100,6 +100,14 @@ export function RoleProvider({ children }) {
 
   const can = (menu) => ROLE_PERMISSIONS[role]?.menus.includes(menu) ?? false;
 
+  const updateCurrentUser = (partialUser) => {
+    setCurrentUser((prev) => {
+      const merged = { ...(prev || {}), ...(partialUser || {}) };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      return merged;
+    });
+  };
+
   return (
     <RoleContext.Provider value={{
       role,
@@ -109,6 +117,7 @@ export function RoleProvider({ children }) {
       loginWithGoogle,
       logout,
       can,
+      updateCurrentUser,
     }}>
       {children}
     </RoleContext.Provider>

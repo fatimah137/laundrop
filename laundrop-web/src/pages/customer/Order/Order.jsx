@@ -27,7 +27,7 @@ const KNOWN_SUBDISTRICTS = [
   "tembalang", "sambirejo", "rowosari", "meteseh", "tandang",
 ];
 const LAUNDRY_COORDINATE = { lat: -7.0715116551644055, lng: 110.41728959200246 };
-const DELIVERY_FEE_PER_KM = 3000;
+const DELIVERY_FEE_PER_KM_TIER = 3000;
 const SAVED_ADDRESS_STORAGE_KEY = "laundrop_saved_addresses_v1";
 const MAX_SAVED_ADDRESSES = 8;
 
@@ -61,6 +61,15 @@ const calculateDistanceKm = (fromLat, fromLng, toLat, toLng) => {
     Math.cos(toRad(fromLat)) * Math.cos(toRad(toLat)) * Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return earthRadiusKm * c;
+};
+
+const calculateTieredDeliveryFee = (distanceKm) => {
+  const distance = Number(distanceKm);
+  if (!Number.isFinite(distance) || distance < 0) return 0;
+
+  // Tiered pricing: 0-1 km = 1 tier, >1-2 km = 2 tiers, and so on.
+  const tierCount = Math.max(1, Math.ceil(distance));
+  return tierCount * DELIVERY_FEE_PER_KM_TIER;
 };
 
 const formatDateLabel = (dateStr) => {
@@ -418,7 +427,7 @@ export default function Order() {
       lat,
       lng
     );
-    const extraFee = Math.round(distanceFromLaundryKm * DELIVERY_FEE_PER_KM);
+    const extraFee = calculateTieredDeliveryFee(distanceFromLaundryKm);
 
     setForm((prev) => ({
       ...prev,
@@ -543,8 +552,18 @@ export default function Order() {
     [form.pickupLat, form.pickupLng]
   );
 
-  const estimatedPrice  = selectedService && form.weight
-    ? parseFloat(form.weight) * selectedService.pricePerKg
+  const normalizedWeight = useMemo(() => {
+    const raw = String(form.weight ?? '').trim();
+    if (!raw) return 0;
+
+    const normalized = raw.replace(',', '.');
+    const value = Number(normalized);
+    return Number.isFinite(value) ? value : 0;
+  }, [form.weight]);
+
+  const serviceUnitPrice = Number(selectedService?.pricePerKg || 0);
+  const estimatedPrice = normalizedWeight > 0 && serviceUnitPrice > 0
+    ? normalizedWeight * serviceUnitPrice
     : 0;
   const grandTotal = estimatedPrice + Number(form.extraFee || 0);
 
@@ -631,7 +650,7 @@ export default function Order() {
         pickup_lng: form.pickupLng,
         pickup_date: form.pickupDate,
         pickup_time: form.pickupTime,
-        estimated_weight: Number(form.weight),
+        estimated_weight: normalizedWeight,
         payment_method: String(form.paymentMethod || "").toLowerCase(),
         notes: form.notes || null,
       };
@@ -655,7 +674,7 @@ export default function Order() {
         verified: false,
         estimated_price: estimatedPrice,
         actual_weight: null,
-        weight: Number(form.weight),
+        weight: normalizedWeight,
         clothesCount: form.clothesCount,
         pickupAddress: created.pickup_address || form.pickupAddress,
         deliveryAddress: created.pickup_address || form.pickupAddress,
@@ -857,7 +876,7 @@ export default function Order() {
             )}
             {form.pickupDistrict && form.isServiceAreaValid && (
               <div className="map-area-warning">
-                Area valid untuk pemesanan. Biaya antar-jemput dihitung ${formatRp(DELIVERY_FEE_PER_KM)} per km dari Laundry.
+                Area valid untuk pemesanan.
               </div>
             )}
             {form.pickupDistrict && !form.isServiceAreaValid && (
@@ -954,6 +973,12 @@ export default function Order() {
               ))}
               <hr className="summary-divider" />
               <div className="summary-total-row">
+                <span className="summary-total-label">Harga Layanan</span>
+                <span className="summary-total-price">
+                  {serviceUnitPrice > 0 ? `${formatRp(serviceUnitPrice)}/kg` : '-'}
+                </span>
+              </div>
+              <div className="summary-total-row">
                 <span className="summary-total-label">Estimasi Harga</span>
                 <span className="summary-total-price">
                   {estimatedPrice > 0 ? formatRp(estimatedPrice) : "-"}
@@ -973,7 +998,7 @@ export default function Order() {
               </div>
               {estimatedPrice > 0 && (
                 <p className="summary-calc">
-                  {form.weight} kg × Rp {selectedService?.pricePerKg?.toLocaleString("id-ID")}/kg
+                  {normalizedWeight} kg × Rp {serviceUnitPrice.toLocaleString("id-ID")}/kg
                 </p>
               )}
               <p className="summary-note">

@@ -39,5 +39,9 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
     ],
 
+    'ml' => [
+        'url' => env('ML_SERVICE_URL', 'http://localhost:5000/api'),
+    ],
+
     // config/services.php
 ];

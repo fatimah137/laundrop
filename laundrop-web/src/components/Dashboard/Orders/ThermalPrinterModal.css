@@ -1,0 +1,362 @@
+/* ── Overlay ─────────────────────────────────────────────────────── */
+.thermal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.thermal-dialog {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: thermalModalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes thermalModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Dialog Header ───────────────────────────────────────────────── */
+.thermal-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+  border-radius: 16px 16px 0 0;
+}
+
+.thermal-dialog-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.thermal-btn-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.thermal-btn-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────── */
+.thermal-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 0;
+  gap: 0;
+}
+
+.thermal-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+
+.thermal-tab:hover {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.thermal-tab.active {
+  color: #0ea5e9;
+  border-bottom-color: #0ea5e9;
+  background: #f0f9ff;
+}
+
+/* ── Body ────────────────────────────────────────────────────────── */
+.thermal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Preview Section ────────────────────────────────────────────── */
+.thermal-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.thermal-preview-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.thermal-preview {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  width: 100%;
+  max-width: 220px;
+  margin: 0 auto;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Thermal preview styling */
+.thermal-header {
+  text-align: center;
+  margin-bottom: 12px;
+  border-bottom: 1px dashed #cbd5e1;
+  padding-bottom: 8px;
+}
+
+.thermal-brand {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.thermal-tagline {
+  font-size: 9px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.thermal-order-id {
+  font-size: 11px;
+  font-weight: bold;
+  color: #0ea5e9;
+  margin-bottom: 2px;
+}
+
+.thermal-divider {
+  border: none;
+  border-top: 1px dashed #cbd5e1;
+  margin: 8px 0;
+}
+
+.thermal-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  margin: 3px 0;
+  gap: 8px;
+}
+
+.thermal-row-label {
+  text-align: left;
+  flex: 1;
+  color: #475569;
+}
+
+.thermal-row-value {
+  text-align: right;
+  flex: 0.8;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.thermal-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: bold;
+  border-top: 1px dashed #cbd5e1;
+  border-bottom: 1px dashed #cbd5e1;
+  padding: 6px 0;
+  margin-top: 8px;
+}
+
+.thermal-qr-section {
+  text-align: center;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.thermal-qr-section svg {
+  max-width: 80px;
+  height: auto;
+}
+
+.thermal-qr-label {
+  font-size: 9px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.thermal-footer {
+  text-align: center;
+  font-size: 9px;
+  color: #64748b;
+  margin-top: 10px;
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 6px;
+}
+
+/* ── Action Section ──────────────────────────────────────────────– */
+.thermal-action-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.thermal-btn-print,
+.thermal-btn-scan {
+  padding: 11px 16px;
+  background: #0ea5e9;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.thermal-btn-print:hover:not(:disabled),
+.thermal-btn-scan:hover:not(:disabled) {
+  background: #0284c7;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
+.thermal-btn-print:disabled,
+.thermal-btn-scan:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.thermal-hint {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Status Messages ────────────────────────────────────────────── */
+.thermal-status {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.thermal-status-device_selected {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.thermal-status-error_not_supported,
+.thermal-status-error_no_device,
+.thermal-status-error_permission,
+.thermal-status-error_no_selection,
+.thermal-status-error_print {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.thermal-status-print_sent {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+/* ── Device Section ──────────────────────────────────────────────– */
+.thermal-device-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+}
+
+.thermal-device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.thermal-device-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0369a1;
+  text-transform: uppercase;
+}
+
+.thermal-device-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0ea5e9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────– */
+@media (max-width: 640px) {
+  .thermal-dialog {
+    max-width: 100%;
+  }
+
+  .thermal-preview {
+    max-width: 100%;
+  }
+}

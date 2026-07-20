@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingBag, Users, Sparkles, Wallet,
-  BarChart3, Bell, UserCircle, Settings, UsersRound, LogOut
+  BarChart3, Bell, UserCircle, Settings, UsersRound, LogOut, Brain
 } from 'lucide-react';
 import { useRole } from '../../../context/RoleContext';
 import Logo from '../../../assets/Logo_Laundrop.png';
@@ -17,6 +17,7 @@ const ALL_MENUS = [
   { key: 'services',      path: 'services',      icon: Sparkles,        label: 'Services',      group: 'main' },
   { key: 'payment',       path: 'payment',       icon: Wallet,          label: 'Payment',       group: 'finance' },
   { key: 'reports',       path: 'reports',       icon: BarChart3,       label: 'Reports',       group: 'finance' },
+  { key: 'ml-dashboard',  path: 'ml-dashboard',  icon: Brain,           label: 'Business AI',   group: 'finance' },
   { key: 'notifications', path: 'notifications', icon: Bell,            label: 'Notifications', group: 'system' },
   { key: 'profile',       path: 'profile',       icon: UserCircle,      label: 'Profile',       group: 'system' },
   { key: 'settings',      path: 'settings',      icon: Settings,        label: 'Settings',      group: 'system' },

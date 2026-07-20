@@ -1,8 +1,66 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, Check, CheckCheck, Info, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import Layout from '../../../components/Customer/Layout';
 import api from '../../../services/api';
 import './Notification.css';
+
+const TYPE_ICON = {
+  info: Info,
+  success: CheckCircle2,
+  warning: AlertTriangle,
+  error: XCircle,
+};
+
+const TYPE_COLOR = {
+  info: 'notif-icon-info',
+  success: 'notif-icon-success',
+  warning: 'notif-icon-warning',
+  error: 'notif-icon-error',
+};
+
+const TYPE_ITEM_CLASS = {
+  info: 'notif-item-info',
+  success: 'notif-item-success',
+  warning: 'notif-item-warning',
+  error: 'notif-item-error',
+};
+
+function resolveNotificationType(notification) {
+  const rawType = String(notification?.type || '').toLowerCase();
+  const title = String(notification?.title || '').toLowerCase();
+  const body = String(notification?.body || '').toLowerCase();
+  const text = `${title} ${body}`;
+
+  if (rawType === 'payment_due') return 'warning';
+  if (rawType === 'payment_success') return 'success';
+  if (rawType === 'order_cancelled') return 'error';
+  if (rawType === 'order_created') return 'info';
+  if (rawType === 'status_updated') {
+    if (text.includes('selesai') || text.includes('siap')) return 'success';
+    if (text.includes('dibatalkan')) return 'error';
+    return 'info';
+  }
+
+  if (rawType === 'order_cancelled' || text.includes('dibatalkan') || text.includes('gagal')) {
+    return 'error';
+  }
+
+  if (rawType === 'payment_due' || text.includes('menunggu pembayaran') || text.includes('pembayaran tertunda')) {
+    return 'warning';
+  }
+
+  if (
+    rawType === 'payment_success' ||
+    text.includes('selesai') ||
+    text.includes('berhasil') ||
+    text.includes('lunas') ||
+    text.includes('siap dikirim')
+  ) {
+    return 'success';
+  }
+
+  return 'info';
+}
 
 function formatRelativeTime(value) {
   if (!value) return '-';
@@ -31,6 +89,8 @@ export default function Notifications() {
     () => notifications.map((n) => ({
       id: n.id,
       read: Boolean(n.is_read),
+      type: resolveNotificationType(n),
+      title: n.title || 'Notifikasi',
       message: n.body || n.title || 'Notifikasi baru',
       time: formatRelativeTime(n.created_at),
     })),
@@ -106,15 +166,15 @@ export default function Notifications() {
 
         {/* Header */}
         <div className="notif-header">
-          <div>
-            <h1 className="notif-title">Notifications</h1>
-            {unreadCount > 0 && (
-              <p className="notif-subtitle">{unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}</p>
-            )}
+          <div className="notif-header-text">
+            <h1 className="notif-title">Notifikasi</h1>
+            <p className="notif-subtitle">
+              {unreadCount > 0 ? `${unreadCount} belum dibaca` : 'Semua sudah dibaca'}
+            </p>
           </div>
           {unreadCount > 0 && (
-            <button className="mark-all-btn" onClick={markAllRead}>
-              <CheckCheck size={16} /> Mark all read
+            <button className="notif-btn-markall" onClick={markAllRead}>
+              <CheckCheck size={16} /> Tandai semua
             </button>
           )}
         </div>
@@ -129,27 +189,48 @@ export default function Notifications() {
             <div className="notif-empty-icon">
               <Bell size={32} />
             </div>
-            <p className="notif-empty-title">No notifications</p>
-            <p className="notif-empty-sub">You're all caught up!</p>
+            <p className="notif-empty-title">Tidak ada notifikasi</p>
+            <p className="notif-empty-sub">Semua notifikasi akan muncul di sini.</p>
           </div>
         ) : (
           <div className="notif-list">
-            {mappedNotifications.map(n => (
-              <div
-                key={n.id}
-                onClick={() => markNotificationRead(n.id)}
-                className={`notif-item ${n.read ? 'read' : 'unread'}`}
-              >
-                <div className={`notif-icon ${n.read ? 'read' : 'unread'}`}>
-                  <Bell size={20} />
+            {mappedNotifications.map(n => {
+              const Icon = TYPE_ICON[n.type] || Bell;
+              const color = TYPE_COLOR[n.type] || 'notif-icon-info';
+              const itemTypeClass = TYPE_ITEM_CLASS[n.type] || 'notif-item-info';
+
+              return (
+                <div
+                  key={n.id}
+                  className={`notif-item ${itemTypeClass}${!n.read ? ' unread' : ''}`}
+                >
+                  <div className={`notif-icon-box ${color}`}>
+                    <Icon size={20} />
+                  </div>
+                  <div className="notif-content">
+                    <div className="notif-title-row">
+                      <span className="notif-item-title">
+                        {n.title}
+                        {!n.read && <span className="notif-dot" />}
+                      </span>
+                      <div className="notif-actions">
+                        {!n.read && (
+                          <button
+                            className="notif-action-btn"
+                            onClick={() => markNotificationRead(n.id)}
+                            title="Tandai sudah dibaca"
+                          >
+                            <Check size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className={`notif-message ${n.read ? 'read' : 'unread'}`}>{n.message}</p>
+                    <p className="notif-time">{n.time}</p>
+                  </div>
                 </div>
-                <div className="notif-content">
-                  <p className={`notif-message ${n.read ? 'read' : 'unread'}`}>{n.message}</p>
-                  <p className="notif-time">{n.time}</p>
-                </div>
-                {!n.read && <div className="notif-dot" />}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

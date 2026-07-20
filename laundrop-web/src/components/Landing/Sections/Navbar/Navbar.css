@@ -56,11 +56,37 @@
 }
 
 .navbar-cta {
-  margin-left: auto;
   flex-shrink: 0;
   width: auto;
   padding: 10px 20px;
   white-space: nowrap;
+}
+
+.navbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-login {
+  flex-shrink: 0;
+  width: auto;
+  padding: 10px 20px;
+  white-space: nowrap;
+  border-radius: 10px;
+  border: 1px solid #dbeafe;
+  background: #fff;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar-login:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
 }
 
 .hamburger {
@@ -106,5 +132,9 @@
 
   .navbar-cta {
     width: auto;
+  }
+
+  .navbar-login {
+    display: none;
   }
 }

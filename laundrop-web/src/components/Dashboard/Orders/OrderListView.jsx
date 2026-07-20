@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Eye, MoreHorizontal, Edit, Trash2, ChevronRight } from 'lucide-react';
 import StatusBadge from '../../shared/StatusBadge';
-import OrderDetailModal from './OrderDetailModal';
 import './OrderListView.css';
 
 const STATUS_FLOW = [
@@ -38,7 +37,6 @@ export default function OrderListView({
   onConfirmCashPayment,
 }) {
   const [openMenuId, setOpenMenuId]       = useState(null);
-  const [viewingDetail, setViewingDetail] = useState(null);
 
   const getEmployee = (id) => employees.find(e => e.id === id || e.name === id);
 
@@ -137,7 +135,6 @@ export default function OrderListView({
                           <button
                             className="olv-dropdown-item"
                             onClick={() => {
-                              setViewingDetail(order);
                               onViewDetail?.(order);
                               setOpenMenuId(null);
                             }}
@@ -176,13 +173,6 @@ export default function OrderListView({
           );
         })}
       </div>
-
-      {viewingDetail && (
-        <OrderDetailModal
-          order={viewingDetail}
-          onClose={() => setViewingDetail(null)}
-        />
-      )}
     </>
   );
 }

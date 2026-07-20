@@ -34,6 +34,8 @@ class Order extends Model
         'pickup_lng',
         'pickup_date',
         'pickup_time',
+        'delivery_distance_km',
+        'delivery_fee',
         'estimated_weight',
         'actual_weight',
         'status',
@@ -48,6 +50,8 @@ class Order extends Model
     protected $casts = [
         'pickup_date'      => 'date',
         'pickup_time'      => 'datetime',
+        'delivery_distance_km' => 'decimal:2',
+        'delivery_fee'     => 'integer',
         'estimated_weight' => 'decimal:2',
         'actual_weight'    => 'decimal:2',
         'pickup_lat'       => 'decimal:8',

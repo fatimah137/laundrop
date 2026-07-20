@@ -1,34 +1,50 @@
-import { useState, useMemo } from 'react';
-import { Plus, Search, Eye, Pencil, Trash2, Phone, Mail, MapPin, X, ShoppingBag } from 'lucide-react';
-import { MOCK_CUSTOMERS, MOCK_ORDERS } from '../../../data/mockData';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Search, Eye, EyeOff, Pencil, Trash2, Phone, Mail, MapPin, X, ShoppingBag } from 'lucide-react';
+import api from '../../../services/api';
 import StatusBadge from '../../../components/shared/StatusBadge';
 import EmptyState from '../../../components/shared/EmptyState';
 import Toast from '../../../components/shared/Toast';
 import './Customers.css';
 
-const generateCustomers = () =>
-  MOCK_CUSTOMERS.map(c => ({
-    ...c,
-    total_orders: MOCK_ORDERS.filter(o => o.customer_name === c.name).length,
-    total_spent: MOCK_ORDERS
-      .filter(o => o.customer_name === c.name)
-      .reduce((s, o) => s + (o.total_amount || 0), 0),
-  }));
-
-const getCustomerOrders = (name) =>
-  MOCK_ORDERS.filter(o => o.customer_name === name).slice(0, 3);
-
-const BLANK = { name: '', phone: '', email: '', address: '', notes: '' };
+const BLANK = { name: '', phone: '', email: '', address: '', notes: '', password: '' };
 
 export default function Customers() {
-  const [customers, setCustomers] = useState(generateCustomers);
+  const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState(BLANK);
+  const [showPassword, setShowPassword] = useState(false);
   const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchCustomers = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get('/admin/customers', { params: { per_page: 100, search } });
+        if (!mounted) return;
+        const rows = response?.data?.data?.data ?? response?.data?.data ?? [];
+        setCustomers(Array.isArray(rows) ? rows : []);
+      } catch (error) {
+        if (!mounted) return;
+        setCustomers([]);
+        showToast(error?.response?.data?.message || 'Gagal memuat data customer', 'danger');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchCustomers();
+
+    return () => {
+      mounted = false;
+    };
+  }, [search]);
 
   const filtered = useMemo(() =>
     customers.filter(c =>
@@ -44,38 +60,61 @@ export default function Customers() {
 
   const openForm = (item = null) => {
     setEditing(item);
+    setShowPassword(false);
     setForm(item ? {
       name: item.name,
       phone: item.phone || '',
       email: item.email || '',
       address: item.address || '',
       notes: item.notes || '',
+      password: '',
     } : BLANK);
     setFormOpen(true);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    if (editing) {
-      setCustomers(prev =>
-        prev.map(c => c.id === editing.id ? { ...c, ...form } : c)
-      );
-      showToast('Customer berhasil diupdate!');
-    } else {
-      setCustomers(prev => [
-        ...prev,
-        { ...form, id: Date.now(), total_orders: 0, total_spent: 0 }
-      ]);
-      showToast('Customer baru berhasil ditambahkan!');
+    try {
+      const payload = {
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        notes: form.notes,
+      };
+
+      if (editing) {
+        await api.put(`/admin/customers/${editing.id}`, payload);
+        showToast('Customer berhasil diupdate!');
+      } else {
+        await api.post('/admin/customers', {
+          ...payload,
+          password: form.password || undefined,
+        });
+        showToast('Customer baru berhasil ditambahkan!');
+      }
+
+      setFormOpen(false);
+      setEditing(null);
+      const response = await api.get('/admin/customers', { params: { per_page: 100, search } });
+      const rows = response?.data?.data?.data ?? response?.data?.data ?? [];
+      setCustomers(Array.isArray(rows) ? rows : []);
+    } catch (error) {
+      showToast(error?.response?.data?.message || 'Gagal menyimpan customer', 'danger');
     }
-    setFormOpen(false);
-    setEditing(null);
   };
 
-  const handleDelete = (id) => {
-    setCustomers(prev => prev.filter(c => c.id !== id));
-    setDeleting(null);
-    showToast('Customer berhasil dihapus!', 'danger');
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/admin/customers/${id}`);
+      setDeleting(null);
+      showToast('Customer berhasil dihapus!', 'danger');
+      const response = await api.get('/admin/customers', { params: { per_page: 100, search } });
+      const rows = response?.data?.data?.data ?? response?.data?.data ?? [];
+      setCustomers(Array.isArray(rows) ? rows : []);
+    } catch (error) {
+      showToast(error?.response?.data?.message || 'Gagal menghapus customer', 'danger');
+    }
   };
 
   const set = (field, value) =>
@@ -118,7 +157,11 @@ export default function Customers() {
       </div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <EmptyState
+          title="Loading customers..."
+        />
+      ) : filtered.length === 0 ? (
         <EmptyState
           title="No customers yet"
           description="Add your first customer to get started."
@@ -206,13 +249,13 @@ export default function Customers() {
                 {viewing.address && <div className="cust-detail-contact-row"><MapPin size={15} /> {viewing.address}</div>}
               </div>
 
-              {getCustomerOrders(viewing.name).length > 0 && (
+              {(viewing.recent_orders || []).length > 0 && (
                 <div className="cust-detail-orders">
                   <div className="cust-detail-orders-header">
                     <ShoppingBag size={14} />
                     <span>ORDER HISTORY</span>
                   </div>
-                  {getCustomerOrders(viewing.name).map(o => (
+                  {(viewing.recent_orders || []).map(o => (
                     <div key={o.id} className="cust-detail-order-item">
                       <div>
                         <p className="cust-detail-order-id">{o.order_number}</p>
@@ -248,11 +291,15 @@ export default function Customers() {
               </button>
             </div>
 
-            <form className="cust-form" onSubmit={handleSave}>
+            <form className="cust-form" onSubmit={handleSave} autoComplete="off">
+              <input type="text" name="fake_username" autoComplete="username" className="cust-hidden-autofill" tabIndex={-1} aria-hidden="true" />
+              <input type="password" name="fake_password" autoComplete="current-password" className="cust-hidden-autofill" tabIndex={-1} aria-hidden="true" />
               <div className="cust-field">
                 <label className="cust-label">Name *</label>
                 <input
                   className="cust-input"
+                  name="customer_name"
+                  autoComplete="off"
                   value={form.name}
                   onChange={e => set('name', e.target.value)}
                   required
@@ -264,6 +311,8 @@ export default function Customers() {
                   <label className="cust-label">Phone *</label>
                   <input
                     className="cust-input"
+                    name="customer_phone"
+                    autoComplete="off"
                     value={form.phone}
                     onChange={e => set('phone', e.target.value)}
                     required
@@ -271,11 +320,15 @@ export default function Customers() {
                 </div>
 
                 <div className="cust-field">
-                  <label className="cust-label">Email</label>
+                  <label className="cust-label">Email *</label>
                   <input
                     className="cust-input"
+                    name="customer_email"
+                    type="email"
+                    autoComplete="off"
                     value={form.email}
                     onChange={e => set('email', e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -289,10 +342,37 @@ export default function Customers() {
                 />
               </div>
 
+              {!editing && (
+                <div className="cust-field">
+                  <label className="cust-label">Password *</label>
+                  <div className="cust-password-wrap">
+                    <input
+                      className="cust-input cust-password-input"
+                      type={showPassword ? 'text' : 'password'}
+                      name="customer_password"
+                      autoComplete="new-password"
+                      value={form.password}
+                      onChange={e => set('password', e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="cust-password-toggle"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="cust-field">
                 <label className="cust-label">Notes</label>
                 <textarea
                   className="cust-input cust-textarea"
+                  name="customer_notes"
+                  autoComplete="off"
                   value={form.notes}
                   onChange={e => set('notes', e.target.value)}
                 />
@@ -303,7 +383,7 @@ export default function Customers() {
                   Cancel
                 </button>
                 <button type="submit" className="cust-btn-save">
-                  {editing ? 'Save' : 'Create'}
+                    {editing ? 'Save' : 'Create'}
                 </button>
               </div>
             </form>

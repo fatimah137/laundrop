@@ -96,6 +96,62 @@ class AuthController extends Controller
         return $this->success($this->formatUser($request->user()));
     }
 
+    // ─── PATCH /api/auth/me ───────────────────────────────────────────────────
+
+    public function updateMe(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'name'  => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'phone' => 'sometimes|nullable|string|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), 422);
+        }
+
+        $payload = $validator->validated();
+        if (! empty($payload)) {
+            $user->update($payload);
+            $user->refresh();
+        }
+
+        return $this->success($this->formatUser($user), 'Profil berhasil diperbarui');
+    }
+
+    // ─── PATCH /api/auth/change-password ─────────────────────────────────────
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password' => ['required', 'string', PasswordRule::min(8)->numbers()->symbols()],
+            'new_password_confirmation' => 'required|same:new_password',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), 422);
+        }
+
+        $user = $request->user();
+
+        if (! Hash::check((string) $request->current_password, (string) $user->password_hash)) {
+            return $this->error('Password saat ini salah', 422);
+        }
+
+        if (Hash::check((string) $request->new_password, (string) $user->password_hash)) {
+            return $this->error('Password baru harus berbeda dari password saat ini', 422);
+        }
+
+        $user->update([
+            'password_hash' => Hash::make((string) $request->new_password),
+        ]);
+
+        return $this->success(null, 'Password berhasil diperbarui');
+    }
+
     // ─── POST /api/auth/forgot-password ──────────────────────────────────────
 
     public function forgotPassword(Request $request): JsonResponse

@@ -9,6 +9,7 @@ import OrderFormDialog from '../../../components/Dashboard/Orders/OrderFormDialo
 import OrderDetailModal from '../../../components/Dashboard/Orders/OrderDetailModal';
 import QRScannerModal from '../../../components/Dashboard/Orders/QRScannerModal';
 import InvoiceModal from '../../../components/Dashboard/Orders/InvoiceModal';
+import ThermalPrinterModal from '../../../components/Dashboard/Orders/ThermalPrinterModal';
 import Pagination from '../../../components/shared/Pagination';
 import Toast from '../../../components/shared/Toast';
 import api from '../../../services/api';
@@ -37,6 +38,7 @@ export default function Orders() {
   const [detailOrder, setDetailOrder]   = useState(null);
   const [deleteOrder, setDeleteOrder]   = useState(null);
   const [invoiceOrder, setInvoiceOrder] = useState(null); // ✅
+  const [thermalPrinterOrder, setThermalPrinterOrder] = useState(null); // ✅ Thermal printer
   const [toast, setToast]               = useState(null);
   const [showQR, setShowQR]             = useState(false);
   const [billingOrder, setBillingOrder] = useState(null);
@@ -88,6 +90,9 @@ export default function Orders() {
       customer_name: row?.customer?.name || '-',
       customer_phone: row?.customer?.phone || '-',
       address: row?.pickup_address || '-',
+      customer_address: row?.pickup_address || '-',
+      latitude: row?.pickup_lat != null ? Number(row.pickup_lat) : null,
+      longitude: row?.pickup_lng != null ? Number(row.pickup_lng) : null,
       assigned_employee: row?.employee?.name || '-',
       service_name: row?.service?.name || '-',
       weight: effectiveWeight,
@@ -96,6 +101,8 @@ export default function Orders() {
       total_amount: backendTotal > 0 ? backendTotal : (effectiveWeight * unitPrice),
       notes: row?.notes || '',
       pickup_date: row?.pickup_date || null,
+      pickup_time: row?.pickup_time || null,
+      created_at: row?.created_at || null,
       raw: row,
     };
   };
@@ -158,6 +165,7 @@ export default function Orders() {
         id: Date.now(),
         order_number: `LD-${Date.now().toString().slice(-8)}`,
         pickup_date: new Date().toISOString().split('T')[0],
+        created_at: new Date().toISOString(),
       };
       setOrders(prev => [newOrder, ...prev]);
       showToast('Pesanan baru berhasil ditambahkan!');
@@ -427,6 +435,7 @@ export default function Orders() {
         <OrderDetailModal
           order={detailOrder}
           onClose={() => setDetailOrder(null)}
+          onPrint={(order) => setThermalPrinterOrder(order)}
         />
       )}
 
@@ -478,6 +487,14 @@ export default function Orders() {
         <InvoiceModal
           order={invoiceOrder}
           onClose={() => setInvoiceOrder(null)}
+        />
+      )}
+
+      {/* ✅ Thermal Printer Modal */}
+      {thermalPrinterOrder && (
+        <ThermalPrinterModal
+          order={thermalPrinterOrder}
+          onClose={() => setThermalPrinterOrder(null)}
         />
       )}
 

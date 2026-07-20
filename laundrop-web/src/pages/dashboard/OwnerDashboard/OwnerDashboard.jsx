@@ -17,8 +17,8 @@ export default function OwnerDashboard() {
   const [error, setError] = useState(null);
 
   const welcomeSubtitle = {
-    owner:    'Masuk sebagai Owner — Berikut ringkasan hari ini.',
-    employee: 'Masuk sebagai Employee — Berikut tugas hari ini.',
+    owner:    'Berikut ringkasan hari ini.',
+    employee: 'Berikut tugas hari ini.',
   };
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function OwnerDashboard() {
     return (
       <div>
         <h1>Selamat Datang, {currentUser?.name} 👋</h1>
-        <p>{welcomeSubtitle[role]}</p>
+        <p style={{ marginBottom: '24px' }}>{welcomeSubtitle[role]}</p>
         <p style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
           Memuat data...
         </p>
@@ -57,7 +57,7 @@ export default function OwnerDashboard() {
     return (
       <div>
         <h1>Selamat Datang, {currentUser?.name} 👋</h1>
-        <p>{welcomeSubtitle[role]}</p>
+        <p style={{ marginBottom: '24px' }}>{welcomeSubtitle[role]}</p>
         <p style={{ textAlign: 'center', marginTop: '40px', color: '#d32f2f' }}>
           {error}
         </p>
@@ -84,7 +84,7 @@ export default function OwnerDashboard() {
     return (
       <div>
         <h1>Selamat Datang, {currentUser?.name} 👋</h1>
-        <p>{welcomeSubtitle[role]}</p>
+        <p style={{ marginBottom: '24px' }}>{welcomeSubtitle[role]}</p>
         <p style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
           Tidak ada data tersedia
         </p>
@@ -95,7 +95,7 @@ export default function OwnerDashboard() {
   return (
     <div>
       <h1>Selamat Datang, {currentUser?.name} 👋</h1>
-      <p>{welcomeSubtitle[role]}</p>
+      <p style={{ marginBottom: '24px' }}>{welcomeSubtitle[role]}</p>
 
       <div className="stats-grid">
         <StatCard

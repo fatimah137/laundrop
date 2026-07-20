@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
 {
+    private const LAUNDRY_LAT = -7.0715116551644055;
+    private const LAUNDRY_LNG = 110.41728959200246;
+    private const DELIVERY_FEE_PER_KM_TIER = 3000;
+
     public function __construct(private NotificationService $notifService) {}
 
     // ─── GET /api/orders ──────────────────────────────────────────────────────
@@ -70,10 +74,19 @@ class OrderController extends Controller
             return $this->error($validator->errors(), 422);
         }
 
+        $deliveryDistanceKm = $this->calculateDistanceKm(
+            self::LAUNDRY_LAT,
+            self::LAUNDRY_LNG,
+            (float) $request->pickup_lat,
+            (float) $request->pickup_lng,
+        );
+
         $order = Order::create([
             ...$validator->validated(),
             'customer_id' => $request->user()->id,
             'status'      => Order::STATUS_WAITING_CONFIRMATION,
+            'delivery_distance_km' => $deliveryDistanceKm,
+            'delivery_fee' => $this->calculateTieredDeliveryFee($deliveryDistanceKm),
         ]);
 
         $order->load(['service:id,name,price_per_kg']);
@@ -202,6 +215,8 @@ class OrderController extends Controller
         $actualWeight = (float) $request->actual_weight;
         $pricePerKg = (float) ($order->service->price_per_kg ?? 0);
         $subtotal = Transaction::calculateSubtotal($actualWeight, $pricePerKg);
+        $deliveryFee = (int) ($order->delivery_fee ?? 0);
+        $totalAmount = round($subtotal + $deliveryFee, 2);
 
         $transaction = Transaction::updateOrCreate(
             ['order_id' => $order->id],
@@ -209,7 +224,7 @@ class OrderController extends Controller
                 'actual_weight' => $actualWeight,
                 'price_per_kg'  => $pricePerKg,
                 'subtotal'      => $subtotal,
-                'total_amount'  => $subtotal,
+                'total_amount'  => $totalAmount,
             ]
         );
 
@@ -300,6 +315,29 @@ class OrderController extends Controller
         $this->notifService->sendStatusUpdate($order->fresh(), Order::STATUS_COMPLETED);
 
         return $this->success($order->fresh(['transaction.payment']), 'Pembayaran cash dikonfirmasi dan pesanan selesai');
+    }
+
+    private function calculateDistanceKm(float $fromLat, float $fromLng, float $toLat, float $toLng): float
+    {
+        $earthRadiusKm = 6371;
+        $dLat = deg2rad($toLat - $fromLat);
+        $dLng = deg2rad($toLng - $fromLng);
+
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($fromLat)) * cos(deg2rad($toLat)) * sin($dLng / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return round($earthRadiusKm * $c, 2);
+    }
+
+    private function calculateTieredDeliveryFee(float $distanceKm): int
+    {
+        if ($distanceKm < 0) {
+            return 0;
+        }
+
+        $tierCount = max(1, (int) ceil($distanceKm));
+        return $tierCount * self::DELIVERY_FEE_PER_KM_TIER;
     }
 
     // ─── PATCH /api/orders/{id}/cancel ───────────────────────────────────────

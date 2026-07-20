@@ -2,13 +2,17 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanySettingController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderNotificationController;
 use App\Http\Controllers\OrderStatusLogController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\MLController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +41,8 @@ Route::post('payments/webhook', [PaymentController::class, 'webhook']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('auth/me',   [AuthController::class, 'me']);
+    Route::patch('auth/me', [AuthController::class, 'updateMe']);
+    Route::patch('auth/change-password', [AuthController::class, 'changePassword']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
 
     // Dashboard stats
@@ -92,13 +98,45 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:owner')->prefix('admin')->group(function () {
 
+        // Customer management
+        Route::get('customers', [CustomerController::class, 'index']);
+        Route::post('customers', [CustomerController::class, 'store']);
+        Route::get('customers/{id}', [CustomerController::class, 'show']);
+        Route::put('customers/{id}', [CustomerController::class, 'update']);
+        Route::delete('customers/{id}', [CustomerController::class, 'destroy']);
+
+        // Employee management
+        Route::get('employees', [EmployeeController::class, 'index']);
+        Route::post('employees', [EmployeeController::class, 'store']);
+        Route::get('employees/{id}', [EmployeeController::class, 'show']);
+        Route::put('employees/{id}', [EmployeeController::class, 'update']);
+        Route::delete('employees/{id}', [EmployeeController::class, 'destroy']);
+
         // Company settings
         Route::put('company', [CompanySettingController::class, 'update']);
 
         // Services management
+        Route::get('services',      [ServiceController::class, 'adminIndex']);
         Route::post('services',        [ServiceController::class, 'store']);
         Route::put('services/{id}',    [ServiceController::class, 'update']);
         Route::delete('services/{id}', [ServiceController::class, 'destroy']);
+
+        // Payments management
+        Route::get('payments', [PaymentController::class, 'adminIndex']);
+        Route::patch('payments/{transactionId}/mark-paid', [PaymentController::class, 'markPaid']);
+
+        // Reports
+        Route::get('reports', [ReportController::class, 'overview']);
+        Route::get('reports/export', [ReportController::class, 'export']);
+
+        // Machine Learning — prediksi & rekomendasi bisnis
+        Route::prefix('ml')->group(function () {
+            Route::get('predict/revenue',  [MLController::class, 'predictRevenue']);
+            Route::get('predict/demand',   [MLController::class, 'predictDemand']);
+            Route::get('predict/churn',    [MLController::class, 'predictChurn']);
+            Route::get('recommendations',  [MLController::class, 'getRecommendations']);
+            Route::get('models/status',    [MLController::class, 'modelsStatus']);
+        });
 
         // Assign employee ke order
         Route::patch('orders/{id}/assign', [OrderController::class, 'assign']);

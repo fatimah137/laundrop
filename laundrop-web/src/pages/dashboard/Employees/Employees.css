@@ -114,6 +114,36 @@
 
 .emp-search-clear:hover { background: #e2e8f0; }
 
+.emp-password-wrap {
+  position: relative;
+}
+
+.emp-password-input {
+  padding-right: 42px;
+}
+
+.emp-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.emp-password-toggle:hover {
+  background: #f8fafc;
+  color: #64748b;
+}
+
 /* ── Grid ────────────────────────────────────────────────────────── */
 .emp-grid {
   display: grid;

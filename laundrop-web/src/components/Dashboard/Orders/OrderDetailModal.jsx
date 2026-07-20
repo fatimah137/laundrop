@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
 import StatusBadge from '../../shared/StatusBadge';
 import './OrderDetailModal.css';
 
@@ -9,7 +9,7 @@ const STEP_LABELS  = {
   siap: 'Siap', delivery: 'Delivery', selesai: 'Selesai',
 };
 
-export default function OrderDetailModal({ order, onClose }) {
+export default function OrderDetailModal({ order, onClose, onPrint }) {
   // ✅ guard harus SEBELUM createPortal, bukan di dalam
   if (!order) return null;
 
@@ -41,7 +41,14 @@ export default function OrderDetailModal({ order, onClose }) {
         {/* Header */}
         <div className="odm-header">
           <h2 className="odm-title">Detail Order</h2>
-          <button className="odm-close" onClick={onClose}><X size={18} /></button>
+          <div className="odm-header-actions">
+            {onPrint && (
+              <button className="odm-btn-print" onClick={() => onPrint(order)} title="Cetak Struk">
+                <Printer size={18} />
+              </button>
+            )}
+            <button className="odm-close" onClick={onClose}><X size={18} /></button>
+          </div>
         </div>
 
         <div className="odm-body">

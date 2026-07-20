@@ -24,6 +24,10 @@ export default function Navbar() {
     navigate("/login")
   }
 
+  const handleLoginClick = () => {
+    navigate('/login')
+  }
+
   return (
     <>
       <nav className="navbar">
@@ -49,12 +53,21 @@ export default function Navbar() {
             <li><a href="#faq">FAQ</a></li>
           </ul>
 
-          <button
-            onClick={handleOrderClick}
-            className="btn-primary navbar-cta"
-          >
-            Pesan Sekarang
-          </button>
+          <div className="navbar-actions">
+            <button
+              onClick={handleLoginClick}
+              className="navbar-login"
+            >
+              Login
+            </button>
+
+            <button
+              onClick={handleOrderClick}
+              className="btn-primary navbar-cta"
+            >
+              Pesan Sekarang
+            </button>
+          </div>
 
         </div>
       </nav>

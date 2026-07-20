@@ -1,86 +1,134 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit, Trash2, MoreHorizontal, UserCog, X, Phone, Mail, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, MoreHorizontal, UserCog, X, Phone, Mail, Search, Shield, Eye, EyeOff } from 'lucide-react';
 import { useRole } from '../../../context/RoleContext';
-import { MOCK_EMPLOYEES } from '../../../data/mockData';
+import api from '../../../services/api';
 import Pagination from '../../../components/shared/Pagination';
 import Toast from '../../../components/shared/Toast';
+import EmptyState from '../../../components/shared/EmptyState';
 import './Employees.css';
 
-const ROLE_LABELS  = { owner: 'Owner', employee: 'Karyawan' };
-const ROLE_OPTIONS = ['owner', 'employee'];
-const BLANK        = { name: '', phone: '', email: '', role: 'employee', is_active: true };
+const ROLE_LABELS = { owner: 'Owner', employee: 'Karyawan' };
+const ROLE_OPTIONS = ['employee', 'owner'];
+const BLANK = { name: '', phone: '', email: '', password: '', role: 'employee', is_active: true };
 const ITEMS_PER_PAGE = 9;
 
 export default function Employees() {
   const { role } = useRole();
 
-  const [employees, setEmployees]   = useState(MOCK_EMPLOYEES);
-  const [search, setSearch]         = useState('');
-  const [page, setPage]             = useState(1);
-  const [showForm, setShowForm]     = useState(false);
-  const [editItem, setEditItem]     = useState(null);
-  const [form, setForm]             = useState(BLANK);
+  const [employees, setEmployees] = useState([]);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [form, setForm] = useState(BLANK);
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [deleting, setDeleting]     = useState(null);
-  const [toast, setToast]           = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const filtered = useMemo(() => {
-    setPage(1);
-    return employees.filter(e =>
-      !search || [e.name, e.phone, e.email]
-        .some(v => (v || '').toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [employees, search]);
+  const loadEmployees = async (searchValue = search) => {
+    setLoading(true);
+    try {
+      const response = await api.get('/admin/employees', {
+        params: { per_page: 100, search: searchValue },
+      });
+      const rows = response?.data?.data?.data ?? response?.data?.data ?? [];
+      setEmployees(Array.isArray(rows) ? rows : []);
+    } catch (error) {
+      setEmployees([]);
+      showToast(error?.response?.data?.message || 'Gagal memuat data karyawan', 'danger');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated  = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  useEffect(() => {
+    loadEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadEmployees(search);
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const filtered = useMemo(() => employees, [employees]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const openForm = (item = null) => {
     setEditItem(item);
+    setShowPassword(false);
     setForm(item ? {
-      name:      item.name,
-      phone:     item.phone     || '',
-      email:     item.email     || '',
-      role:      item.role      || 'employee',
+      name: item.name,
+      phone: item.phone || '',
+      email: item.email || '',
+      password: '',
+      role: item.role || 'employee',
       is_active: item.is_active !== false,
     } : BLANK);
     setShowForm(true);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    if (editItem) {
-      setEmployees(prev => prev.map(emp =>
-        emp.id === editItem.id ? { ...emp, ...form } : emp
-      ));
-      showToast('Karyawan berhasil diupdate!');
-    } else {
-      setEmployees(prev => [
-        ...prev,
-        { ...form, id: Date.now(), joined: new Date().toISOString().split('T')[0] }
-      ]);
-      showToast('Karyawan baru berhasil ditambahkan!');
+
+    try {
+      const payload = {
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        role: form.role,
+        is_active: form.is_active,
+      };
+
+      if (editItem) {
+        if (form.password) {
+          payload.password = form.password;
+        }
+        await api.put(`/admin/employees/${editItem.id}`, payload);
+        showToast('Karyawan berhasil diupdate!');
+      } else {
+        await api.post('/admin/employees', {
+          ...payload,
+          password: form.password,
+        });
+        showToast('Karyawan baru berhasil ditambahkan!');
+      }
+
+      setShowForm(false);
+      setEditItem(null);
+      await loadEmployees(search);
+    } catch (error) {
+      showToast(error?.response?.data?.message || 'Gagal menyimpan karyawan', 'danger');
     }
-    setShowForm(false);
-    setEditItem(null);
   };
 
-  const handleDelete = (id) => {
-    setEmployees(prev => prev.filter(emp => emp.id !== id));
-    setDeleting(null);
-    showToast('Karyawan berhasil dihapus!', 'danger');
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/admin/employees/${id}`);
+      setDeleting(null);
+      showToast('Karyawan berhasil dihapus!', 'danger');
+      await loadEmployees(search);
+    } catch (error) {
+      showToast(error?.response?.data?.message || 'Gagal menghapus karyawan', 'danger');
+    }
   };
 
-  const set      = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
   const initials = (name) => name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
 
-  // Restricted untuk non-owner
   if (role !== 'owner') {
     return (
       <div className="emp-restricted">
@@ -93,10 +141,8 @@ export default function Employees() {
 
   return (
     <div className="emp-page">
-
       <Toast toast={toast} onClose={() => setToast(null)} />
 
-      {/* Header */}
       <div className="emp-header">
         <div>
           <h1 className="emp-title">Employee Management</h1>
@@ -107,14 +153,16 @@ export default function Employees() {
         </button>
       </div>
 
-      {/* Search */}
       <div className="emp-search-wrap">
         <Search size={15} className="emp-search-icon" />
         <input
           className="emp-search-input"
           placeholder="Cari nama, email, atau no. HP..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => {
+            setPage(1);
+            setSearch(e.target.value);
+          }}
         />
         {search && (
           <button className="emp-search-clear" onClick={() => setSearch('')}>
@@ -123,13 +171,19 @@ export default function Employees() {
         )}
       </div>
 
-      {/* Grid */}
-      {filtered.length === 0 ? (
-        <div className="emp-empty">
-          <UserCog size={40} className="emp-empty-icon" />
-          <p className="emp-empty-title">Tidak ada karyawan ditemukan</p>
-          <p className="emp-empty-sub">Coba ubah kata kunci pencarian</p>
-        </div>
+      {loading ? (
+        <EmptyState title="Loading employees..." />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={UserCog}
+          title="Tidak ada karyawan ditemukan"
+          description="Coba ubah kata kunci pencarian"
+          action={
+            <button className="emp-btn-add" onClick={() => openForm()}>
+              <Plus size={16} /> Add Employee
+            </button>
+          }
+        />
       ) : (
         <>
           <div className="emp-grid">
@@ -168,13 +222,17 @@ export default function Employees() {
                           >
                             <Edit size={14} /> Edit
                           </button>
-                          <div className="emp-dropdown-divider" />
-                          <button
-                            className="emp-dropdown-item danger"
-                            onClick={() => { setDeleting(emp); setOpenMenuId(null); }}
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
+                          {emp.role !== 'owner' && (
+                            <>
+                              <div className="emp-dropdown-divider" />
+                              <button
+                                className="emp-dropdown-item danger"
+                                onClick={() => { setDeleting(emp); setOpenMenuId(null); }}
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </>
+                          )}
                         </div>
                       </>
                     )}
@@ -195,7 +253,6 @@ export default function Employees() {
         </>
       )}
 
-      {/* Form Modal */}
       {showForm && createPortal(
         <div className="emp-overlay" onClick={() => setShowForm(false)}>
           <div className="emp-dialog" onClick={e => e.stopPropagation()}>
@@ -205,11 +262,13 @@ export default function Employees() {
                 <X size={18} />
               </button>
             </div>
-            <form className="emp-form" onSubmit={handleSave}>
+            <form className="emp-form" onSubmit={handleSave} autoComplete="off">
               <div className="emp-field">
                 <label className="emp-label">Name *</label>
                 <input
                   className="emp-input"
+                  name="employee_name"
+                  autoComplete="off"
                   value={form.name}
                   onChange={e => set('name', e.target.value)}
                   placeholder="Full name"
@@ -218,36 +277,67 @@ export default function Employees() {
               </div>
               <div className="emp-grid-2">
                 <div className="emp-field">
-                  <label className="emp-label">Phone</label>
+                  <label className="emp-label">Phone *</label>
                   <input
                     className="emp-input"
+                    name="employee_phone"
+                    autoComplete="off"
                     value={form.phone}
                     onChange={e => set('phone', e.target.value)}
                     placeholder="08xxxxxxxxxx"
+                    required
                   />
                 </div>
                 <div className="emp-field">
-                  <label className="emp-label">Email</label>
+                  <label className="emp-label">Email *</label>
                   <input
                     className="emp-input"
                     type="email"
+                    name="employee_email"
+                    autoComplete="off"
                     value={form.email}
                     onChange={e => set('email', e.target.value)}
                     placeholder="email@example.com"
+                    required
                   />
                 </div>
               </div>
-              <div className="emp-field">
-                <label className="emp-label">Role</label>
-                <select
-                  className="emp-input emp-select"
-                  value={form.role}
-                  onChange={e => set('role', e.target.value)}
-                >
-                  {ROLE_OPTIONS.map(r => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                  ))}
-                </select>
+              <div className="emp-grid-2">
+                <div className="emp-field">
+                  <label className="emp-label">Role</label>
+                  <select
+                    className="emp-input emp-select"
+                    value={form.role}
+                    onChange={e => set('role', e.target.value)}
+                  >
+                    {ROLE_OPTIONS.map(r => (
+                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="emp-field">
+                  <label className="emp-label">Password {editItem ? '(optional)' : '*'}</label>
+                  <div className="emp-password-wrap">
+                    <input
+                      className="emp-input emp-password-input"
+                      type={showPassword ? 'text' : 'password'}
+                      name="employee_password"
+                      autoComplete={editItem ? 'off' : 'new-password'}
+                      value={form.password}
+                      onChange={e => set('password', e.target.value)}
+                      placeholder={editItem ? 'Leave blank to keep current password' : 'Minimum 8 characters'}
+                      required={!editItem}
+                    />
+                    <button
+                      type="button"
+                      className="emp-password-toggle"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
               </div>
               <div className="emp-toggle-row">
                 <label className="emp-label">Active</label>
@@ -273,7 +363,6 @@ export default function Employees() {
         document.body
       )}
 
-      {/* Delete Modal */}
       {deleting && createPortal(
         <div className="emp-overlay" onClick={() => setDeleting(null)}>
           <div className="emp-dialog small" onClick={e => e.stopPropagation()}>
@@ -294,7 +383,6 @@ export default function Employees() {
         </div>,
         document.body
       )}
-
     </div>
   );
 }

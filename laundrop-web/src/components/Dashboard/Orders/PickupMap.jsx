@@ -46,11 +46,22 @@ function FitBounds({ orders }) {
 export default function PickupMap({ orders = [] }) {
   const [selectedId, setSelectedId] = useState(null);
 
+  const hasValidCoords = (order) =>
+    Number.isFinite(order?.latitude) && Number.isFinite(order?.longitude);
+
+  const openGoogleMaps = (order) => {
+    if (!hasValidCoords(order)) return;
+
+    const destination = `${order.latitude},${order.longitude}`;
+    const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=driving`;
+    window.open(gmapsUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const ordersWithCoords = useMemo(() => {
     return orders.map(o => ({
       ...o,
-      _lat: o.latitude  || -6.2088  + (Math.random() - 0.5) * 0.08,
-      _lng: o.longitude || 106.8456 + (Math.random() - 0.5) * 0.08,
+      _lat: Number.isFinite(o.latitude) ? o.latitude : -6.2088 + (Math.random() - 0.5) * 0.08,
+      _lng: Number.isFinite(o.longitude) ? o.longitude : 106.8456 + (Math.random() - 0.5) * 0.08,
     }));
   }, [orders]);
 
@@ -123,8 +134,16 @@ export default function PickupMap({ orders = [] }) {
 
               {selectedId === order.id && (
                 <div className="card-actions-row">
-                  <button className="btn-map-action">
-                    <Navigation size={14} /> Navigasi
+                  <button
+                    className="btn-map-action"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openGoogleMaps(order);
+                    }}
+                    disabled={!hasValidCoords(order)}
+                    title={!hasValidCoords(order) ? 'Koordinat pelanggan belum tersedia' : 'Buka rute di Google Maps'}
+                  >
+                    <Navigation size={14} /> {hasValidCoords(order) ? 'Navigasi' : 'Koordinat kosong'}
                   </button>
                   <button className="btn-map-action primary">
                     <CheckCircle size={14} /> Selesai

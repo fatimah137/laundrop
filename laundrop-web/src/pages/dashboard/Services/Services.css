@@ -111,7 +111,23 @@
 }
 
 .svc-card:hover    { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-.svc-card.inactive { opacity: 0.65; }
+.svc-card.inactive {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.svc-card.inactive .svc-icon-box {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.svc-card.inactive .svc-name,
+.svc-card.inactive .svc-price,
+.svc-card.inactive .svc-unit,
+.svc-card.inactive .svc-duration,
+.svc-card.inactive .svc-desc {
+  color: #64748b;
+}
 
 .svc-card-top {
   display: flex;
@@ -135,12 +151,24 @@
 .svc-badge-inactive {
   font-size: 10px;
   font-weight: 700;
-  background: var(--dash-bg, #f1f5f9);
-  color: var(--dash-text-muted, #94a3b8);
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
   padding: 3px 8px;
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.svc-status-note {
+  margin: 2px 0 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .svc-name {

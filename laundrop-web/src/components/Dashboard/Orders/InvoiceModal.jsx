@@ -8,6 +8,23 @@ import './InvoiceModal.css';
 const formatIDR = (n) =>
   'Rp ' + (n || 0).toLocaleString('id-ID');
 
+const formatPickupSchedule = (pickupDate, pickupTime) => {
+  if (!pickupDate && !pickupTime) return '-';
+
+  const datePart = pickupDate
+    ? new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(new Date(pickupDate))
+    : '';
+
+  const timePart = pickupTime ? String(pickupTime).slice(0, 5) : '';
+
+  if (datePart && timePart) return `${datePart} ${timePart}`;
+  return datePart || timePart || '-';
+};
+
 export default function InvoiceModal({ order, onClose }) {
   const printRef = useRef(null);
 
@@ -50,7 +67,7 @@ export default function InvoiceModal({ order, onClose }) {
   };
 
   const rows = [
-    { label: 'Tanggal',   value: order.pickup_date || '-' },
+    { label: 'Jadwal Jemput', value: formatPickupSchedule(order.pickup_date, order.pickup_time) },
     { label: 'Customer',  value: order.customer_name || '-' },
     { label: 'No. HP',    value: order.customer_phone || '-' },
     { label: 'Alamat',    value: order.address || '-' },
