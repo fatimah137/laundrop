@@ -1,6 +1,3 @@
-// Laravel Trait - Copy ke app/Traits/MLIntegration.php
-// Untuk memudahkan integrasi dengan ML Service
-
 <?php
 
 namespace App\Traits;

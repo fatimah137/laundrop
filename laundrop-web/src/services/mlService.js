@@ -12,9 +12,12 @@ const mlService = {
     }),
 
   /** Churn risk semua customer (atau satu jika ada customerId) */
-  getChurnPrediction: (customerId = null) =>
+  getChurnPrediction: (customerId = null, periodDays = 30) =>
     api.get('/admin/ml/predict/churn', {
-      params: customerId ? { customer_id: customerId } : {},
+      params: {
+        period_days: periodDays,
+        ...(customerId ? { customer_id: customerId } : {}),
+      },
     }),
 
   /** Rekomendasi bisnis berbasis data N hari terakhir */

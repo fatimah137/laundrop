@@ -119,14 +119,14 @@ export default function Login() {
             <span className="auth-logo-text">Laundrop</span>
           </div>
 
-          <h1 className="auth-title">Sign In</h1>
+          <h1 className="auth-title">Login</h1>
 
           <button className="btn-google" type="button" onClick={handleGoogleClick}>
             <GoogleIcon />
-            Sign In using <strong>Google</strong>
+            Login using <strong>Google</strong>
           </button>
 
-          <div className="auth-divider">or sign in with your email</div>
+          <div className="auth-divider">or login with your email</div>
 
           <form onSubmit={handleSubmit}>
             <div className="auth-field">
@@ -175,7 +175,7 @@ export default function Login() {
             </div>
 
             <button type="submit" className="btn-auth-primary">
-              Sign In
+              Login
             </button>
           </form>
 
@@ -183,7 +183,7 @@ export default function Login() {
           <div className="auth-bottom">
             Don't have an account?{" "}
             <button type="button" onClick={() => navigate("/register")}>
-              Sign Up
+              Register
             </button>
           </div>
 

@@ -37,6 +37,10 @@ import Profile from './pages/dashboard/Profile/Profile'
 import Settings from './pages/dashboard/Settings/Settings'
 import Reports from './pages/dashboard/Reports/Reports'
 import MLDashboard from './pages/dashboard/MLDashboard/MLDashboard'
+import MLRevenueDetail from './pages/dashboard/MLDashboard/Details/MLRevenueDetail'
+import MLDemandDetail from './pages/dashboard/MLDashboard/Details/MLDemandDetail'
+import MLChurnDetail from './pages/dashboard/MLDashboard/Details/MLChurnDetail'
+import MLRecommendationDetail from './pages/dashboard/MLDashboard/Details/MLRecommendationDetail'
 
 import './App.css'
 
@@ -113,6 +117,10 @@ function App() {
               <Route path="settings"      element={<Settings />} />
               <Route path="reports"       element={<Reports />} />
               <Route path="ml-dashboard" element={<MLDashboard />} />
+              <Route path="ml-dashboard/revenue" element={<MLRevenueDetail />} />
+              <Route path="ml-dashboard/demand" element={<MLDemandDetail />} />
+              <Route path="ml-dashboard/churn" element={<MLChurnDetail />} />
+              <Route path="ml-dashboard/recommendations" element={<MLRecommendationDetail />} />
             </Route>
 
             {/* ─── Employee ─── */}

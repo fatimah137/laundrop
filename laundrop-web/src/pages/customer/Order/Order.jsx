@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
@@ -19,6 +19,10 @@ const PAYMENT_METHODS = [
   { id: "Cash", label: "Cash (Tunai)", desc: "Bayar saat laundry diantar" },
   { id: "QRIS", label: "QRIS",         desc: "Bayar via QR Code" },
 ];
+const ORDER_TYPES = [
+  { id: "pickup", label: "Pickup", desc: "Karyawan mengambil pakaian ke alamat Anda." },
+  { id: "drop_off", label: "Drop Off", desc: "Pelanggan mengantar pakaian kotor ke outlet." },
+];
 const SERVICE_DISTRICTS = ["tembalang", "banyumanik"];
 const KNOWN_SUBDISTRICTS = [
   // Banyumanik sub-districts
@@ -27,6 +31,8 @@ const KNOWN_SUBDISTRICTS = [
   "tembalang", "sambirejo", "rowosari", "meteseh", "tandang",
 ];
 const LAUNDRY_COORDINATE = { lat: -7.0715116551644055, lng: 110.41728959200246 };
+const OUTLET_ADDRESS = "Outlet Laundrop - Tembalang, Semarang";
+const OUTLET_COORDINATE = LAUNDRY_COORDINATE;
 const DELIVERY_FEE_PER_KM_TIER = 3000;
 const SAVED_ADDRESS_STORAGE_KEY = "laundrop_saved_addresses_v1";
 const MAX_SAVED_ADDRESSES = 8;
@@ -257,9 +263,12 @@ function IconQris() {
 }
 
 const createBlankForm = () => ({
+  orderType:       "pickup",
   service:         "",
   pickupAddress:   "",
   deliveryAddress: "",
+  deliveryLat:     null,
+  deliveryLng:     null,
   pickupDistrict:  "",
   isServiceAreaValid: false,
   distanceFromLaundryKm: 0,
@@ -277,8 +286,10 @@ const createBlankForm = () => ({
 
 export default function Order() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { confirmPayment } = useApp();
   const { currentUser } = useRole();
+  const pickupBackupRef = useRef(null);
 
   const [placedOrder,   setPlacedOrder]   = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
@@ -475,6 +486,11 @@ export default function Order() {
           pickupAddress: payload.display_name,
           pickupDistrict: district,
           isServiceAreaValid,
+          deliveryAddress: prev.orderType === "pickup" ? payload.display_name : prev.deliveryAddress,
+          deliveryLat: prev.orderType === "pickup" ? Number(lat.toFixed(6)) : prev.deliveryLat,
+          deliveryLng: prev.orderType === "pickup" ? Number(lng.toFixed(6)) : prev.deliveryLng,
+          distanceFromLaundryKm,
+          extraFee,
         }));
         setLastGeocodedAddress(payload.display_name);
 
@@ -483,6 +499,45 @@ export default function Order() {
         } else {
           setMapError("");
         }
+      }
+    } catch {
+      setMapError("Titik berhasil dipilih, tapi alamat otomatis gagal diambil. Silakan isi alamat manual.");
+    }
+  };
+
+  const updateDeliveryFromCoordinates = async (lat, lng) => {
+    const distanceFromLaundryKm = calculateDistanceKm(
+      LAUNDRY_COORDINATE.lat,
+      LAUNDRY_COORDINATE.lng,
+      lat,
+      lng
+    );
+
+    setForm((prev) => ({
+      ...prev,
+      deliveryLat: Number(lat.toFixed(6)),
+      deliveryLng: Number(lng.toFixed(6)),
+      distanceFromLaundryKm: Number(distanceFromLaundryKm.toFixed(2)),
+      extraFee: calculateTieredDeliveryFee(distanceFromLaundryKm),
+    }));
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=id`
+      );
+
+      if (!response.ok) {
+        throw new Error("Reverse geocoding OSM gagal");
+      }
+
+      const payload = await response.json();
+      if (payload?.display_name) {
+        setForm((prev) => ({
+          ...prev,
+          deliveryAddress: payload.display_name,
+        }));
+        setLastGeocodedAddress(payload.display_name);
+        setMapError("");
       }
     } catch {
       setMapError("Titik berhasil dipilih, tapi alamat otomatis gagal diambil. Silakan isi alamat manual.");
@@ -526,6 +581,59 @@ export default function Order() {
     }
   };
 
+  const geocodeManualDeliveryAddress = async () => {
+    if (form.orderType !== "drop_off") return;
+
+    const address = String(form.deliveryAddress || "").trim();
+    if (!address) return;
+
+    try {
+      setManualGeocodingLoading(true);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=id&q=${encodeURIComponent(address)}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Geocoding alamat pengantaran gagal");
+      }
+
+      const results = await response.json();
+      if (!Array.isArray(results) || results.length === 0) {
+        setMapError("Alamat pengantaran tidak ditemukan di map. Coba perjelas nama jalan/daerah.");
+        return;
+      }
+
+      const first = results[0];
+      const lat = Number(first.lat);
+      const lng = Number(first.lon);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        setMapError("Alamat pengantaran ditemukan tetapi koordinat tidak valid.");
+        return;
+      }
+
+      const distanceFromLaundryKm = calculateDistanceKm(
+        LAUNDRY_COORDINATE.lat,
+        LAUNDRY_COORDINATE.lng,
+        lat,
+        lng
+      );
+
+      setForm((prev) => ({
+        ...prev,
+        deliveryAddress: address,
+        deliveryLat: Number(lat.toFixed(6)),
+        deliveryLng: Number(lng.toFixed(6)),
+        distanceFromLaundryKm: Number(distanceFromLaundryKm.toFixed(2)),
+        extraFee: calculateTieredDeliveryFee(distanceFromLaundryKm),
+      }));
+      setMapError("");
+    } catch {
+      setMapError("Gagal sinkronkan alamat pengantaran ke map. Silakan coba lagi.");
+    } finally {
+      setManualGeocodingLoading(false);
+    }
+  };
+
   const currentMinutes = (now.getHours() * 60) + now.getMinutes();
   const isPickupToday = form.pickupDate === today;
   const availablePickupTimes = useMemo(
@@ -543,13 +651,29 @@ export default function Order() {
   }, [services, form.service]);
 
   const selectedService = services.find(s => String(s.id) === String(form.service));
-  const canSubmitOrder = Boolean(form.isServiceAreaValid && form.pickupAddress && selectedService);
+  const isPickupOrder = form.orderType === "pickup";
+  const canSubmitOrder = Boolean(
+    selectedService
+    && (
+      isPickupOrder
+        ? (form.isServiceAreaValid && form.pickupAddress && typeof form.pickupLat === "number" && typeof form.pickupLng === "number")
+        : (form.deliveryAddress && typeof form.deliveryLat === "number" && typeof form.deliveryLng === "number")
+    )
+  );
   const pickupPosition = useMemo(
     () => ({
       lat: typeof form.pickupLat === "number" ? form.pickupLat : DEFAULT_MAP_CENTER.lat,
       lng: typeof form.pickupLng === "number" ? form.pickupLng : DEFAULT_MAP_CENTER.lng,
     }),
     [form.pickupLat, form.pickupLng]
+  );
+
+  const deliveryPosition = useMemo(
+    () => ({
+      lat: typeof form.deliveryLat === "number" ? form.deliveryLat : DEFAULT_MAP_CENTER.lat,
+      lng: typeof form.deliveryLng === "number" ? form.deliveryLng : DEFAULT_MAP_CENTER.lng,
+    }),
+    [form.deliveryLat, form.deliveryLng]
   );
 
   const normalizedWeight = useMemo(() => {
@@ -614,10 +738,20 @@ export default function Order() {
   };
 
   useEffect(() => {
-    setForm((prev) => ({
-      ...prev,
-      deliveryAddress: prev.pickupAddress,
-    }));
+    if (form.orderType !== "pickup") return;
+
+    setForm((prev) => {
+      if (prev.deliveryAddress === prev.pickupAddress && prev.deliveryLat === prev.pickupLat && prev.deliveryLng === prev.pickupLng) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        deliveryAddress: prev.pickupAddress,
+        deliveryLat: prev.pickupLat,
+        deliveryLng: prev.pickupLng,
+      };
+    });
   }, [form.pickupAddress]);
 
   useEffect(() => {
@@ -636,6 +770,63 @@ export default function Order() {
     }));
   };
 
+  const setOrderType = (type) => {
+    if (type === form.orderType) return;
+
+    setForm((prev) => {
+      if (type === "drop_off") {
+        pickupBackupRef.current = {
+          pickupAddress: prev.pickupAddress,
+          pickupDistrict: prev.pickupDistrict,
+          pickupLat: prev.pickupLat,
+          pickupLng: prev.pickupLng,
+          isServiceAreaValid: prev.isServiceAreaValid,
+          distanceFromLaundryKm: prev.distanceFromLaundryKm,
+          extraFee: prev.extraFee,
+          deliveryAddress: prev.deliveryAddress,
+          deliveryLat: prev.deliveryLat,
+          deliveryLng: prev.deliveryLng,
+        };
+
+        return {
+          ...prev,
+          orderType: "drop_off",
+          pickupAddress: OUTLET_ADDRESS,
+          pickupLat: OUTLET_COORDINATE.lat,
+          pickupLng: OUTLET_COORDINATE.lng,
+          pickupDistrict: "",
+          isServiceAreaValid: true,
+          distanceFromLaundryKm: 0,
+          extraFee: 0,
+          deliveryAddress: prev.deliveryAddress || prev.pickupAddress || "",
+          deliveryLat: prev.deliveryLat,
+          deliveryLng: prev.deliveryLng,
+        };
+      }
+
+      const backup = pickupBackupRef.current;
+
+      return {
+        ...prev,
+        orderType: "pickup",
+        pickupAddress: backup?.pickupAddress || prev.pickupAddress,
+        pickupDistrict: backup?.pickupDistrict || prev.pickupDistrict,
+        isServiceAreaValid: typeof backup?.isServiceAreaValid === "boolean" ? backup.isServiceAreaValid : prev.isServiceAreaValid,
+        pickupLat: backup?.pickupLat ?? prev.pickupLat,
+        pickupLng: backup?.pickupLng ?? prev.pickupLng,
+        distanceFromLaundryKm: backup?.distanceFromLaundryKm ?? prev.distanceFromLaundryKm,
+        extraFee: backup?.extraFee ?? prev.extraFee,
+        deliveryAddress: backup?.deliveryAddress || backup?.pickupAddress || prev.pickupAddress,
+        deliveryLat: backup?.deliveryLat ?? backup?.pickupLat ?? prev.pickupLat,
+        deliveryLng: backup?.deliveryLng ?? backup?.pickupLng ?? prev.pickupLng,
+      };
+    });
+
+    if (type === "drop_off") {
+      setMapError("");
+    }
+  };
+
   const submitOrder = async () => {
     if (!selectedService) return;
 
@@ -645,11 +836,15 @@ export default function Order() {
     try {
       const payload = {
         service_id: Number(selectedService.id),
+        order_type: form.orderType,
         pickup_address: form.pickupAddress,
         pickup_lat: form.pickupLat,
         pickup_lng: form.pickupLng,
         pickup_date: form.pickupDate,
         pickup_time: form.pickupTime,
+        delivery_address: form.orderType === "drop_off" ? form.deliveryAddress : (form.deliveryAddress || form.pickupAddress),
+        delivery_lat: form.orderType === "drop_off" ? form.deliveryLat : form.pickupLat,
+        delivery_lng: form.orderType === "drop_off" ? form.deliveryLng : form.pickupLng,
         estimated_weight: normalizedWeight,
         payment_method: String(form.paymentMethod || "").toLowerCase(),
         notes: form.notes || null,
@@ -677,7 +872,7 @@ export default function Order() {
         weight: normalizedWeight,
         clothesCount: form.clothesCount,
         pickupAddress: created.pickup_address || form.pickupAddress,
-        deliveryAddress: created.pickup_address || form.pickupAddress,
+        deliveryAddress: created.delivery_address || (form.orderType === "drop_off" ? form.deliveryAddress : form.pickupAddress),
         pickupDate: form.pickupDate,
         pickupTime: form.pickupTime,
         notes: form.notes,
@@ -710,12 +905,12 @@ export default function Order() {
       setServicesError("Layanan belum tersedia. Silakan coba refresh halaman.");
       return;
     }
-    if (!form.isServiceAreaValid) {
+    if (isPickupOrder && !form.isServiceAreaValid) {
       setMapError("Order hanya tersedia untuk area kecamatan Tembalang dan Banyumanik.");
       return;
     }
 
-    if (typeof form.pickupLat !== "number" || typeof form.pickupLng !== "number") {
+    if (isPickupOrder && (typeof form.pickupLat !== "number" || typeof form.pickupLng !== "number")) {
       setMapError("Silakan pilih titik penjemputan di map terlebih dahulu.");
       return;
     }
@@ -744,7 +939,27 @@ export default function Order() {
 
         <form className="order-form" onSubmit={handleSubmit}>
 
-          {/* 1. Pilih Layanan */}
+          {/* 1. Jenis Order */}
+          <div className="order-section">
+            <h3 className="section-title"><IconBag /> Jenis Order</h3>
+            <div className="payment-grid">
+              {ORDER_TYPES.map(({ id, label, desc }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`payment-option ${form.orderType === id ? "selected" : ""}`}
+                  onClick={() => setOrderType(id)}
+                >
+                  <div className="payment-text">
+                    <span className="payment-label">{label}</span>
+                    <span className="payment-desc">{desc}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. Pilih Layanan */}
           <div className="order-section">
             <h3 className="section-title"><IconBag /> Select Service</h3>
             {servicesError && <span className="form-hint">{servicesError}</span>}
@@ -765,147 +980,229 @@ export default function Order() {
             </div>
           </div>
 
-          {/* 2. Jadwal Penjemputan */}
-          <div className="order-section">
-            <h3 className="section-title"><IconCalendar /> Jadwal Penjemputan</h3>
-            <div className="pickup-grid">
-              <div className="form-field">
-                <label className="form-label">Tanggal Penjemputan</label>
-                <select
-                  required
-                  value={form.pickupDate}
-                  onChange={e => set("pickupDate", e.target.value)}
-                  className="form-select"
-                >
-                  <option value={today}>Hari ini ({formatDateLabel(today)})</option>
-                  <option value={tomorrow}>Besok ({formatDateLabel(tomorrow)})</option>
-                </select>
-                <span className="form-hint">Tersedia untuk hari ini dan besok</span>
+          {isPickupOrder ? (
+            <>
+              {/* 3. Jadwal Penjemputan */}
+              <div className="order-section">
+                <h3 className="section-title"><IconCalendar /> Jadwal Penjemputan</h3>
+                <div className="pickup-grid">
+                  <div className="form-field">
+                    <label className="form-label">Tanggal Penjemputan</label>
+                    <select
+                      required
+                      value={form.pickupDate}
+                      onChange={e => set("pickupDate", e.target.value)}
+                      className="form-select"
+                    >
+                      <option value={today}>Hari ini ({formatDateLabel(today)})</option>
+                      <option value={tomorrow}>Besok ({formatDateLabel(tomorrow)})</option>
+                    </select>
+                    <span className="form-hint">Tersedia untuk hari ini dan besok</span>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Waktu Penjemputan</label>
+                    <select
+                      required
+                      value={form.pickupTime}
+                      onChange={e => set("pickupTime", e.target.value)}
+                      className="form-select"
+                      disabled={availablePickupTimes.length === 0}
+                    >
+                      {PICKUP_TIMES.map((t) => {
+                        const disabled = isPickupToday && timeToMinutes(t) <= currentMinutes;
+                        return (
+                          <option key={t} value={t} disabled={disabled}>
+                            {t}{disabled ? " (sudah lewat)" : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <span className="form-hint">
+                      {!isPickupToday
+                        ? "Semua jam tersedia untuk jadwal besok"
+                        : availablePickupTimes.length > 0
+                        ? "Jam yang sudah lewat otomatis tidak bisa dipilih"
+                        : "Semua jam penjemputan hari ini sudah lewat"}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="form-field">
-                <label className="form-label">Waktu Penjemputan</label>
-                <select
-                  required
-                  value={form.pickupTime}
-                  onChange={e => set("pickupTime", e.target.value)}
-                  className="form-select"
-                  disabled={availablePickupTimes.length === 0}
-                >
-                  {PICKUP_TIMES.map((t) => {
-                    const disabled = isPickupToday && timeToMinutes(t) <= currentMinutes;
-                    return (
-                      <option key={t} value={t} disabled={disabled}>
-                        {t}{disabled ? " (sudah lewat)" : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-                <span className="form-hint">
-                  {!isPickupToday
-                    ? "Semua jam tersedia untuk jadwal besok"
-                    : availablePickupTimes.length > 0
-                    ? "Jam yang sudah lewat otomatis tidak bisa dipilih"
-                    : "Semua jam penjemputan hari ini sudah lewat"}
-                </span>
-              </div>
-            </div>
-          </div>
 
-          {/* 3. Alamat */}
-          <div className="order-section">
-            <div className="section-header-with-action">
-              <h3 className="section-title"><IconMapPin /> Alamat</h3>
-              <button
-                type="button"
-                className="btn-pick-saved-address"
-                onClick={openSavedAddressesPage}
-              >
-                Pilih Alamat Tersimpan
-              </button>
-            </div>
-            {mapError && <div className="map-error-box">{mapError}</div>}
-            {loadingServiceArea && (
-              <p className="form-hint" style={{ marginBottom: 8 }}>
-                Memuat boundary kecamatan resmi...
-              </p>
-            )}
-            <div className="map-picker-wrap">
-              <MapContainer
-                center={[pickupPosition.lat, pickupPosition.lng]}
-                zoom={14}
-                className="map-canvas"
-                scrollWheelZoom
-              >
-                <MapCenterUpdater lat={pickupPosition.lat} lng={pickupPosition.lng} />
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker
-                  icon={mapMarkerIcon}
-                  position={[pickupPosition.lat, pickupPosition.lng]}
-                  draggable
-                  eventHandlers={{
-                    dragend: (event) => {
-                      const { lat, lng } = event.target.getLatLng();
-                      updatePickupFromCoordinates(lat, lng);
-                    },
-                  }}
-                />
-                {form.pickupLat && form.pickupLng && (
+              {/* 4. Alamat */}
+              <div className="order-section">
+                <div className="section-header-with-action">
+                  <h3 className="section-title"><IconMapPin /> Alamat</h3>
+                  <button
+                    type="button"
+                    className="btn-pick-saved-address"
+                    onClick={openSavedAddressesPage}
+                  >
+                    Pilih Alamat Tersimpan
+                  </button>
+                </div>
+                {mapError && <div className="map-error-box">{mapError}</div>}
+                {loadingServiceArea && (
+                  <p className="form-hint" style={{ marginBottom: 8 }}>
+                    Memuat boundary kecamatan resmi...
+                  </p>
+                )}
+                <div className="map-picker-wrap">
+                  <MapContainer
+                    center={[pickupPosition.lat, pickupPosition.lng]}
+                    zoom={14}
+                    className="map-canvas"
+                    scrollWheelZoom
+                  >
+                    <MapCenterUpdater lat={pickupPosition.lat} lng={pickupPosition.lng} />
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker
+                      icon={mapMarkerIcon}
+                      position={[pickupPosition.lat, pickupPosition.lng]}
+                      draggable
+                      eventHandlers={{
+                        dragend: (event) => {
+                          const { lat, lng } = event.target.getLatLng();
+                          updatePickupFromCoordinates(lat, lng);
+                        },
+                      }}
+                    />
+                    {form.pickupLat && form.pickupLng && (
+                      <Marker
+                        icon={deliveryMarkerIcon}
+                        position={[form.pickupLat, form.pickupLng]}
+                      />
+                    )}
+                    <MapClickHandler onSelect={updatePickupFromCoordinates} />
+                  </MapContainer>
+                </div>
+                <p className="map-coord-hint">
+                  Koordinat: {form.pickupLat ?? "-"}, {form.pickupLng ?? "-"}
+                </p>
+                {form.pickupDistrict && (
+                  <p className="map-area-hint">
+                    Kecamatan terdeteksi: {form.pickupDistrict}
+                  </p>
+                )}
+                {form.pickupDistrict && (
+                  <p className="map-area-hint">
+                    Jarak dari Laundry: {Number(form.distanceFromLaundryKm || 0).toFixed(2)} km
+                  </p>
+                )}
+                {form.pickupDistrict && form.isServiceAreaValid && (
+                  <div className="map-area-warning">
+                    Area valid untuk pemesanan.
+                  </div>
+                )}
+                {form.pickupDistrict && !form.isServiceAreaValid && (
+                  <div className="map-area-danger">
+                    Area tidak valid. Order hanya bisa dibuat dari kecamatan Tembalang atau Banyumanik.
+                  </div>
+                )}
+                <div className="address-fields">
+                  <div className="form-field">
+                    <label className="form-label">Alamat Penjemputan</label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={form.pickupAddress}
+                      onChange={e => set("pickupAddress", e.target.value)}
+                      onBlur={geocodeManualPickupAddress}
+                      placeholder="Masukkan alamat lengkap penjemputan..."
+                      className="form-textarea"
+                    />
+                    <span className="form-hint">
+                      {manualGeocodingLoading
+                        ? "Mencari lokasi dari alamat manual..."
+                        : "Alamat manual akan sinkron ke map saat field selesai diisi"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="order-section">
+              <div className="section-header-with-action">
+                <h3 className="section-title"><IconMapPin /> Drop Off ke Outlet</h3>
+                <button
+                  type="button"
+                  className="btn-pick-saved-address"
+                  onClick={openSavedAddressesPage}
+                >
+                  Pilih Alamat Tersimpan
+                </button>
+              </div>
+              <div className="map-area-warning" style={{ marginBottom: 14 }}>
+                Anda memilih Drop Off. Silakan antar pakaian kotor langsung ke outlet, lalu isi alamat pengantaran untuk pengiriman setelah selesai dicuci.
+              </div>
+              {mapError && <div className="map-error-box">{mapError}</div>}
+              {loadingServiceArea && (
+                <p className="form-hint" style={{ marginBottom: 8 }}>
+                  Memuat boundary kecamatan resmi...
+                </p>
+              )}
+              <div className="map-picker-wrap">
+                <MapContainer
+                  center={[deliveryPosition.lat, deliveryPosition.lng]}
+                  zoom={14}
+                  className="map-canvas"
+                  scrollWheelZoom
+                >
+                  <MapCenterUpdater lat={deliveryPosition.lat} lng={deliveryPosition.lng} />
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
                   <Marker
                     icon={deliveryMarkerIcon}
-                    position={[form.pickupLat, form.pickupLng]}
+                    position={[deliveryPosition.lat, deliveryPosition.lng]}
+                    draggable
+                    eventHandlers={{
+                      dragend: (event) => {
+                        const { lat, lng } = event.target.getLatLng();
+                        updateDeliveryFromCoordinates(lat, lng);
+                      },
+                    }}
                   />
-                )}
-                <MapClickHandler onSelect={updatePickupFromCoordinates} />
-              </MapContainer>
-            </div>
-            <p className="map-coord-hint">
-              Koordinat: {form.pickupLat ?? "-"}, {form.pickupLng ?? "-"}
-            </p>
-            {form.pickupDistrict && (
-              <p className="map-area-hint">
-                Kecamatan terdeteksi: {form.pickupDistrict}
-              </p>
-            )}
-            {form.pickupDistrict && (
-              <p className="map-area-hint">
-                Jarak dari Laundry: {Number(form.distanceFromLaundryKm || 0).toFixed(2)} km
-              </p>
-            )}
-            {form.pickupDistrict && form.isServiceAreaValid && (
-              <div className="map-area-warning">
-                Area valid untuk pemesanan.
+                  <MapClickHandler onSelect={updateDeliveryFromCoordinates} />
+                </MapContainer>
               </div>
-            )}
-            {form.pickupDistrict && !form.isServiceAreaValid && (
-              <div className="map-area-danger">
-                Area tidak valid. Order hanya bisa dibuat dari kecamatan Tembalang atau Banyumanik.
-              </div>
-            )}
-            <div className="address-fields">
-              <div className="form-field">
-                <label className="form-label">Alamat Penjemputan</label>
-                <textarea
-                  required
-                  rows={2}
-                  value={form.pickupAddress}
-                  onChange={e => set("pickupAddress", e.target.value)}
-                  onBlur={geocodeManualPickupAddress}
-                  placeholder="Masukkan alamat lengkap penjemputan..."
-                  className="form-textarea"
-                />
-                <span className="form-hint">
-                  {manualGeocodingLoading
-                    ? "Mencari lokasi dari alamat manual..."
-                    : "Alamat manual akan sinkron ke map saat field selesai diisi"}
-                </span>
+              <p className="map-coord-hint">
+                Koordinat: {form.deliveryLat ?? "-"}, {form.deliveryLng ?? "-"}
+              </p>
+              {form.deliveryAddress && (
+                <p className="map-area-hint">
+                  Alamat pengantaran terdeteksi: {form.deliveryAddress}
+                </p>
+              )}
+              {form.deliveryAddress && (
+                <p className="map-area-hint">
+                  Jarak dari Laundry: {Number(form.distanceFromLaundryKm || 0).toFixed(2)} km
+                </p>
+              )}
+              <div className="address-fields">
+                <div className="form-field">
+                  <label className="form-label">Alamat Pengantaran</label>
+                  <textarea
+                    required
+                    rows={2}
+                    value={form.deliveryAddress}
+                    onChange={e => set("deliveryAddress", e.target.value)}
+                    onBlur={geocodeManualDeliveryAddress}
+                    placeholder="Masukkan alamat pengantaran setelah cucian selesai..."
+                    className="form-textarea"
+                  />
+                  <span className="form-hint">
+                    Alamat ini dipakai untuk mengirim hasil cucian kembali ke rumah atau lokasi tujuan Anda.
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* 4. Detail Cucian */}
+          {/* 5. Detail Cucian */}
           <div className="order-section">
             <h3 className="section-title"><IconWeight /> Detail Cucian</h3>
             <div className="form-field" style={{ marginBottom: 14 }}>
@@ -936,7 +1233,7 @@ export default function Order() {
             </div>
           </div>
 
-          {/* 5. Metode Pembayaran */}
+          {/* 6. Metode Pembayaran */}
           <div className="order-section">
             <h3 className="section-title"><IconCard /> Metode Pembayaran</h3>
             <div className="payment-grid">
@@ -954,16 +1251,18 @@ export default function Order() {
             </div>
           </div>
 
-          {/* 6. Ringkasan */}
+          {/* 7. Ringkasan */}
           <div className="summary-card">
             <h3 className="summary-title">📋 Ringkasan Pesanan</h3>
             <div className="summary-rows">
               {[
+                { label: "Jenis Order",    value: form.orderType === "pickup" ? "Pickup" : "Drop Off" },
                 { label: "Layanan",        value: selectedService?.label || "-" },
-                { label: "Jadwal",         value: form.pickupTime ? `${formatDateLabel(form.pickupDate)} · ${form.pickupTime}` : "-" },
+                { label: "Jadwal",         value: form.orderType === "pickup" ? (form.pickupTime ? `${formatDateLabel(form.pickupDate)} · ${form.pickupTime}` : "-") : "Drop off ke outlet" },
                 { label: "Berat",          value: form.weight ? `${form.weight} kg` : "-" },
                 { label: "Jumlah Pakaian", value: form.clothesCount ? `${form.clothesCount} pcs` : "-" },
-                { label: "Alamat",         value: form.pickupAddress || "-" },
+                { label: "Alamat Antar",    value: form.orderType === "pickup" ? (form.pickupAddress || "-") : OUTLET_ADDRESS },
+                { label: "Alamat Kembali",  value: form.orderType === "pickup" ? (form.deliveryAddress || form.pickupAddress || "-") : (form.deliveryAddress || "-") },
                 { label: "Pembayaran",     value: form.paymentMethod },
               ].map(({ label, value }) => (
                 <div key={label} className="summary-row">
@@ -986,7 +1285,7 @@ export default function Order() {
               </div>
               {form.extraFee > 0 && (
                 <div className="summary-total-row summary-total-row-extra">
-                  <span className="summary-total-label">Biaya Antar Jemput</span>
+                  <span className="summary-total-label">{form.orderType === "pickup" ? "Biaya Antar Jemput" : "Biaya Pengantaran"}</span>
                   <span className="summary-total-price summary-extra-fee">+ {formatRp(form.extraFee)}</span>
                 </div>
               )}
@@ -1061,20 +1360,28 @@ export default function Order() {
 
               <div className="verify-list">
                 <div className="verify-row">
+                  <span>Jenis Order</span>
+                  <strong>{form.orderType === "pickup" ? "Pickup" : "Drop Off"}</strong>
+                </div>
+                <div className="verify-row">
                   <span>Layanan</span>
                   <strong>{selectedService?.label || "-"}</strong>
                 </div>
                 <div className="verify-row">
-                  <span>Jadwal Jemput</span>
-                  <strong>{`${formatDateLabel(form.pickupDate)} · ${form.pickupTime}`}</strong>
+                  <span>{form.orderType === "pickup" ? "Jadwal Jemput" : "Jadwal"}</span>
+                  <strong>{form.orderType === "pickup" ? `${formatDateLabel(form.pickupDate)} · ${form.pickupTime}` : "Drop off ke outlet"}</strong>
                 </div>
                 <div className="verify-row">
                   <span>Berat Estimasi</span>
                   <strong>{form.weight ? `${form.weight} kg` : "-"}</strong>
                 </div>
                 <div className="verify-row">
-                  <span>Alamat Jemput</span>
-                  <strong className="verify-address">{form.pickupAddress || "-"}</strong>
+                  <span>{form.orderType === "pickup" ? "Alamat Jemput" : "Alamat Outlet"}</span>
+                  <strong className="verify-address">{form.orderType === "pickup" ? (form.pickupAddress || "-") : OUTLET_ADDRESS}</strong>
+                </div>
+                <div className="verify-row">
+                  <span>{form.orderType === "pickup" ? "Alamat Pengantaran" : "Alamat Kembali"}</span>
+                  <strong className="verify-address">{form.orderType === "pickup" ? (form.deliveryAddress || form.pickupAddress || "-") : (form.deliveryAddress || "-")}</strong>
                 </div>
                 <div className="verify-row">
                   <span>Pembayaran</span>

@@ -116,6 +116,11 @@ export default function Dashboard() {
     [orders]
   );
 
+  const activeOrdersPreview = useMemo(
+    () => activeOrders.slice(0, 3),
+    [activeOrders]
+  );
+
   const completedOrders = useMemo(
     () => orders.filter((o) => o.status === 'Completed'),
     [orders]
@@ -178,10 +183,15 @@ export default function Dashboard() {
           <section className="content-card">
             <div className="card-header">
               <h3>Active Orders</h3>
-              <span className="badge-blue">{activeOrders.length} active</span>
+              <div className="card-header-actions">
+                <span className="badge-blue">{activeOrders.length} active</span>
+                <Link to="/customer/history" className="view-all-link">
+                  View all <ArrowRight size={16} />
+                </Link>
+              </div>
             </div>
             <div className="card-body no-padding">
-              {activeOrders.map(order => (
+              {activeOrdersPreview.map(order => (
                 <OrderCard
                   key={order.id}
                   order={order}

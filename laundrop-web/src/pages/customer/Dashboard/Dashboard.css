@@ -61,6 +61,12 @@
   color: #1e293b;
 }
 
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .badge-blue {
   background: #eff6ff;
   color: #3b82f6;

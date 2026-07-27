@@ -4,10 +4,21 @@ import "./OrderModal.css";
 
 const formatRp = (n) => `Rp ${Number(n).toLocaleString("id-ID")}`;
 
-const TIMELINE_STEPS = [
+const PICKUP_TIMELINE_STEPS = [
   { key: 'waiting_confirmation', label: 'Menunggu Konfirmasi', desc: 'Admin mengecek slot dan ketersediaan kurir' },
   { key: 'pickup',               label: 'Dalam Penjemputan',   desc: 'Kurir sedang menuju lokasi Anda' },
   { key: 'picked_up',            label: 'Pakaian Diambil',     desc: 'Kurir telah mengambil pakaian Anda' },
+  { key: 'waiting_payment',      label: 'Menunggu Pembayaran', desc: 'Tagihan tersedia, menunggu pembayaran' },
+  { key: 'washing',              label: 'Proses Pencucian',    desc: 'Pakaian sedang dicuci' },
+  { key: 'washing_finished',     label: 'Pencucian Selesai',   desc: 'Pakaian sudah bersih, rapi, dan siap kirim' },
+  { key: 'delivery',             label: 'Dalam Pengantaran',   desc: 'Kurir sedang mengantarkan pakaian Anda' },
+  { key: 'completed',            label: 'Selesai',             desc: 'Pakaian sudah diterima. Terima kasih!' },
+];
+
+const DROP_OFF_TIMELINE_STEPS = [
+  { key: 'waiting_confirmation', label: 'Menunggu Konfirmasi', desc: 'Admin mengecek pesanan drop off Anda' },
+  { key: 'pickup',               label: 'Menunggu Pakaian di Drop Off', desc: 'Menunggu pelanggan datang ke outlet' },
+  { key: 'picked_up',            label: 'Pakaian di Drop Off',  desc: 'Pakaian sudah diterima di outlet' },
   { key: 'waiting_payment',      label: 'Menunggu Pembayaran', desc: 'Tagihan tersedia, menunggu pembayaran' },
   { key: 'washing',              label: 'Proses Pencucian',    desc: 'Pakaian sedang dicuci' },
   { key: 'washing_finished',     label: 'Pencucian Selesai',   desc: 'Pakaian sudah bersih, rapi, dan siap kirim' },
@@ -26,6 +37,20 @@ const STATUS_LABELS = {
   completed: 'Selesai',
   cancelled: 'Dibatalkan',
 };
+
+function formatTimelineDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return new Intl.DateTimeFormat('id-ID', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date).replace('.', '');
+}
 
 function normalizeStatus(status, backendStatus) {
   if (backendStatus) return String(backendStatus).toLowerCase();
@@ -47,13 +72,6 @@ function normalizeStatus(status, backendStatus) {
   return aliasMap[key] || key;
 }
 
-function getStepIndex(status) {
-  const idx = TIMELINE_STEPS.findIndex(
-    s => s.key.toLowerCase() === (status || '').toLowerCase()
-  );
-  return idx === -1 ? 0 : idx;
-}
-
 export default function TrackOrderModal({
   order,
   onClose,
@@ -65,7 +83,26 @@ export default function TrackOrderModal({
   if (!order) return null;
 
   const statusKey = normalizeStatus(order.status, order.backend_status);
-  const activeIdx = getStepIndex(statusKey);
+  const isDropOff = String(order.orderType || order.order_type || '').toLowerCase() === 'drop_off';
+  const timelineSteps = isDropOff ? DROP_OFF_TIMELINE_STEPS : PICKUP_TIMELINE_STEPS;
+  const statusLogs = Array.isArray(order.status_logs) ? order.status_logs : [];
+  const statusTimeMap = statusLogs.reduce((acc, log) => {
+    const key = String(log?.status_after || '').toLowerCase();
+    if (!key) return acc;
+    if (!acc[key]) acc[key] = log?.created_at;
+    return acc;
+  }, {});
+  if (!statusTimeMap.waiting_confirmation) {
+    statusTimeMap.waiting_confirmation = order.created_at;
+  }
+
+  const pickupProofUrl = order?.photos?.pickup || order?.photo_pickup_url || null;
+  const deliveryProofUrl = order?.photos?.delivery || order?.photo_delivery_url || null;
+  const activeIdx = timelineSteps.findIndex(
+    s => s.key.toLowerCase() === (statusKey || '').toLowerCase()
+  ) === -1
+    ? 0
+    : timelineSteps.findIndex(s => s.key.toLowerCase() === (statusKey || '').toLowerCase());
 
   // ✅ Tampilkan tombol QRIS kalau sudah verified, metode QRIS, belum bayar
   const showQrisBtn =
@@ -131,7 +168,7 @@ export default function TrackOrderModal({
           <div className="track-progress-bar">
             <div
               className="track-progress-fill"
-              style={{ width: `${(activeIdx / (TIMELINE_STEPS.length - 1)) * 100}%` }}
+              style={{ width: `${(activeIdx / (timelineSteps.length - 1)) * 100}%` }}
             />
           </div>
           <div className="track-progress-labels">
@@ -141,7 +178,7 @@ export default function TrackOrderModal({
 
           {/* Timeline vertikal */}
           <div className="timeline">
-            {TIMELINE_STEPS.map((step, i) => {
+            {timelineSteps.map((step, i) => {
               const isDone   = i < activeIdx;
               const isActive = i === activeIdx;
               const isWait   = i > activeIdx;
@@ -157,13 +194,34 @@ export default function TrackOrderModal({
                         <div className="t-circle-dot" />
                       ) : null}
                     </div>
-                    {i < TIMELINE_STEPS.length - 1 && (
+                    {i < timelineSteps.length - 1 && (
                       <div className={`t-line ${isDone ? "done" : ""}`} />
                     )}
                   </div>
                   <div className="timeline-content">
                     <p className={`t-title ${isWait ? "muted" : ""}`}>{step.label}</p>
                     <p className="t-desc">{step.desc}</p>
+                    {statusTimeMap[step.key] && (
+                      <p className="t-time">{formatTimelineDateTime(statusTimeMap[step.key])}</p>
+                    )}
+
+                    {step.key === 'picked_up' && pickupProofUrl && (
+                      <div className="t-proof-wrap">
+                        <p className="t-proof-label">{isDropOff ? 'Foto Bukti Drop Off' : 'Foto Bukti Penjemputan'}</p>
+                        <a href={pickupProofUrl} target="_blank" rel="noreferrer" className="t-proof-link">
+                          <img src={pickupProofUrl} alt={isDropOff ? 'Bukti drop off pakaian' : 'Bukti pakaian dijemput'} className="t-proof-image" />
+                        </a>
+                      </div>
+                    )}
+
+                    {step.key === 'completed' && deliveryProofUrl && (
+                      <div className="t-proof-wrap">
+                        <p className="t-proof-label">Foto Bukti Selesai / Serah Terima</p>
+                        <a href={deliveryProofUrl} target="_blank" rel="noreferrer" className="t-proof-link">
+                          <img src={deliveryProofUrl} alt="Bukti status selesai" className="t-proof-image" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -175,7 +233,8 @@ export default function TrackOrderModal({
             {[
               ["Layanan",       order.service],
               ["Jadwal Jemput", `${order.pickupDate || order.date} · ${order.pickupTime}`],
-              ["Alamat",        order.pickupAddress],
+              ["Alamat Antar",  order.pickupAddress],
+              ["Alamat Kembali", order.deliveryAddress || order.pickupAddress],
             ].map(([label, value]) => (
               <div key={label} className="receipt-row">
                 <span className="receipt-row-label">{label}</span>

@@ -95,14 +95,14 @@ export default function Register() {
             <span className="auth-logo-text">Laundrop</span>
           </div>
 
-          <h1 className="auth-title">Sign Up</h1>
+          <h1 className="auth-title">Register</h1>
 
           <button className="btn-google" type="button">
             <GoogleIcon />
-            Sign Up using <strong>Google</strong>
+            Register using <strong>Google</strong>
           </button>
 
-          <div className="auth-divider">or sign Up with your email</div>
+          <div className="auth-divider">or register with your email</div>
 
           <form onSubmit={handleSubmit}>
             <div className="auth-field">
@@ -205,13 +205,13 @@ export default function Register() {
               type="submit"
               disabled={!agreed}
             >
-              Sign Up
+              Register
             </button>
           </form>
 
           <div className="auth-bottom">
             Already have an Account?{" "}
-            <button onClick={() => navigate("/login")}>Sign In</button>
+            <button onClick={() => navigate("/login")}>Login</button>
           </div>
         </div>
       </main>

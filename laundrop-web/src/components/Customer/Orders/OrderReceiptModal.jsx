@@ -41,7 +41,8 @@ export default function OrderReceiptModal({ order, onClose, onNewOrder, onTrack 
               ["Jadwal Jemput",  `${order.pickupDate || order.date} · ${order.pickupTime}`],
               ["Berat / Pcs",    `${order.weight} kg`],
               ["Jumlah Pakaian", order.clothesCount ? `${order.clothesCount} pcs` : "-"],
-              ["Alamat",         order.pickupAddress],
+              ["Alamat Antar",   order.pickupAddress],
+              ["Alamat Kembali", order.deliveryAddress || order.pickupAddress],
               ["Pembayaran",     order.paymentMethod],
             ].map(([label, value]) => (
               <div key={label} className="receipt-row">

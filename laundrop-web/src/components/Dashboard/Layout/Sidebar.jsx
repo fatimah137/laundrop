@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingBag, Users, Sparkles, Wallet,
-  BarChart3, Bell, UserCircle, Settings, UsersRound, LogOut, Brain
+  BarChart3, Bell, UserCircle, Settings, UsersRound, LogOut, Brain,
+  ChevronDown, TrendingUp, ChartColumnIncreasing, Users2, Lightbulb
 } from 'lucide-react';
 import { useRole } from '../../../context/RoleContext';
 import Logo from '../../../assets/Logo_Laundrop.png';
@@ -29,13 +30,24 @@ const GROUPS = [
   { key: 'system',  label: 'System' },
 ];
 
+const BUSINESS_AI_SUBMENUS = [
+  { key: 'ml-revenue',         path: 'ml-dashboard/revenue',         label: 'Prediksi Revenue', icon: TrendingUp },
+  { key: 'ml-demand',          path: 'ml-dashboard/demand',          label: 'Prediksi Demand', icon: ChartColumnIncreasing },
+  { key: 'ml-churn',           path: 'ml-dashboard/churn',           label: 'Prediksi Churn', icon: Users2 },
+  { key: 'ml-recommendations', path: 'ml-dashboard/recommendations', label: 'Rekomendasi Bisnis', icon: Lightbulb },
+];
+
 export default function Sidebar({ onNavigate }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { role, currentUser, can, logout } = useRole();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [businessAIOpen, setBusinessAIOpen] = useState(true);
 
   const roleLabel = role === 'owner' ? 'Owner' : 'Employee';
   const menus     = ALL_MENUS.filter(m => can(m.key));
+  const businessAISubmenus = BUSINESS_AI_SUBMENUS.filter(m => can(m.key));
+  const isBusinessAIActive = location.pathname.includes('/ml-dashboard');
   const initials  = currentUser?.name
     ?.split(' ').map(n => n[0]).slice(0, 2).join('') ?? 'U';
 
@@ -69,21 +81,63 @@ export default function Sidebar({ onNavigate }) {
               <div key={group.key} className="sidebar-nav-group">
                 <p className="sidebar-nav-group-label">{group.label}</p>
                 <ul>
-                  {groupMenus.map(({ key, path, icon: Icon, label }) => (
-                    <li key={key}>
-                      <NavLink
-                        to={path}
-                        end={path.endsWith('dashboard')}
-                        onClick={onNavigate}
-                        className={({ isActive }) =>
-                          `sidebar-nav-link ${isActive ? 'active' : ''}`
-                        }
-                      >
-                        <Icon size={18} strokeWidth={2} />
-                        <span>{label}</span>
-                      </NavLink>
-                    </li>
-                  ))}
+                  {groupMenus.map(({ key, path, icon: Icon, label }) => {
+                    if (key !== 'ml-dashboard') {
+                      return (
+                        <li key={key}>
+                          <NavLink
+                            to={path}
+                            end={path.endsWith('dashboard')}
+                            onClick={onNavigate}
+                            className={({ isActive }) =>
+                              `sidebar-nav-link ${isActive ? 'active' : ''}`
+                            }
+                          >
+                            <Icon size={18} strokeWidth={2} />
+                            <span>{label}</span>
+                          </NavLink>
+                        </li>
+                      );
+                    }
+
+                    return (
+                      <li key={key} className="sidebar-nav-dropdown-item">
+                        <button
+                          type="button"
+                          onClick={() => setBusinessAIOpen(prev => !prev)}
+                          className={`sidebar-nav-link sidebar-dropdown-trigger ${isBusinessAIActive ? 'active' : ''}`}
+                        >
+                          <div className="sidebar-link-main">
+                            <Icon size={18} strokeWidth={2} />
+                            <span>{label}</span>
+                          </div>
+                          <ChevronDown
+                            size={16}
+                            className={`sidebar-dropdown-chevron ${businessAIOpen ? 'open' : ''}`}
+                          />
+                        </button>
+
+                        {businessAIOpen && businessAISubmenus.length > 0 && (
+                          <ul className="sidebar-submenu-list">
+                            {businessAISubmenus.map(({ key: subKey, path: subPath, label: subLabel, icon: SubIcon }) => (
+                              <li key={subKey}>
+                                <NavLink
+                                  to={subPath}
+                                  onClick={onNavigate}
+                                  className={({ isActive }) =>
+                                    `sidebar-submenu-link ${isActive ? 'active' : ''}`
+                                  }
+                                >
+                                  <SubIcon size={14} strokeWidth={2} />
+                                  <span>{subLabel}</span>
+                                </NavLink>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             );

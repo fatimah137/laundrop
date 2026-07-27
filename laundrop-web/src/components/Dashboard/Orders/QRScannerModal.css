@@ -105,7 +105,7 @@
   position: relative;
   background: #0f172a;
   border-radius: 12px;
-  height: 200px;
+  height: 280px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -291,7 +291,8 @@
   outline: none;
   transition: border-color 0.15s;
 }
-.qr-camera-select:focus { 
+
+.qr-camera-select:focus {
   border-color: #0284c7;
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
 }
@@ -361,12 +362,52 @@
   height: 100%;
   overflow: hidden;
   border-radius: 10px;
+  background: #020617;
 }
 
 .qr-camera-region video {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover;
+  object-fit: contain;
+  background: #020617;
+}
+
+.qr-camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #020617;
+}
+
+.qr-camera-video.hidden,
+.qr-camera-fallback.hidden {
+  display: none !important;
+}
+
+.qr-camera-region.native-engine canvas {
+  display: none !important;
+}
+
+.qr-camera-region.html5-engine canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background: #020617;
+}
+
+.qr-camera-fallback {
+  width: 100%;
+  height: 100%;
+  background: #020617;
+}
+
+.qr-camera-fallback video,
+.qr-camera-fallback img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background: #020617;
 }
 
 /* ── Scan buttons ────────────────────────────────────────────────── */

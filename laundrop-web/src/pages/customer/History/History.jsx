@@ -33,6 +33,27 @@ const TRACKABLE_BACKEND_STATUS = new Set([
   'delivery',
 ]);
 
+const getApiOrigin = () => {
+  const baseUrl = String(api.defaults.baseURL || '').trim();
+  if (!baseUrl) return '';
+
+  try {
+    const parsed = new URL(baseUrl);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return '';
+  }
+};
+
+const API_ORIGIN = getApiOrigin();
+
+const toStorageUrl = (path) => {
+  if (!path) return null;
+  if (String(path).startsWith('http')) return path;
+  if (!API_ORIGIN) return null;
+  return `${API_ORIGIN}/storage/${String(path).replace(/^\/+/, '')}`;
+};
+
 function formatDate(value) {
   if (!value) return '-';
   const date = new Date(value);
@@ -48,11 +69,36 @@ function formatTime(value) {
   return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
-function buildTimeline(status) {
-  const key = String(status || '').toLowerCase();
-  const isCancelled = key === 'cancelled';
+function formatTimelineDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
 
-  const steps = [
+  return date.toLocaleString('id-ID', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function buildTimeline(status, orderType = 'pickup', statusLogs = [], createdAt = null) {
+  const key = String(status || '').toLowerCase();
+  const typeKey = String(orderType || 'pickup').toLowerCase();
+  const isCancelled = key === 'cancelled';
+  const statusTimeMap = (Array.isArray(statusLogs) ? statusLogs : []).reduce((acc, log) => {
+    const after = String(log?.status_after || '').toLowerCase();
+    if (!after) return acc;
+    if (!acc[after]) acc[after] = formatTimelineDateTime(log?.created_at);
+    return acc;
+  }, {});
+
+  if (!statusTimeMap.waiting_confirmation) {
+    statusTimeMap.waiting_confirmation = formatTimelineDateTime(createdAt);
+  }
+
+  const pickupSteps = [
     { key: 'waiting_confirmation', label: 'Menunggu konfirmasi' },
     { key: 'pickup', label: 'Dalam penjemputan' },
     { key: 'picked_up', label: 'Pakaian dijemput' },
@@ -62,6 +108,19 @@ function buildTimeline(status) {
     { key: 'delivery', label: 'Dalam pengantaran' },
     { key: 'completed', label: 'Selesai' },
   ];
+
+  const dropOffSteps = [
+    { key: 'waiting_confirmation', label: 'Menunggu konfirmasi' },
+    { key: 'pickup', label: 'Menunggu pakaian di drop off' },
+    { key: 'picked_up', label: 'Pakaian di drop off' },
+    { key: 'waiting_payment', label: 'Menunggu pembayaran' },
+    { key: 'washing', label: 'Proses pencucian' },
+    { key: 'washing_finished', label: 'Pencucian selesai' },
+    { key: 'delivery', label: 'Dalam pengantaran' },
+    { key: 'completed', label: 'Selesai' },
+  ];
+
+  const steps = typeKey === 'drop_off' ? dropOffSteps : pickupSteps;
 
   const progressRank = {
     waiting_confirmation: 1,
@@ -79,15 +138,15 @@ function buildTimeline(status) {
 
   if (isCancelled) {
     return [
-      { label: 'Menunggu konfirmasi', done: true, time: '' },
-      { label: 'Dibatalkan', done: true, time: '' },
+      { label: 'Menunggu konfirmasi', done: true, time: statusTimeMap.waiting_confirmation || '' },
+      { label: 'Dibatalkan', done: true, time: statusTimeMap.cancelled || '' },
     ];
   }
 
   return steps.map((step, index) => ({
     label: step.label,
     done: index + 1 <= rank,
-    time: '',
+    time: index + 1 <= rank ? (statusTimeMap[step.key] || '') : '',
   }));
 }
 
@@ -101,6 +160,8 @@ export default function OrderHistory() {
   const [filter, setFilter] = useState('All');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
+  const [trackingLoadingId, setTrackingLoadingId] = useState(null);
+  const [detailLoadingId, setDetailLoadingId] = useState(null);
 
   const isPendingOrder = (order) => String(order?.backend_status || '').toLowerCase() === 'waiting_confirmation';
 
@@ -115,12 +176,13 @@ export default function OrderHistory() {
         const response = await api.get('/orders', { params: { per_page: 100 } });
         const rows = response?.data?.data?.data ?? [];
 
-        const mapped = rows.map((row) => {
+        const mapRowToOrder = (row) => {
           const unitPrice = Number(row?.service?.price_per_kg ?? 0);
           const estimatedWeight = Number(row?.estimated_weight ?? 0);
           const actualWeight = Number(row?.actual_weight ?? 0);
           const effectiveWeight = actualWeight > 0 ? actualWeight : estimatedWeight;
-          const total = unitPrice * effectiveWeight;
+          const total = Number(row?.transaction?.total_amount ?? (unitPrice * effectiveWeight));
+          const statusLogs = Array.isArray(row?.status_logs) ? row.status_logs : [];
 
           return {
             id: row.order_number || `ORD-${row.id}`,
@@ -137,14 +199,21 @@ export default function OrderHistory() {
             pickupDate: formatDate(row?.pickup_date),
             pickupTime: formatTime(row?.pickup_time),
             paymentMethod: (row?.payment_method || '').toUpperCase(),
-            payment_status: row?.status === 'completed' ? 'paid' : 'unpaid',
+            payment_status: row?.transaction?.payment?.status === 'success' || row?.status === 'completed' ? 'paid' : 'unpaid',
             verified: actualWeight > 0,
             estimated_price: unitPrice * estimatedWeight,
-            deliveryAddress: row?.pickup_address ?? '-',
+            deliveryAddress: row?.delivery_address ?? row?.pickup_address ?? '-',
             notes: row?.notes || '',
-            timeline: buildTimeline(row?.status),
+            orderType: row?.order_type ?? 'pickup',
+            photo_pickup_url: toStorageUrl(row?.photo_pickup),
+            photo_delivery_url: toStorageUrl(row?.photo_delivery),
+            status_logs: statusLogs,
+            created_at: row?.created_at || null,
+            timeline: buildTimeline(row?.status, row?.order_type, statusLogs, row?.created_at),
           };
-        });
+        };
+
+        const mapped = rows.map(mapRowToOrder);
 
         if (mounted) setOrders(mapped);
       } catch (err) {
@@ -211,6 +280,116 @@ export default function OrderHistory() {
     return orders.filter((o) => o.status === filter);
   }, [filter, orders]);
 
+  const openTrackingOrder = async (order) => {
+    if (!order?.rawId) {
+      setTrackingOrder(order);
+      return;
+    }
+
+    setTrackingOrder(order);
+    setTrackingLoadingId(order.rawId);
+
+    try {
+      const response = await api.get(`/orders/${order.rawId}`);
+      const row = response?.data?.data;
+      if (!row) return;
+
+      const unitPrice = Number(row?.service?.price_per_kg ?? 0);
+      const estimatedWeight = Number(row?.estimated_weight ?? 0);
+      const actualWeight = Number(row?.actual_weight ?? 0);
+      const effectiveWeight = actualWeight > 0 ? actualWeight : estimatedWeight;
+      const total = Number(row?.transaction?.total_amount ?? (unitPrice * effectiveWeight));
+      const statusLogs = Array.isArray(row?.status_logs) ? row.status_logs : [];
+
+      setTrackingOrder((prev) => {
+        if (!prev || prev.rawId !== order.rawId) return prev;
+
+        return {
+          ...prev,
+          service: row?.service?.name ?? prev.service,
+          backend_status: row?.status ?? prev.backend_status,
+          status: STATUS_LABEL_MAP[row?.status] ?? prev.status,
+          weight: estimatedWeight || prev.weight,
+          actual_weight: actualWeight || prev.actual_weight,
+          price: total,
+          estimated_price: unitPrice * estimatedWeight,
+          paymentMethod: (row?.payment_method || prev.paymentMethod || '').toUpperCase(),
+          payment_status: row?.transaction?.payment?.status === 'success' || row?.status === 'completed' ? 'paid' : 'unpaid',
+          pickupAddress: row?.pickup_address ?? prev.pickupAddress,
+          deliveryAddress: row?.delivery_address ?? row?.pickup_address ?? prev.deliveryAddress,
+          pickupDate: formatDate(row?.pickup_date),
+          pickupTime: formatTime(row?.pickup_time),
+          notes: row?.notes || prev.notes,
+          orderType: row?.order_type ?? prev.orderType,
+          photo_pickup_url: toStorageUrl(row?.photo_pickup),
+          photo_delivery_url: toStorageUrl(row?.photo_delivery),
+          status_logs: statusLogs,
+          created_at: row?.created_at || prev.created_at,
+          timeline: buildTimeline(row?.status, row?.order_type, statusLogs, row?.created_at),
+        };
+      });
+    } catch (err) {
+      setActionError(err?.response?.data?.message || 'Gagal memuat detail tracking order');
+    } finally {
+      setTrackingLoadingId(null);
+    }
+  };
+
+  const openOrderDetail = async (order) => {
+    if (!order?.rawId) {
+      setSelectedOrder(order);
+      return;
+    }
+
+    setSelectedOrder(order);
+    setDetailLoadingId(order.rawId);
+
+    try {
+      const response = await api.get(`/orders/${order.rawId}`);
+      const row = response?.data?.data;
+      if (!row) return;
+
+      const unitPrice = Number(row?.service?.price_per_kg ?? 0);
+      const estimatedWeight = Number(row?.estimated_weight ?? 0);
+      const actualWeight = Number(row?.actual_weight ?? 0);
+      const effectiveWeight = actualWeight > 0 ? actualWeight : estimatedWeight;
+      const total = Number(row?.transaction?.total_amount ?? (unitPrice * effectiveWeight));
+      const statusLogs = Array.isArray(row?.status_logs) ? row.status_logs : [];
+
+      setSelectedOrder((prev) => {
+        if (!prev || prev.rawId !== order.rawId) return prev;
+
+        return {
+          ...prev,
+          service: row?.service?.name ?? prev.service,
+          backend_status: row?.status ?? prev.backend_status,
+          status: STATUS_LABEL_MAP[row?.status] ?? prev.status,
+          weight: estimatedWeight || prev.weight,
+          actual_weight: actualWeight || prev.actual_weight,
+          price: total,
+          estimated_price: unitPrice * estimatedWeight,
+          paymentMethod: (row?.payment_method || prev.paymentMethod || '').toUpperCase(),
+          payment_status: row?.transaction?.payment?.status === 'success' || row?.status === 'completed' ? 'paid' : 'unpaid',
+          pickupAddress: row?.pickup_address ?? prev.pickupAddress,
+          deliveryAddress: row?.delivery_address ?? row?.pickup_address ?? prev.deliveryAddress,
+          pickupDate: formatDate(row?.pickup_date),
+          pickupTime: formatTime(row?.pickup_time),
+          notes: row?.notes || prev.notes,
+          orderType: row?.order_type ?? prev.orderType,
+          photo_pickup_url: toStorageUrl(row?.photo_pickup),
+          photo_delivery_url: toStorageUrl(row?.photo_delivery),
+          status_logs: statusLogs,
+          created_at: row?.created_at || prev.created_at,
+          timeline: buildTimeline(row?.status, row?.order_type, statusLogs, row?.created_at),
+        };
+      });
+    } catch (err) {
+      setActionError(err?.response?.data?.message || 'Gagal memuat detail order');
+    } finally {
+      setDetailLoadingId(null);
+    }
+  };
+
   return (
     <Layout>
       <div className="order-history-page">
@@ -257,7 +436,7 @@ export default function OrderHistory() {
               <div key={order.id} className="order-card">
                 <div
                   className="order-card-main"
-                  onClick={() => setSelectedOrder(order)}
+                  onClick={() => openOrderDetail(order)}
                 >
                   <div className="order-card-left">
                     <div className="order-icon">
@@ -266,6 +445,7 @@ export default function OrderHistory() {
                     <div className="order-info">
                       <div className="order-id-row">
                         <p className="order-id">{order.id}</p>
+                        {detailLoadingId === order.rawId && <span className="order-loading-inline">Memuat detail...</span>}
                         <StatusBadge status={order.status} />
                       </div>
                       <p className="order-meta">
@@ -288,9 +468,10 @@ export default function OrderHistory() {
                   <div className="order-card-footer">
                     <button
                       className="track-btn"
-                      onClick={() => setTrackingOrder(order)}
+                      onClick={() => openTrackingOrder(order)}
+                      disabled={trackingLoadingId === order.rawId}
                     >
-                      <Truck size={14} /> Track Order
+                      <Truck size={14} /> {trackingLoadingId === order.rawId ? 'Membuka...' : 'Track Order'}
                     </button>
                     {isPendingOrder(order) && (
                       <button

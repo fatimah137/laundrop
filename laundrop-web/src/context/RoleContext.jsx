@@ -6,7 +6,7 @@ const RoleContext = createContext(null);
 const ROLE_PERMISSIONS = {
   owner: {
     label: 'Owner',
-    menus: ['dashboard', 'orders', 'customers', 'employees', 'services', 'payment', 'reports', 'ml-dashboard', 'notifications', 'profile', 'settings', 'tracking'],
+    menus: ['dashboard', 'orders', 'customers', 'employees', 'services', 'payment', 'reports', 'ml-dashboard', 'ml-revenue', 'ml-demand', 'ml-churn', 'ml-recommendations', 'notifications', 'profile', 'settings', 'tracking'],
   },
   employee: {
     label: 'Employee',

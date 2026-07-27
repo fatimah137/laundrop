@@ -59,12 +59,16 @@ class OrderController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
+            'order_type'       => 'required|in:pickup,drop_off',
             'service_id'       => 'required|exists:services,id',
             'pickup_address'   => 'required|string|max:500',
             'pickup_lat'       => 'required|numeric|between:-90,90',
             'pickup_lng'       => 'required|numeric|between:-180,180',
             'pickup_date'      => 'required|date|after_or_equal:today',
             'pickup_time'      => 'required|date_format:H:i',
+            'delivery_address' => 'required|string|max:500',
+            'delivery_lat'     => 'nullable|numeric|between:-90,90',
+            'delivery_lng'     => 'nullable|numeric|between:-180,180',
             'estimated_weight' => 'required|numeric|min:0.1|max:100',
             'payment_method'   => 'required|in:cash,qris',
             'notes'            => 'nullable|string|max:1000',
@@ -74,11 +78,18 @@ class OrderController extends Controller
             return $this->error($validator->errors(), 422);
         }
 
+        $feeLat = $request->order_type === 'drop_off'
+            ? (float) ($request->delivery_lat ?? $request->pickup_lat)
+            : (float) $request->pickup_lat;
+        $feeLng = $request->order_type === 'drop_off'
+            ? (float) ($request->delivery_lng ?? $request->pickup_lng)
+            : (float) $request->pickup_lng;
+
         $deliveryDistanceKm = $this->calculateDistanceKm(
             self::LAUNDRY_LAT,
             self::LAUNDRY_LNG,
-            (float) $request->pickup_lat,
-            (float) $request->pickup_lng,
+            $feeLat,
+            $feeLng,
         );
 
         $order = Order::create([

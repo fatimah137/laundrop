@@ -69,7 +69,7 @@ export default function ForgotPassword() {
 
           <div className="auth-bottom">
             Ingat password?{" "}
-            <button onClick={() => navigate("/login")}>Sign In</button>
+            <button onClick={() => navigate("/login")}>Login</button>
           </div>
         </div>
       </main>

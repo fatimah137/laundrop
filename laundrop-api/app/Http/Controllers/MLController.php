@@ -115,10 +115,12 @@ class MLController extends Controller
     public function predictChurn(Request $request): JsonResponse
     {
         $customerId = $request->query('customer_id');
+        $periodDays = (int) $request->query('period_days', 30);
+        $periodDays = min(max($periodDays, 1), 90);
 
         if ($customerId) {
             // Churn risk untuk satu customer
-            $metrics = $this->getCustomerChurnMetrics((int) $customerId);
+            $metrics = $this->getCustomerChurnMetrics((int) $customerId, $periodDays);
             if (! $metrics) {
                 return $this->error('Customer tidak ditemukan.', 404);
             }
@@ -140,7 +142,7 @@ class MLController extends Controller
 
         $results = [];
         foreach ($customers as $customer) {
-            $metrics = $this->getCustomerChurnMetrics($customer->id);
+            $metrics = $this->getCustomerChurnMetrics($customer->id, $periodDays);
             if (! $metrics) {
                 continue;
             }
@@ -275,7 +277,7 @@ class MLController extends Controller
     /**
      * Kumpulkan metrik churn untuk satu customer.
      */
-    private function getCustomerChurnMetrics(int $customerId): ?array
+    private function getCustomerChurnMetrics(int $customerId, int $periodDays = 30): ?array
     {
         $customer = DB::table('users')
             ->where('id', $customerId)
@@ -294,17 +296,24 @@ class MLController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $ordersInPeriod = DB::table('orders')
+            ->where('customer_id', $customerId)
+            ->whereNotIn('status', ['cancelled'])
+            ->where('created_at', '>=', now()->subDays($periodDays))
+            ->count();
+
         $lastOrder       = $orders->first();
         $daysLastOrder   = $lastOrder
             ? (int) Carbon::parse($lastOrder->created_at)->diffInDays(now())
             : 999;
 
-        $totalOrders     = $orders->count();
+        $totalOrders     = $ordersInPeriod;
         $membershipDays  = (int) Carbon::parse($customer->created_at)->diffInDays(now());
 
         $avgOrderValue   = (float) DB::table('transactions')
             ->join('orders', 'orders.id', '=', 'transactions.order_id')
             ->where('orders.customer_id', $customerId)
+            ->where('orders.created_at', '>=', now()->subDays($periodDays))
             ->avg('transactions.total_amount') ?? 0;
 
         return [
