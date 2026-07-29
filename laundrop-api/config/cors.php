@@ -20,7 +20,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:5173', // URL frontend React/Vite
+        'https://laundrop.vercel.app', // URL frontend React/Vite
     ],
 
     'allowed_origins_patterns' => [],
