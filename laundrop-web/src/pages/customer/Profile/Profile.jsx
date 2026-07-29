@@ -222,7 +222,7 @@ export default function Profile() {
                 {[
                   { key: 'name',    label: 'Full Name', icon: User,   type: 'text'  },
                   { key: 'email',   label: 'Email',     icon: Mail,   type: 'email' },
-                  { key: 'phone',   label: 'Phone',     icon: Phone,  type: 'text'  },
+                  { key: 'phone',   label: 'Phone (Masukkan nomor Whatsapp aktif)',     icon: Phone,  type: 'text'  },
                 ].map(({ key, label, icon: Icon, type }) => (
                   <div key={key} className="form-group">
                     <label className="form-label">
@@ -241,7 +241,7 @@ export default function Profile() {
               <div className="fields-list">
                 <Field icon={User}   label="Full Name" value={currentUser?.name}    />
                 <Field icon={Mail}   label="Email"     value={currentUser?.email}   />
-                <Field icon={Phone}  label="Phone"     value={currentUser?.phone}   />
+                <Field icon={Phone}  label="Phone (Masukkan nomor Whatsapp aktif)"     value={currentUser?.phone}   />
               </div>
             )}
           </div>

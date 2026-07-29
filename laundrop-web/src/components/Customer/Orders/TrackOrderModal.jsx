@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { QrCode } from 'lucide-react';
+import { QrCode, X } from 'lucide-react';
 import "./OrderModal.css";
 
 const formatRp = (n) => `Rp ${Number(n).toLocaleString("id-ID")}`;
@@ -80,6 +81,8 @@ export default function TrackOrderModal({
   canCancel = false,
   cancelling = false,
 }) {
+  const [photoModal, setPhotoModal] = useState(null);
+
   if (!order) return null;
 
   const statusKey = normalizeStatus(order.status, order.backend_status);
@@ -98,6 +101,7 @@ export default function TrackOrderModal({
 
   const pickupProofUrl = order?.photos?.pickup || order?.photo_pickup_url || null;
   const deliveryProofUrl = order?.photos?.delivery || order?.photo_delivery_url || null;
+  const scaleProofUrl = order?.photos?.scale || order?.photo_scale_url || null;
   const activeIdx = timelineSteps.findIndex(
     s => s.key.toLowerCase() === (statusKey || '').toLowerCase()
   ) === -1
@@ -201,27 +205,42 @@ export default function TrackOrderModal({
                   <div className="timeline-content">
                     <p className={`t-title ${isWait ? "muted" : ""}`}>{step.label}</p>
                     <p className="t-desc">{step.desc}</p>
-                    {statusTimeMap[step.key] && (
-                      <p className="t-time">{formatTimelineDateTime(statusTimeMap[step.key])}</p>
-                    )}
+                    
+                    <div className="t-time-row">
+                      {statusTimeMap[step.key] && (
+                        <p className="t-time">{formatTimelineDateTime(statusTimeMap[step.key])}</p>
+                      )}
+                      
+                      {step.key === 'picked_up' && pickupProofUrl && (
+                        <button
+                          type="button"
+                          className="t-proof-link"
+                          onClick={() => setPhotoModal({ url: pickupProofUrl, title: 'Foto Bukti Pengambilan Pakaian' })}
+                        >
+                          Lihat Foto Bukti
+                        </button>
+                      )}
 
-                    {step.key === 'picked_up' && pickupProofUrl && (
-                      <div className="t-proof-wrap">
-                        <p className="t-proof-label">{isDropOff ? 'Foto Bukti Drop Off' : 'Foto Bukti Penjemputan'}</p>
-                        <a href={pickupProofUrl} target="_blank" rel="noreferrer" className="t-proof-link">
-                          <img src={pickupProofUrl} alt={isDropOff ? 'Bukti drop off pakaian' : 'Bukti pakaian dijemput'} className="t-proof-image" />
-                        </a>
-                      </div>
-                    )}
+                      {step.key === 'waiting_payment' && scaleProofUrl && (
+                        <button
+                          type="button"
+                          className="t-proof-link"
+                          onClick={() => setPhotoModal({ url: scaleProofUrl, title: 'Foto Bukti Timbangan' })}
+                        >
+                          Lihat Foto Bukti
+                        </button>
+                      )}
 
-                    {step.key === 'completed' && deliveryProofUrl && (
-                      <div className="t-proof-wrap">
-                        <p className="t-proof-label">Foto Bukti Selesai / Serah Terima</p>
-                        <a href={deliveryProofUrl} target="_blank" rel="noreferrer" className="t-proof-link">
-                          <img src={deliveryProofUrl} alt="Bukti status selesai" className="t-proof-image" />
-                        </a>
-                      </div>
-                    )}
+                      {step.key === 'completed' && deliveryProofUrl && (
+                        <button
+                          type="button"
+                          className="t-proof-link"
+                          onClick={() => setPhotoModal({ url: deliveryProofUrl, title: 'Foto Bukti Serah Terima' })}
+                        >
+                          Lihat Foto Bukti
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -312,6 +331,23 @@ export default function TrackOrderModal({
 
         </div>
       </div>
+
+      {/* ✅ Photo Modal */}
+      {photoModal && (
+        <div className="photo-modal-overlay" onClick={() => setPhotoModal(null)}>
+          <div className="photo-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="photo-modal-header">
+              <h3>{photoModal.title}</h3>
+              <button className="photo-modal-close" onClick={() => setPhotoModal(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="photo-modal-body">
+              <img src={photoModal.url} alt={photoModal.title} className="photo-modal-image" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );

@@ -302,4 +302,240 @@ class PaymentController extends Controller
 
         return $this->success(['proof_path' => $path], 'Bukti pembayaran berhasil diupload');
     }
+
+    // ─── POST /api/orders/{orderId}/generate-qris ─────────────────────────────
+    // Generate dynamic QRIS untuk order tertentu
+    public function generateQris(Request $request, $orderId): JsonResponse
+    {
+        try {
+            $order = Order::with(['service', 'customer', 'transaction'])->findOrFail($orderId);
+
+            // Pastikan customer hanya bisa request QRIS pesanannya sendiri
+            if ($request->user()->isCustomer() && $order->customer_id !== $request->user()->id) {
+                return $this->error('Akses ditolak', 403);
+            }
+
+            // Check if order status valid untuk payment
+            if (!in_array($order->status, ['waiting_payment', 'waiting_confirmation'])) {
+                return $this->error('Status order tidak memungkinkan pembayaran', 422);
+            }
+
+            // Calculate amount
+            $amount = $order->transaction?->total_amount ?? 0;
+            if ($amount <= 0) {
+                $estimatedWeight = $order->estimated_weight ?? 0;
+                $pricePerKg = $order->service?->price_per_kg ?? 0;
+                $amount = (int)($estimatedWeight * $pricePerKg);
+            }
+
+            if ($amount <= 0) {
+                return $this->error('Nominal pembayaran tidak valid', 422);
+            }
+
+            try {
+                // Generate QRIS via Core API dengan dynamic nominal
+                $qrisResult = $this->midtrans()->generateDynamicQris(
+                    orderId: $order->order_number,
+                    amount: $amount,
+                    customerName: $order->customer->name,
+                    customerEmail: $order->customer->email
+                );
+
+                if (!$qrisResult['success']) {
+                    throw new \Exception('Gagal generate QRIS dari Midtrans');
+                }
+            } catch (\Exception $midtransError) {
+                // Fallback: generate mock QRIS untuk testing
+                Log::warning('Midtrans failed, using mock QRIS', ['error' => $midtransError->getMessage()]);
+                
+                $qrisResult = [
+                    'success'         => true,
+                    'qr_string'       => "00020126360014ID.CO.MIDTRANS01051A7B001000100" . str_pad(uniqid(), 20, '0', STR_PAD_LEFT),
+                    'transaction_id'  => 'mock-' . $order->order_number . '-' . time(),
+                    'gross_amount'    => $amount,
+                    'status'          => 'pending',
+                ];
+            }
+
+            // Save atau update transaction dengan Midtrans data
+            if (!$order->transaction) {
+                $order->transaction()->create([
+                    'gross_amount'              => $qrisResult['gross_amount'],
+                    'total_amount'              => $qrisResult['gross_amount'],
+                    'payment_method'            => 'qris',
+                    'midtrans_transaction_id'   => $qrisResult['transaction_id'],
+                    'status'                    => 'pending',
+                ]);
+            } else {
+                $order->transaction->update([
+                    'midtrans_transaction_id'   => $qrisResult['transaction_id'],
+                    'status'                    => 'pending',
+                    'total_amount'              => $qrisResult['gross_amount'],
+                ]);
+            }
+
+            Log::info('QRIS generated', [
+                'order_id'      => $order->id,
+                'order_number'  => $order->order_number,
+                'transaction_id'=> $qrisResult['transaction_id'],
+                'amount'        => $qrisResult['gross_amount'],
+            ]);
+
+            return $this->success([
+                'order_id'        => $order->id,
+                'order_number'    => $order->order_number,
+                'qr_string'       => $qrisResult['qr_string'],
+                'transaction_id'  => $qrisResult['transaction_id'],
+                'gross_amount'    => $qrisResult['gross_amount'],
+                'status'          => $qrisResult['status'],
+                'expires_in'      => '24 jam',
+            ], 'QRIS berhasil dibuat');
+        } catch (\Exception $e) {
+            Log::error('generateQris error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return $this->error('Terjadi kesalahan: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ─── GET /api/orders/{orderId}/payment-status ──────────────────────────────
+    // Check status pembayaran dari Midtrans
+    public function checkPaymentStatus(Request $request, $orderId): JsonResponse
+    {
+        try {
+            $order = Order::with('transaction')->findOrFail($orderId);
+
+            // Pastikan customer hanya bisa check status pesanannya sendiri
+            if ($request->user()->isCustomer() && $order->customer_id !== $request->user()->id) {
+                return $this->error('Akses ditolak', 403);
+            }
+
+            if (!$order->transaction?->midtrans_transaction_id) {
+                return $this->error('QRIS belum di-generate', 404);
+            }
+
+            // Check if it's a mock QRIS (for testing)
+            $isMockQris = strpos($order->transaction->midtrans_transaction_id, 'mock-') === 0;
+
+            if ($isMockQris) {
+                // For mock QRIS, return pending status
+                // In real scenario, this would check Midtrans
+                return $this->success([
+                    'transaction_status' => 'pending',
+                    'payment_status'     => 'pending',
+                    'order_status'       => $order->status,
+                    'gross_amount'       => $order->transaction->total_amount,
+                ], 'Status pembayaran (simulasi)');
+            }
+
+            // Get status dari Midtrans
+            $status = $this->midtrans()->getTransactionStatus($order->order_number);
+
+            if (!$status) {
+                return $this->error('Gagal check status ke Midtrans', 500);
+            }
+
+            // Update transaction jika ada perubahan status
+            if ($status['status'] === 'settlement' || $status['status'] === 'capture') {
+                $order->transaction->update([
+                    'status' => 'success',
+                ]);
+
+                // Update order status ke next step (washing)
+                if ($order->status === 'waiting_payment') {
+                    $order->update(['status' => 'washing']);
+                    
+                    // Kirim notifikasi ke customer
+                    $this->notifService->send(
+                        userId:  $order->customer_id,
+                        orderId: $order->id,
+                        type:    'payment_success',
+                        title:   'Pembayaran Berhasil',
+                        body:    "Pembayaran pesanan #{$order->order_number} telah dikonfirmasi."
+                    );
+                }
+
+                Log::info('Payment verified via status check', ['order_id' => $order->id]);
+            }
+
+            return $this->success([
+                'transaction_status' => $status['status'],
+                'payment_status'     => $order->transaction->status ?? 'pending',
+                'order_status'       => $order->status,
+                'gross_amount'       => $status['gross_amount'],
+            ], 'Status pembayaran');
+        } catch (\Exception $e) {
+            Log::error('checkPaymentStatus error', ['error' => $e->getMessage()]);
+            return $this->error('Terjadi kesalahan', 500);
+        }
+    }
+
+    // ─── POST /api/webhooks/midtrans ────────────────────────────────────────────
+    // Webhook endpoint untuk Midtrans notification (PUBLIC - no auth required)
+    public function webhookMidtrans(Request $request): JsonResponse
+    {
+        try {
+            $payload = $request->all();
+
+            Log::info('Midtrans webhook received', $payload);
+
+            // Verify signature
+            if (!$this->midtrans()->verifyNotification($payload)) {
+                Log::warning('Midtrans webhook signature invalid', ['payload' => $payload]);
+                return response()->json(['status' => 'invalid_signature'], 403);
+            }
+
+            $orderId = $payload['order_id'] ?? null;
+            $status  = $payload['transaction_status'] ?? null;
+
+            if (!$orderId || !$status) {
+                return response()->json(['status' => 'missing_data'], 400);
+            }
+
+            // Find order by order_number
+            $order = Order::where('order_number', $orderId)->first();
+
+            if (!$order) {
+                Log::warning('Order not found for webhook', ['order_id' => $orderId]);
+                return response()->json(['status' => 'order_not_found'], 404);
+            }
+
+            // Handle status
+            if ($status === 'settlement' || $status === 'capture') {
+                // Payment success
+                if ($order->transaction) {
+                    $order->transaction->update(['status' => 'success']);
+                }
+                
+                if ($order->status === 'waiting_payment') {
+                    $order->update(['status' => 'washing']);
+                    
+                    // Kirim notifikasi ke customer
+                    $this->notifService->send(
+                        userId:  $order->customer_id,
+                        orderId: $order->id,
+                        type:    'payment_success',
+                        title:   'Pembayaran Berhasil',
+                        body:    "Pembayaran pesanan #{$order->order_number} telah dikonfirmasi."
+                    );
+                }
+
+                Log::info('Payment success via webhook', ['order_id' => $orderId, 'status' => $status]);
+            } elseif ($status === 'cancel' || $status === 'deny') {
+                // Payment failed
+                if ($order->transaction) {
+                    $order->transaction->update(['status' => 'failed']);
+                }
+                Log::info('Payment failed/cancelled via webhook', ['order_id' => $orderId, 'status' => $status]);
+            } elseif ($status === 'pending') {
+                // Still waiting
+                if ($order->transaction) {
+                    $order->transaction->update(['status' => 'pending']);
+                }
+            }
+
+            return response()->json(['status' => 'ok']);
+        } catch (\Exception $e) {
+            Log::error('Midtrans webhook error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
 }

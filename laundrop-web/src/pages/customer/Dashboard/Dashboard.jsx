@@ -13,16 +13,14 @@ import TrackOrderModal from '../../../components/Customer/Orders/TrackOrderModal
 import './Dashboard.css';
 
 const STATUS_LABEL_MAP = {
-  pending: 'Waiting Pickup',
-  confirmed: 'Waiting Pickup',
-  picking_up: 'Pickup',
+  waiting_confirmation: 'Pending',
+  pickup: 'Pickup',
   picked_up: 'Pickup',
-  billed: 'Waiting Payment',
-  paid: 'Processing',
-  processing: 'Processing',
-  ready: 'Ready',
-  delivering: 'Delivery',
-  delivered: 'Completed',
+  waiting_payment: 'Waiting Payment',
+  washing: 'Processing',
+  washing_finished: 'Ready',
+  delivery: 'Delivery',
+  completed: 'Completed',
   cancelled: 'Cancelled',
 };
 
@@ -61,13 +59,17 @@ export default function Dashboard() {
 
       try {
         const response = await api.get('/orders', { params: { per_page: 100 } });
-        const rows = response?.data?.data?.data ?? [];
+        const payload = response?.data?.data;
+        const rows = Array.isArray(payload)
+          ? payload
+          : (Array.isArray(payload?.data) ? payload.data : []);
 
         const mapped = rows.map((row) => {
           const unitPrice = Number(row?.service?.price_per_kg ?? 0);
           const estimatedWeight = Number(row?.estimated_weight ?? 0);
           const actualWeight = Number(row?.actual_weight ?? 0);
           const weightForPrice = actualWeight > 0 ? actualWeight : estimatedWeight;
+          const transactionTotal = Number(row?.transaction?.total_amount ?? 0);
           const estimatedPrice = unitPrice * estimatedWeight;
           const finalPrice = unitPrice * weightForPrice;
           const statusLabel = STATUS_LABEL_MAP[row?.status] ?? 'Pending';
@@ -80,10 +82,10 @@ export default function Dashboard() {
             status: statusLabel,
             backend_status: row?.status,
             paymentMethod: (row?.payment_method || '').toUpperCase(),
-            payment_status: row?.status === 'delivered' ? 'paid' : 'unpaid',
+            payment_status: row?.status === 'completed' ? 'paid' : 'unpaid',
             verified: actualWeight > 0,
             estimated_price: estimatedPrice,
-            price: finalPrice,
+            price: transactionTotal > 0 ? transactionTotal : finalPrice,
             weight: estimatedWeight,
             actual_weight: actualWeight,
             pickupAddress: row?.pickup_address ?? '-',

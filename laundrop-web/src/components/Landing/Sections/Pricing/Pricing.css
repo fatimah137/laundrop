@@ -1,6 +1,7 @@
 .pricing {
   padding: 64px 0;
   background: #fff;
+  scroll-margin-top: 72px;
 }
 
 .pricing-grid {

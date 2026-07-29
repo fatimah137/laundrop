@@ -18,6 +18,14 @@ import './Orders.css';
 const STATUS_FILTERS = ['all', 'waiting_confirmation', 'pickup', 'picked_up', 'waiting_payment', 'washing', 'washing_finished', 'delivery', 'completed', 'cancelled'];
 const ITEMS_PER_PAGE = 10;
 
+// Backend error() always puts message in .errors, not .message
+const getApiError = (err, fallback) => {
+  const data = err?.response?.data;
+  if (typeof data?.errors === 'string') return data.errors;
+  if (typeof data?.message === 'string' && data.message !== 'Terjadi kesalahan') return data.message;
+  return fallback;
+};
+
 const getFilterLabel = (key) => {
   if (key === 'all') return 'Semua';
   return STATUS_CONFIG[key]?.label ?? key;
@@ -50,6 +58,10 @@ export default function Orders() {
   const [cashPaymentPhoto, setCashPaymentPhoto] = useState(null);
   const [cashPaymentNotes, setCashPaymentNotes] = useState('');
   const [cashPaymentSubmitting, setCashPaymentSubmitting] = useState(false);
+  const [pickupPhotoOrder, setPickupPhotoOrder] = useState(null);
+  const [pickupPhoto, setPickupPhoto] = useState(null);
+  const [pickupPhotoNotes, setPickupPhotoNotes] = useState('');
+  const [pickupPhotoSubmitting, setPickupPhotoSubmitting] = useState(false);
 
   const canManage = role === 'owner' || role === 'employee';
 
@@ -115,7 +127,7 @@ export default function Orders() {
       setError('');
       try {
         const response = await api.get('/orders', { params: { per_page: 100 } });
-        const rows = response?.data?.data?.data ?? [];
+        const rows = response?.data?.data ?? [];
         if (!mounted) return;
         setOrders(rows.map(mapApiOrderToUi));
       } catch (err) {
@@ -189,17 +201,63 @@ export default function Orders() {
       return;
     }
 
+    // Intercept pickup -> picked_up to show photo upload modal
+    if (newStatus === 'picked_up' && currentOrder?.status === 'pickup') {
+      setPickupPhotoOrder(currentOrder);
+      setPickupPhoto(null);
+      setPickupPhotoNotes('');
+      return;
+    }
+
     const updateStatus = async () => {
       try {
         await api.patch(`/orders/${id}/status`, { status: newStatus });
         setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
         showToast('Status pesanan berhasil diupdate!');
       } catch (err) {
-        showToast(err?.response?.data?.message || 'Gagal update status', 'danger');
+        showToast(getApiError(err, 'Gagal update status'), 'danger');
       }
     };
 
     updateStatus();
+  };
+
+  const closePickupPhotoModal = () => {
+    setPickupPhotoOrder(null);
+    setPickupPhoto(null);
+    setPickupPhotoNotes('');
+  };
+
+  const handleSubmitPickupPhoto = async (e) => {
+    e.preventDefault();
+    if (!pickupPhotoOrder?.id) return;
+
+    try {
+      setPickupPhotoSubmitting(true);
+
+      // Upload photo if provided
+      if (pickupPhoto) {
+        const formData = new FormData();
+        formData.append('type', 'pickup');
+        formData.append('photo', pickupPhoto);
+        await api.post(`/orders/${pickupPhotoOrder.id}/photos`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
+
+      // Update status to picked_up
+      await api.patch(`/orders/${pickupPhotoOrder.id}/status`, { status: 'picked_up' });
+      setOrders((prev) => prev.map((o) =>
+        o.id === pickupPhotoOrder.id ? { ...o, status: 'picked_up' } : o
+      ));
+
+      showToast('Pakaian berhasil dijemput!');
+      closePickupPhotoModal();
+    } catch (err) {
+      showToast(getApiError(err, 'Gagal konfirmasi pickup'), 'danger');
+    } finally {
+      setPickupPhotoSubmitting(false);
+    }
   };
 
   const openBillModal = (order) => {
@@ -238,6 +296,11 @@ export default function Orders() {
       return;
     }
 
+    if (!billingPhoto) {
+      showToast('Foto timbangan wajib diisi', 'danger');
+      return;
+    }
+
     try {
       setBillingSubmitting(true);
       const formData = new FormData();
@@ -268,7 +331,7 @@ export default function Orders() {
       showToast('Tagihan berhasil dibuat dan status jadi waiting_payment');
       closeBillModal();
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Gagal membuat tagihan', 'danger');
+      showToast(getApiError(err, 'Gagal membuat tagihan'), 'danger');
     } finally {
       setBillingSubmitting(false);
     }
@@ -277,6 +340,11 @@ export default function Orders() {
   const handleConfirmCashPayment = async (e) => {
     e.preventDefault();
     if (!cashPaymentOrder?.id) return;
+
+    if (!cashPaymentPhoto) {
+      showToast('Foto bukti serah terima wajib diisi', 'danger');
+      return;
+    }
 
     try {
       setCashPaymentSubmitting(true);
@@ -305,7 +373,7 @@ export default function Orders() {
       showToast('Pembayaran cash diterima, status pesanan selesai');
       closeCashPaymentModal();
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Gagal konfirmasi pembayaran cash', 'danger');
+      showToast(getApiError(err, 'Gagal konfirmasi pembayaran cash'), 'danger');
     } finally {
       setCashPaymentSubmitting(false);
     }
@@ -520,12 +588,13 @@ export default function Orders() {
               </label>
 
               <label className="ow-bill-label">
-                Foto Timbangan (opsional)
+                <span>Foto Timbangan <span style={{ color: '#ef4444' }}>*</span></span>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setBillingPhoto(e.target.files?.[0] || null)}
                   className="ow-bill-file"
+                  required
                 />
               </label>
 
@@ -553,6 +622,48 @@ export default function Orders() {
         </div>
       )}
 
+      {pickupPhotoOrder && (
+        <div className="ow-modal-overlay" onClick={closePickupPhotoModal}>
+          <div className="ow-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="ow-modal-header">
+              <h3>Konfirmasi Pakaian Dijemput</h3>
+              <button className="ow-modal-close" onClick={closePickupPhotoModal}>✕</button>
+            </div>
+            <form className="ow-modal-body ow-bill-form" onSubmit={handleSubmitPickupPhoto}>
+              <p className="ow-cash-helper">
+                Order <strong>{pickupPhotoOrder.order_number}</strong> — {pickupPhotoOrder.customer_name}
+              </p>
+
+              <label className="ow-bill-label">
+                <span>Foto Bukti Pengambilan Pakaian <span style={{ color: '#ef4444' }}>*</span></span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => setPickupPhoto(e.target.files?.[0] || null)}
+                  className="ow-bill-file"
+                  required
+                />
+              </label>
+              {pickupPhoto && (
+                <p style={{ fontSize: 12, color: '#16a34a', marginTop: -8 }}>
+                  ✓ {pickupPhoto.name}
+                </p>
+              )}
+
+              <div className="ow-modal-footer" style={{ padding: '16px 0 0' }}>
+                <button type="button" className="ow-btn-cancel" onClick={closePickupPhotoModal} disabled={pickupPhotoSubmitting}>
+                  Batal
+                </button>
+                <button type="submit" className="ow-btn-new" disabled={pickupPhotoSubmitting}>
+                  {pickupPhotoSubmitting ? 'Menyimpan...' : 'Konfirmasi Pickup'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {cashPaymentOrder && (
         <div className="ow-modal-overlay" onClick={closeCashPaymentModal}>
           <div className="ow-modal-box" onClick={(e) => e.stopPropagation()}>
@@ -566,12 +677,13 @@ export default function Orders() {
               </p>
 
               <label className="ow-bill-label">
-                Foto Bukti Serah Terima (opsional)
+                <span>Foto Bukti Serah Terima <span style={{ color: '#ef4444' }}>*</span></span>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setCashPaymentPhoto(e.target.files?.[0] || null)}
                   className="ow-bill-file"
+                  required
                 />
               </label>
 

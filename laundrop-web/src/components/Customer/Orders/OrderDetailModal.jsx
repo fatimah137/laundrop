@@ -1,4 +1,5 @@
 import { X, MapPin, Package } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import StatusBadge from '../../ui/StatusBadge';
 import './OrderDetailModal.css';
 
@@ -21,6 +22,18 @@ export default function OrderDetailModal({ order, onClose, onCancel, canCancel =
               <X size={16} />
             </button>
           </div>
+        </div>
+
+        {/* QR Code Section */}
+        <div className="qr-code-section">
+          <QRCodeSVG 
+            value={order.id} 
+            size={120}
+            level="H"
+            includeMargin={true}
+            className="order-qr-code"
+          />
+          <p className="qr-label">Tunjukkan ke karyawan untuk scan</p>
         </div>
 
         <div className="modal-body">

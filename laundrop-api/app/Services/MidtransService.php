@@ -49,37 +49,96 @@ class MidtransService
     }
 
     /**
-     * Parse dan verifikasi notifikasi webhook dari Midtrans.
-     * Mengembalikan null jika signature tidak valid.
+     * Generate dynamic QRIS via Core API
+     * Returns barcode string yang bisa ditampilkan di frontend
      */
-    public function parseNotification(array $payload): ?array
+    public function generateDynamicQris(string $orderId, int $amount, string $customerName, string $customerEmail): array
     {
         try {
-            $notification = new \Midtrans\Notification();
+            $params = [
+                'payment_type' => 'qris',
+                'qris'         => [
+                    'acquirer' => 'gopay', // Support multi-acquirer GoPay, LinkAja, DANA, OVO
+                ],
+                'transaction_details' => [
+                    'order_id'     => $orderId,
+                    'gross_amount' => $amount,
+                ],
+                'customer_details' => [
+                    'first_name' => $customerName,
+                    'email'      => $customerEmail,
+                    'phone'      => '-',
+                ],
+                'expiry' => [
+                    'unit'     => 'hours',
+                    'duration' => 24,
+                ],
+            ];
 
-            // Verifikasi signature key
-            $expectedSignature = hash(
-                'sha512',
-                $payload['order_id']
-                . $payload['status_code']
-                . $payload['gross_amount']
-                . config('services.midtrans.server_key')
-            );
+            // Call Midtrans Core API
+            $response = \Midtrans\CoreApi::charge($params);
 
-            if ($payload['signature_key'] !== $expectedSignature) {
-                return null;
+            if ($response->status_code == '201' || $response->status_code == '200') {
+                return [
+                    'success'           => true,
+                    'transaction_id'    => $response->transaction_id,
+                    'qr_string'         => $response->qr_string,       // QR barcode string
+                    'status'            => $response->transaction_status,
+                    'gross_amount'      => $response->gross_amount,
+                    'expiry_time'       => $response->expiry_time ?? null,
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error'   => $response->status_message ?? 'Unknown error',
+                ];
             }
-
+        } catch (\Throwable $e) {
+            Log::error('Midtrans generateDynamicQris error', ['error' => $e->getMessage()]);
             return [
-                'order_id'          => $payload['order_id'],
-                'transaction_id'    => $payload['transaction_id'],
-                'transaction_status'=> $payload['transaction_status'],
-                'fraud_status'      => $payload['fraud_status'] ?? null,
-                'gross_amount'      => $payload['gross_amount'],
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Get transaction status dari Midtrans
+     */
+    public function getTransactionStatus(string $orderId): ?array
+    {
+        try {
+            $response = \Midtrans\CoreApi::status($orderId);
+            
+            return [
+                'order_id'       => $response->order_id,
+                'transaction_id' => $response->transaction_id,
+                'status'         => $response->transaction_status,
+                'gross_amount'   => $response->gross_amount,
+                'settlement_time'=> $response->settlement_time ?? null,
+                'fraud_status'   => $response->fraud_status ?? null,
+                'payment_type'   => $response->payment_type ?? null,
             ];
         } catch (\Throwable $e) {
-            Log::error('Midtrans parseNotification error', ['error' => $e->getMessage()]);
+            Log::error('Midtrans getTransactionStatus error', ['error' => $e->getMessage()]);
             return null;
         }
+    }
+
+    /**
+     * Verifikasi webhook notification dari Midtrans
+     */
+    public function verifyNotification(array $payload): bool
+    {
+        $orderId      = $payload['order_id'] ?? '';
+        $statusCode   = $payload['status_code'] ?? '';
+        $grossAmount  = $payload['gross_amount'] ?? '';
+        $serverKey    = config('services.midtrans.server_key');
+        $signatureKey = $payload['signature_key'] ?? '';
+
+        // Hash formula: order_id + status_code + gross_amount + server_key
+        $expectedSignature = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
+
+        return hash_equals($signatureKey, $expectedSignature);
     }
 }

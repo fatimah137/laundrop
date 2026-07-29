@@ -7,6 +7,7 @@ use App\Models\OrderStatusLog;
 use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Http\Resources\OrderResource;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -51,7 +52,7 @@ class OrderController extends Controller
         $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
         $orders = $query->paginate($perPage);
 
-        return $this->success($orders);
+        return $this->success(OrderResource::collection($orders), 'Orders retrieved successfully');
     }
 
     // ─── POST /api/orders ─────────────────────────────────────────────────────
@@ -111,7 +112,7 @@ class OrderController extends Controller
             body:    "Pesanan #{$order->order_number} sedang menunggu konfirmasi karyawan."
         );
 
-        return $this->success($order, 'Pesanan berhasil dibuat', 201);
+        return $this->success(new OrderResource($order), 'Pesanan berhasil dibuat', 201);
     }
 
     // ─── GET /api/orders/{id} ─────────────────────────────────────────────────
@@ -131,7 +132,7 @@ class OrderController extends Controller
             return $this->error('Akses ditolak', 403);
         }
 
-        return $this->success($order);
+        return $this->success(new OrderResource($order));
     }
 
     // ─── PATCH /api/orders/{id}/status ───────────────────────────────────────
@@ -199,7 +200,10 @@ class OrderController extends Controller
         // Kirim notifikasi ke customer
         $this->notifService->sendStatusUpdate($order, $newStatus);
 
-        return $this->success($order, 'Status pesanan berhasil diperbarui');
+        return $this->success(
+            new OrderResource($order->fresh(['customer:id,name,phone', 'service', 'transaction.payment'])),
+            'Status pesanan berhasil diperbarui'
+        );
     }
 
     // ─── POST /api/orders/{id}/bill ─────────────────────────────────────────
@@ -323,9 +327,10 @@ class OrderController extends Controller
             'notes'         => $request->notes ?? 'Pembayaran cash diterima saat pengantaran',
         ]);
 
-        $this->notifService->sendStatusUpdate($order->fresh(), Order::STATUS_COMPLETED);
+        $freshOrder = $order->fresh(['customer:id,name,phone', 'service', 'transaction.payment']);
+        $this->notifService->sendStatusUpdate($freshOrder, Order::STATUS_COMPLETED);
 
-        return $this->success($order->fresh(['transaction.payment']), 'Pembayaran cash dikonfirmasi dan pesanan selesai');
+        return $this->success(new OrderResource($freshOrder), 'Pembayaran cash dikonfirmasi dan pesanan selesai');
     }
 
     private function calculateDistanceKm(float $fromLat, float $fromLng, float $toLat, float $toLng): float

@@ -5,6 +5,7 @@ import PageTitle from '../../../components/ui/PageTitle';
 import StatusBadge from '../../../components/ui/StatusBadge';
 import OrderDetailModal from '../../../components/Customer/Orders/OrderDetailModal';
 import TrackOrderModal from '../../../components/Customer/Orders/TrackOrderModal';
+import PaymentQrisModal from '../../../components/Customer/Orders/PaymentQrisModal';
 import api from '../../../services/api';
 import { formatRp } from '../../../context/AppContext';
 import './History.css';
@@ -31,6 +32,7 @@ const TRACKABLE_BACKEND_STATUS = new Set([
   'washing',
   'washing_finished',
   'delivery',
+  'completed',
 ]);
 
 const getApiOrigin = () => {
@@ -162,6 +164,7 @@ export default function OrderHistory() {
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [trackingLoadingId, setTrackingLoadingId] = useState(null);
   const [detailLoadingId, setDetailLoadingId] = useState(null);
+  const [paymentOrder, setPaymentOrder] = useState(null);
 
   const isPendingOrder = (order) => String(order?.backend_status || '').toLowerCase() === 'waiting_confirmation';
 
@@ -174,7 +177,7 @@ export default function OrderHistory() {
 
       try {
         const response = await api.get('/orders', { params: { per_page: 100 } });
-        const rows = response?.data?.data?.data ?? [];
+        const rows = response?.data?.data ?? [];  // API returns { data: { data: [...], links, meta } }
 
         const mapRowToOrder = (row) => {
           const unitPrice = Number(row?.service?.price_per_kg ?? 0);
@@ -207,6 +210,11 @@ export default function OrderHistory() {
             orderType: row?.order_type ?? 'pickup',
             photo_pickup_url: toStorageUrl(row?.photo_pickup),
             photo_delivery_url: toStorageUrl(row?.photo_delivery),
+            photos: {
+              pickup: toStorageUrl(row?.photos?.pickup ?? row?.photo_pickup),
+              scale: toStorageUrl(row?.photos?.scale ?? row?.photo_scale),
+              delivery: toStorageUrl(row?.photos?.delivery ?? row?.photo_delivery),
+            },
             status_logs: statusLogs,
             created_at: row?.created_at || null,
             timeline: buildTimeline(row?.status, row?.order_type, statusLogs, row?.created_at),
@@ -227,8 +235,17 @@ export default function OrderHistory() {
 
     fetchOrders();
 
+    // Refetch when tab regains focus (e.g. employee changed status in another tab)
+    const handleFocus = () => { if (mounted) fetchOrders(); };
+    window.addEventListener('focus', handleFocus);
+
+    // Refetch every 30 seconds for active orders
+    const interval = setInterval(() => { if (mounted) fetchOrders(); }, 30000);
+
     return () => {
       mounted = false;
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
     };
   }, []);
 
@@ -323,6 +340,11 @@ export default function OrderHistory() {
           orderType: row?.order_type ?? prev.orderType,
           photo_pickup_url: toStorageUrl(row?.photo_pickup),
           photo_delivery_url: toStorageUrl(row?.photo_delivery),
+          photos: {
+            pickup: toStorageUrl(row?.photos?.pickup ?? row?.photo_pickup),
+            scale: toStorageUrl(row?.photos?.scale ?? row?.photo_scale),
+            delivery: toStorageUrl(row?.photos?.delivery ?? row?.photo_delivery),
+          },
           status_logs: statusLogs,
           created_at: row?.created_at || prev.created_at,
           timeline: buildTimeline(row?.status, row?.order_type, statusLogs, row?.created_at),
@@ -378,6 +400,11 @@ export default function OrderHistory() {
           orderType: row?.order_type ?? prev.orderType,
           photo_pickup_url: toStorageUrl(row?.photo_pickup),
           photo_delivery_url: toStorageUrl(row?.photo_delivery),
+          photos: {
+            pickup: toStorageUrl(row?.photos?.pickup ?? row?.photo_pickup),
+            scale: toStorageUrl(row?.photos?.scale ?? row?.photo_scale),
+            delivery: toStorageUrl(row?.photos?.delivery ?? row?.photo_delivery),
+          },
           status_logs: statusLogs,
           created_at: row?.created_at || prev.created_at,
           timeline: buildTimeline(row?.status, row?.order_type, statusLogs, row?.created_at),
@@ -388,6 +415,19 @@ export default function OrderHistory() {
     } finally {
       setDetailLoadingId(null);
     }
+  };
+
+  const handlePaymentQris = (order) => {
+    setTrackingOrder(null);
+    setPaymentOrder(order);
+  };
+
+  const handlePaymentSuccess = (paymentData) => {
+    // Refresh order data setelah pembayaran berhasil
+    if (paymentOrder?.rawId) {
+      openTrackingOrder({ ...paymentOrder, rawId: paymentOrder.rawId });
+    }
+    setPaymentOrder(null);
   };
 
   return (
@@ -503,6 +543,7 @@ export default function OrderHistory() {
             onCancel={() => handleCancelOrder(trackingOrder)}
             canCancel={isPendingOrder(trackingOrder)}
             cancelling={cancellingId === trackingOrder?.rawId}
+            onPayQris={handlePaymentQris}
           />
         )}
 
@@ -534,6 +575,14 @@ export default function OrderHistory() {
               </div>
             </div>
           </div>
+        )}
+
+        {paymentOrder && (
+          <PaymentQrisModal
+            order={paymentOrder}
+            onClose={() => setPaymentOrder(null)}
+            onPaymentSuccess={handlePaymentSuccess}
+          />
         )}
       </div>
     </Layout>

@@ -88,21 +88,19 @@ export default function OrderListView({
                   {nextStatus && (
                     <button
                       className="olv-btn-next"
-                      onClick={() => canAdvance && onStatusChange?.(order.id, nextStatus)}
+                      onClick={() => {
+                        if (!canAdvance) return;
+                        if (order.status === 'picked_up') {
+                          onBill?.(order);
+                        } else {
+                          onStatusChange?.(order.id, nextStatus);
+                        }
+                      }}
                       disabled={!canAdvance}
                       title={blockReason}
                     >
                       <ChevronRight size={13} />
                       {STATUS_BUTTON_LABEL[order.status] || 'Next'}
-                    </button>
-                  )}
-
-                  {canBill && (
-                    <button
-                      className="olv-btn-bill"
-                      onClick={() => onBill?.(order)}
-                    >
-                      Input Berat
                     </button>
                   )}
 

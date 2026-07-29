@@ -5,11 +5,31 @@ import { Html5Qrcode } from 'html5-qrcode';
 import StatusBadge from '../../shared/StatusBadge';
 import './QRScannerModal.css';
 
-const STATUS_FLOW = ['pending', 'pickup', 'proses', 'siap', 'delivery', 'selesai'];
+const STATUS_FLOW = [
+  'waiting_confirmation',
+  'pickup',
+  'picked_up',
+  'waiting_payment',
+  'washing',
+  'washing_finished',
+  'delivery',
+  'completed',
+];
+
+const STATUS_LABELS = {
+  waiting_confirmation: 'Menunggu Konfirmasi',
+  pickup: 'Dalam Penjemputan',
+  picked_up: 'Pakaian Diambil',
+  waiting_payment: 'Menunggu Pembayaran',
+  washing: 'Proses Pencucian',
+  washing_finished: 'Pencucian Selesai',
+  delivery: 'Dalam Pengantaran',
+  completed: 'Selesai',
+};
 
 const STATUS_OPTIONS = STATUS_FLOW.map((s) => ({
   value: s,
-  label: s.charAt(0).toUpperCase() + s.slice(1),
+  label: STATUS_LABELS[s] || s,
 }));
 
 const CAMERA_SCAN_CONFIG = { fps: 10, qrbox: { width: 240, height: 240 } };
@@ -567,9 +587,20 @@ export default function QRScannerModal({ orders = [], onStatusChange, onClose })
                           value={newStatus}
                           onChange={(e) => setNewStatus(e.target.value)}
                         >
-                          {STATUS_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
+                          {STATUS_OPTIONS.map((o) => {
+                            const currentStatusIdx = STATUS_FLOW.indexOf(foundOrder.status);
+                            const optionIdx = STATUS_FLOW.indexOf(o.value);
+                            const isDisabled = optionIdx <= currentStatusIdx;
+                            return (
+                              <option 
+                                key={o.value} 
+                                value={o.value}
+                                disabled={isDisabled}
+                              >
+                                {o.label}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
 

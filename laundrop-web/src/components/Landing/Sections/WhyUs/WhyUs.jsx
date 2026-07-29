@@ -14,7 +14,7 @@ export default function WhyUs() {
       <div className="container whyus-inner">
         <div className="whyus-image">
           <img
-            src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80"
+            src="https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=600&q=80"
             alt="Why Laundrop"
           />
         </div>

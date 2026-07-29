@@ -1,6 +1,7 @@
 .faq {
   padding: 64px 0;
   background: var(--bg-light);
+  scroll-margin-top: 72px;
 }
 
 .faq-list {

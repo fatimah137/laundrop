@@ -35,6 +35,7 @@ Route::get('services/{id}', [ServiceController::class, 'show']);
 
 // Webhook Midtrans — TANPA auth (IP Midtrans yang diverifikasi via signature)
 Route::post('payments/webhook', [PaymentController::class, 'webhook']);
+Route::post('webhooks/midtrans', [PaymentController::class, 'webhookMidtrans']);
 
 // ─── Authenticated ────────────────────────────────────────────────────────────
 
@@ -82,6 +83,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('orders',              [OrderController::class, 'store']);
         Route::patch('orders/{id}/cancel', [OrderController::class, 'cancel']);
         Route::post('payments/create',     [PaymentController::class, 'create']);
+        
+        // QRIS payment endpoints
+        Route::post('orders/{orderId}/generate-qris', [PaymentController::class, 'generateQris']);
+        Route::get('orders/{orderId}/payment-status', [PaymentController::class, 'checkPaymentStatus']);
     });
 
     // ── Employee only ────────────────────────────────────────────────────────

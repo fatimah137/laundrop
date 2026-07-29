@@ -1,4 +1,5 @@
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import './Toast.css';
 
 export default function Toast({ toast, onClose }) {
@@ -19,13 +20,14 @@ export default function Toast({ toast, onClose }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className={`toast ${toast.type}`}>
       {getIcon()}
       <span>{toast.msg}</span>
       <button className="toast-close" onClick={onClose}>
         <X size={14} />
       </button>
-    </div>
+    </div>,
+    document.body
   );
 }
