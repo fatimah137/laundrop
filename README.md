@@ -23,7 +23,6 @@ Laundrop adalah sistem manajemen laundry modern yang memudahkan pelanggan memesa
 | Fitur | Deskripsi |
 |-------|-----------|
 | 📱 **PWA** | Dapat diakses via browser, bisa di-install ke homescreen tanpa Play Store |
-| 🤖 **AI OCR** | Scan nota transaksi otomatis menggunakan Optical Character Recognition |
 | 📍 **Location Tracking** | Pelacakan lokasi penjemputan & pengantaran cucian secara real-time |
 | 👥 **Multi-Role** | Tiga peran pengguna: Customer, Karyawan, dan Owner |
 | 💳 **Pembayaran Online** | Sistem pembayaran terintegrasi dengan berbagai metode |
@@ -37,7 +36,6 @@ Laundrop adalah sistem manajemen laundry modern yang memudahkan pelanggan memesa
 - **Laravel 11** — PHP Framework
 - **Laravel Sanctum** — API Authentication
 - **MySQL 8** — Database
-- **Tesseract OCR / Google Vision API** — AI OCR
 
 ### Frontend
 - **React 18** — UI Library
