@@ -55,8 +55,8 @@ Laundrop adalah sistem manajemen laundry modern yang memudahkan pelanggan memesa
 | Desyana Dewi Hapsari | 3.34.23.1.08 |
 | Fatimah Fauzi Abdul Ghoni | 3.34.23.1.11 |
 
-> Pembimbing I: Tahan Prahara, S.T., M.Kom.  
-> Pembimbing II: Amran Yobioktabera, S.Kom., M.Kom.
+> Pembimbing I: Amran Yobioktabera, S.Kom., M.Kom. 
+> Pembimbing II: Tahan Prahara, S.T., M.Kom. 
 
 ---
 
