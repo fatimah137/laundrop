@@ -10,7 +10,7 @@ class Config:
     PORT = int(os.getenv('PORT', 5000))
     
     # CORS Configuration
-    CORS_ORIGINS = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000,http://localhost:8000').split(',')
     
     # Laravel API Integration
     LARAVEL_API_URL = os.getenv('LARAVEL_API_URL', 'http://localhost:8000/api')
