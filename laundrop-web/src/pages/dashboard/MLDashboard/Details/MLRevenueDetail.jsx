@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp } from 'lucide-react';
+import { Download, TrendingUp } from 'lucide-react';
 import PageHeader from '../../../../components/shared/PageHeader';
 import { formatIDR } from '../../../../data/format';
 import mlService from '../../../../services/mlService';
 import PredictionTimeSeriesChart from '../../../../components/Dashboard/ML/PredictionTimeSeriesChart';
+import { downloadMlPdfReport } from '../../../../utils/mlPdfReport';
 import '../MLDashboard.css';
 
 function toInputDate(date) {
@@ -81,6 +82,46 @@ export default function MLRevenueDetail() {
     load(start, end);
   };
 
+  const trendLabel = data?.trend === 'up' ? 'Naik' : data?.trend === 'down' ? 'Turun' : 'Stabil';
+
+  const projectionData = data
+    ? buildDateLabels(startDate, totalDays).map(({ label, dayIndex }) => {
+      const trendFactor = data.trend === 'up'
+        ? 1 + ((dayIndex - 1) / Math.max(totalDays, 1)) * 0.12
+        : data.trend === 'down'
+          ? 1 - ((dayIndex - 1) / Math.max(totalDays, 1)) * 0.12
+          : 1;
+
+      return {
+        label,
+        revenue: Math.max(0, Math.round((data.predicted_daily_average || 0) * trendFactor)),
+      };
+    })
+    : [];
+
+  const handleDownloadPdf = () => {
+    if (!data) return;
+    const todayStr = new Date().toLocaleString('id-ID');
+
+    downloadMlPdfReport({
+      title: 'Laporan Prediksi Revenue',
+      subtitle: 'Business AI Laundrop',
+      period: `${startDate} s/d ${endDate}`,
+      generatedAt: todayStr,
+      summaryRows: [
+        { label: 'Periode Prediksi', value: `${daysBetween(startDate, endDate)} hari` },
+        { label: 'Prediksi Total Revenue', value: formatIDR(data.predicted_total) },
+        { label: 'Rata-rata Harian', value: formatIDR(data.predicted_daily_average) },
+        { label: 'Akurasi Model', value: `${Math.round((data.confidence || 0) * 100)}%` },
+        { label: 'Tren', value: trendLabel },
+      ],
+      tableHead: ['Tanggal', 'Proyeksi Revenue / Hari'],
+      tableBody: projectionData.map((row) => [row.label, formatIDR(row.revenue)]),
+      notes: data.summary || 'Tidak ada ringkasan AI.',
+      filename: `laporan-prediksi-revenue-${startDate}-${endDate}.pdf`,
+    });
+  };
+
   return (
     <div className="ml-dashboard">
       <PageHeader
@@ -143,9 +184,19 @@ export default function MLRevenueDetail() {
           </button>
         </div>
 
-        <p className="ml-range-caption">
-          Periode prediksi: {daysBetween(startDate, endDate)} hari (maksimal 90 hari ke depan)
-        </p>
+        <div className="ml-range-actions">
+          <p className="ml-range-caption">
+            Periode prediksi: {daysBetween(startDate, endDate)} hari (maksimal 90 hari ke depan)
+          </p>
+          <button
+            className="ml-export-btn"
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={loading || !!error || !data}
+          >
+            <Download size={14} /> Unduh PDF
+          </button>
+        </div>
 
         {loading && <p className="ml-placeholder">Memuat data...</p>}
         {!loading && error && <p className="ml-error">{error}</p>}
@@ -165,22 +216,22 @@ export default function MLRevenueDetail() {
             <PredictionTimeSeriesChart
               title="Grafik Prediksi Revenue Harian"
               subtitle={`Simulasi per hari untuk ${totalDays} hari ke depan`}
-              data={buildDateLabels(startDate, totalDays).map(({ label, dayIndex }) => {
-                const trendFactor = data.trend === 'up'
-                  ? 1 + ((dayIndex - 1) / Math.max(totalDays, 1)) * 0.12
-                  : data.trend === 'down'
-                    ? 1 - ((dayIndex - 1) / Math.max(totalDays, 1)) * 0.12
-                    : 1;
-
-                return {
-                  label,
-                  revenue: Math.max(0, Math.round((data.predicted_daily_average || 0) * trendFactor)),
-                };
-              })}
+              data={projectionData}
               lines={[{ dataKey: 'revenue', name: 'Revenue / Hari', color: '#16a34a' }]}
               yTickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : `${Math.round(v / 1000)}k`}
               tooltipFormatter={(v) => [formatIDR(v), 'Revenue']}
             />
+
+            {/* Gemini AI Summary */}
+            {data.summary && (
+              <div className="ml-summary-box">
+                <div className="ml-summary-header">
+                  <span className="ml-summary-icon">✨</span>
+                  <span className="ml-summary-label">Kesimpulan AI</span>
+                </div>
+                <p className="ml-summary-text">{data.summary}</p>
+              </div>
+            )}
           </div>
         )}
       </div>

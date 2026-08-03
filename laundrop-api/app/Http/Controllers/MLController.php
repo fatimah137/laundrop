@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\GeminiSummaryService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,10 +13,12 @@ use Illuminate\Support\Facades\Log;
 class MLController extends Controller
 {
     private string $mlServiceUrl;
+    private GeminiSummaryService $gemini;
 
-    public function __construct()
+    public function __construct(GeminiSummaryService $gemini)
     {
         $this->mlServiceUrl = config('services.ml.url', 'http://localhost:5000/api');
+        $this->gemini = $gemini;
     }
 
     /**
@@ -27,7 +30,6 @@ class MLController extends Controller
         $periodDays  = (int) $request->query('days', 30);
         $historyDays = (int) $request->query('history_days', 90);
 
-        // Ambil data revenue harian dari transaksi yang sudah dibayar
         $rows = DB::table('transactions')
             ->join('payments', 'transactions.id', '=', 'payments.transaction_id')
             ->where('payments.status', 'paid')
@@ -56,7 +58,13 @@ class MLController extends Controller
             return $this->error('ML Service tidak dapat dihubungi.', 503);
         }
 
-        return $this->success($result['prediction'] ?? $result);
+        $prediction = $result['prediction'] ?? $result;
+
+        // Generate kesimpulan bahasa natural (null kalau Gemini gagal/quota habis,
+        // dashboard tetap jalan tanpa summary)
+        $summary = $this->gemini->summarize('revenue', $prediction);
+
+        return $this->success(array_merge($prediction, ['summary' => $summary]));
     }
 
     /**
@@ -105,7 +113,10 @@ class MLController extends Controller
             return $this->error('ML Service tidak dapat dihubungi.', 503);
         }
 
-        return $this->success($result['prediction'] ?? $result);
+        $prediction = $result['prediction'] ?? $result;
+        $summary = $this->gemini->summarize('demand', $prediction);
+
+        return $this->success(array_merge($prediction, ['summary' => $summary]));
     }
 
     /**
@@ -119,7 +130,7 @@ class MLController extends Controller
         $periodDays = min(max($periodDays, 1), 90);
 
         if ($customerId) {
-            // Churn risk untuk satu customer
+            // Churn risk untuk satu customer -> sertakan summary Gemini
             $metrics = $this->getCustomerChurnMetrics((int) $customerId, $periodDays);
             if (! $metrics) {
                 return $this->error('Customer tidak ditemukan.', 404);
@@ -130,13 +141,17 @@ class MLController extends Controller
                 return $this->error('ML Service tidak dapat dihubungi.', 503);
             }
 
-            return $this->success($result['prediction'] ?? $result);
+            $prediction = $result['prediction'] ?? $result;
+            $summary = $this->gemini->summarize('churn', $prediction);
+
+            return $this->success(array_merge($prediction, ['summary' => $summary]));
         }
 
         // Batch: hitung churn risk untuk semua customer aktif (max 50)
+        // TIDAK pakai Gemini di sini (hindari 50x API call sekaligus / rate limit)
         $customers = DB::table('users')
             ->where('role', 'customer')
-            ->select('id', 'name', 'created_at')
+            ->select('id', 'name', 'phone', 'created_at')
             ->limit(50)
             ->get();
 
@@ -152,17 +167,48 @@ class MLController extends Controller
                 $results[] = [
                     'customer_id'   => $customer->id,
                     'customer_name' => $customer->name,
+                    'customer_phone' => $customer->phone,
                     'churn_risk'    => $ml['prediction'] ?? null,
                 ];
             }
         }
 
-        // Urutkan dari risiko tertinggi
         usort($results, fn ($a, $b) =>
             ($b['churn_risk']['churn_risk_score'] ?? 0) <=> ($a['churn_risk']['churn_risk_score'] ?? 0)
         );
 
-        return $this->success($results);
+        $highRiskCount = collect($results)->filter(fn ($item) => ($item['churn_risk']['risk_level'] ?? null) === 'high')->count();
+        $mediumRiskCount = collect($results)->filter(fn ($item) => ($item['churn_risk']['risk_level'] ?? null) === 'medium')->count();
+        $lowRiskCount = collect($results)->filter(fn ($item) => ($item['churn_risk']['risk_level'] ?? null) === 'low')->count();
+        $averageRiskScore = collect($results)
+            ->avg(fn ($item) => (float) ($item['churn_risk']['churn_risk_score'] ?? 0)) ?? 0;
+
+        $portfolioPayload = [
+            'period_days' => $periodDays,
+            'total_customers' => count($results),
+            'average_risk_score' => round((float) $averageRiskScore, 4),
+            'risk_distribution' => [
+                'high' => $highRiskCount,
+                'medium' => $mediumRiskCount,
+                'low' => $lowRiskCount,
+            ],
+            'top_risk_customers' => collect($results)
+                ->take(5)
+                ->map(fn ($item) => [
+                    'customer_name' => $item['customer_name'] ?? '-',
+                    'risk_level' => $item['churn_risk']['risk_level'] ?? 'low',
+                    'churn_risk_score' => (float) ($item['churn_risk']['churn_risk_score'] ?? 0),
+                ])
+                ->values()
+                ->toArray(),
+        ];
+
+        $summary = $this->gemini->summarize('churn_portfolio', $portfolioPayload);
+
+        return $this->success([
+            'items' => $results,
+            'summary' => $summary,
+        ]);
     }
 
     /**
@@ -172,34 +218,29 @@ class MLController extends Controller
     public function getRecommendations(Request $request): JsonResponse
     {
         $period = (int) $request->query('period', 30);
-        $period = min(max($period, 7), 365); // clamp 7-365 hari
+        $period = min(max($period, 7), 365);
 
         $startDate = now()->subDays($period)->toDateString();
 
-        // Revenue total
         $totalRevenue = (float) DB::table('transactions')
             ->join('payments', 'transactions.id', '=', 'payments.transaction_id')
             ->where('payments.status', 'paid')
             ->where('transactions.created_at', '>=', $startDate)
             ->sum('transactions.total_amount');
 
-        // Order count
         $orderCount = DB::table('orders')
             ->where('created_at', '>=', $startDate)
             ->whereNotIn('status', ['cancelled'])
             ->count();
 
-        // Unique active customers dalam periode ini
         $activeCustomers = DB::table('orders')
             ->where('created_at', '>=', $startDate)
             ->whereNotIn('status', ['cancelled'])
             ->distinct()
             ->count('customer_id');
 
-        // Total customer terdaftar
         $totalCustomers = DB::table('users')->where('role', 'customer')->count();
 
-        // Churn rate: customer terdaftar yang tidak order dalam periode ini
         $churnedCount  = max(0, $totalCustomers - $activeCustomers);
         $churnRate     = $totalCustomers > 0 ? round($churnedCount / $totalCustomers, 4) : 0;
 
@@ -218,16 +259,30 @@ class MLController extends Controller
             return $this->error('ML Service tidak dapat dihubungi.', 503);
         }
 
-        // Sertakan ringkasan metrik juga
+        $summaryPayload = [
+            'period_days' => $period,
+            'summary' => [
+                'total_revenue'    => $totalRevenue,
+                'order_count'      => $orderCount,
+                'avg_order_value'  => $avgOrderValue,
+                'active_customers' => $activeCustomers,
+                'churn_rate'       => $churnRate,
+            ],
+            'recommendations' => $result['recommendations'] ?? [],
+        ];
+
+        $aiSummary = $this->gemini->summarize('recommendation', $summaryPayload);
+
         return $this->success([
             'period_days'    => $period,
             'summary' => [
-                'total_revenue'   => $totalRevenue,
-                'order_count'     => $orderCount,
-                'avg_order_value' => $avgOrderValue,
-                'active_customers'=> $activeCustomers,
-                'churn_rate'      => $churnRate,
+                'total_revenue'    => $totalRevenue,
+                'order_count'      => $orderCount,
+                'avg_order_value'  => $avgOrderValue,
+                'active_customers' => $activeCustomers,
+                'churn_rate'       => $churnRate,
             ],
+            'ai_summary' => $aiSummary,
             'recommendations' => $result['recommendations'] ?? [],
         ]);
     }
@@ -249,10 +304,6 @@ class MLController extends Controller
 
     // ─── Private helpers ──────────────────────────────────────────────────────
 
-    /**
-     * Kirim POST request ke ML service.
-     * Return array hasil, atau null jika gagal.
-     */
     private function callML(string $endpoint, array $payload): ?array
     {
         try {
@@ -274,9 +325,6 @@ class MLController extends Controller
         }
     }
 
-    /**
-     * Kumpulkan metrik churn untuk satu customer.
-     */
     private function getCustomerChurnMetrics(int $customerId, int $periodDays = 30): ?array
     {
         $customer = DB::table('users')

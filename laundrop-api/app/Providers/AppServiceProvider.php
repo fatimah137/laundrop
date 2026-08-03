@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\GeminiSummaryService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -16,7 +17,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(GeminiSummaryService::class, function ($app) {
+            return new GeminiSummaryService();
+        });
     }
 
     /**

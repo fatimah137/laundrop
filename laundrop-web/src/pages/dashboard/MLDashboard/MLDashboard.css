@@ -141,6 +141,38 @@
   margin: 2px 0 10px;
 }
 
+.ml-range-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ml-export-btn {
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.ml-export-btn:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.ml-export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .ml-range-quick {
   display: flex;
   align-items: center;
@@ -313,6 +345,14 @@
   margin: 2px 0 0;
 }
 
+.ml-churn-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .ml-risk-badge {
   font-size: 11px;
   font-weight: 600;
@@ -321,6 +361,88 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+.ml-risk-tooltip-trigger {
+  position: relative;
+  cursor: help;
+}
+
+.ml-risk-tooltip-trigger::before {
+  content: '';
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 14px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent #0f172a transparent;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+  z-index: 39;
+  pointer-events: none;
+}
+
+.ml-risk-tooltip-trigger::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(320px, 72vw);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-line;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.ml-risk-tooltip-trigger:hover::before,
+.ml-risk-tooltip-trigger:hover::after,
+.ml-risk-tooltip-trigger:focus-visible::before,
+.ml-risk-tooltip-trigger:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.ml-wa-promo-btn {
+  height: 26px;
+  border: 1px solid #86efac;
+  background: #f0fdf4;
+  color: #166534;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ml-wa-promo-btn:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+}
+
+.ml-wa-promo-btn.is-disabled,
+.ml-wa-promo-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .risk-high   { background: #fef2f2; color: #dc2626; }
 .risk-medium { background: #fffbeb; color: #d97706; }
 .risk-low    { background: #f0fdf4; color: #16a34a; }
@@ -401,6 +523,68 @@
   color: #374151;
   margin: 0;
   line-height: 1.45;
+}
+
+/* ── Gemini AI Summary Box ───────────────────────────────────── */
+.ml-summary-box {
+  margin: 16px 0;
+  padding: 14px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
+  border: 1px solid #dcfce7;
+  border-radius: 12px;
+  animation: summaryFadeIn 0.3s ease;
+}
+
+.ml-summary-box.ml-summary-compact {
+  margin: 12px 0 0 0;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(220, 252, 231, 0.7) 0%, rgba(248, 250, 252, 0.5) 100%);
+}
+
+@keyframes summaryFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);     }
+}
+
+.ml-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.ml-summary-box.ml-summary-compact .ml-summary-header {
+  margin-bottom: 4px;
+}
+
+.ml-summary-icon {
+  font-size: 14px;
+}
+
+.ml-summary-box.ml-summary-compact .ml-summary-icon {
+  font-size: 12px;
+}
+
+.ml-summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #16a34a;
+}
+
+.ml-summary-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #374151;
+  margin: 0;
+  font-weight: 500;
+  white-space: pre-line;
+}
+
+.ml-summary-box.ml-summary-compact .ml-summary-text {
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 /* ── Footer note ─────────────────────────────────────────────── */

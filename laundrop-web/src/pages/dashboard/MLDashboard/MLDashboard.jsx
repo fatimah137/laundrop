@@ -40,7 +40,7 @@ function SectionCard({ title, icon: Icon, iconTint = 'blue', loading, error, chi
 
 function RevenueSection({ data }) {
   if (!data) return null;
-  const { predicted_total, predicted_daily_average, trend, confidence } = data;
+  const { predicted_total, predicted_daily_average, trend, confidence, summary } = data;
   return (
     <div className="ml-revenue">
       <div className="ml-revenue-main">
@@ -58,13 +58,22 @@ function RevenueSection({ data }) {
         <p className="ml-daily-label">Rata-rata / hari</p>
         <p className="ml-daily-value">{formatIDR(predicted_daily_average)}</p>
       </div>
+      {summary && (
+        <div className="ml-summary-box ml-summary-compact">
+          <div className="ml-summary-header">
+            <span className="ml-summary-icon">✨</span>
+            <span className="ml-summary-label">AI Insight</span>
+          </div>
+          <p className="ml-summary-text">{summary}</p>
+        </div>
+      )}
     </div>
   );
 }
 
 function DemandSection({ data }) {
   if (!data) return null;
-  const { estimated_orders, range, confidence } = data;
+  const { estimated_orders, range, confidence, summary } = data;
   return (
     <div className="ml-demand">
       <div className="ml-demand-main">
@@ -75,6 +84,15 @@ function DemandSection({ data }) {
           <span className="ml-confidence"> · {Math.round(confidence * 100)}% akurasi</span>
         </p>
       </div>
+      {summary && (
+        <div className="ml-summary-box ml-summary-compact">
+          <div className="ml-summary-header">
+            <span className="ml-summary-icon">✨</span>
+            <span className="ml-summary-label">AI Insight</span>
+          </div>
+          <p className="ml-summary-text">{summary}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -191,7 +209,10 @@ export default function MLDashboard() {
     // Churn
     setLoadingChurn(true); setErrorChurn(null);
     mlService.getChurnPrediction()
-      .then(r => setChurn(r.data.data))
+      .then((r) => {
+        const payload = r.data.data;
+        setChurn(Array.isArray(payload) ? payload : (payload?.items || []));
+      })
       .catch(e => setErrorChurn(e.response?.data?.message ?? e.response?.data?.errors ?? 'Gagal memuat prediksi churn.'))
       .finally(() => setLoadingChurn(false));
 

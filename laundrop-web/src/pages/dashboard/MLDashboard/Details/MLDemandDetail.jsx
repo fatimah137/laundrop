@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ChartColumnIncreasing } from 'lucide-react';
+import { ChartColumnIncreasing, Download } from 'lucide-react';
 import PageHeader from '../../../../components/shared/PageHeader';
 import mlService from '../../../../services/mlService';
 import PredictionTimeSeriesChart from '../../../../components/Dashboard/ML/PredictionTimeSeriesChart';
+import { downloadMlPdfReport } from '../../../../utils/mlPdfReport';
 import '../MLDashboard.css';
 
 function toInputDate(date) {
@@ -80,6 +81,45 @@ export default function MLDemandDetail() {
     load(start, end);
   };
 
+  const projectionData = data
+    ? buildDateLabels(startDate, totalDays).map(({ label, dayIndex }) => {
+      const wave = Math.sin(dayIndex / 2.2) * 0.15;
+      const base = data.estimated_orders || 0;
+      const min = data.range?.min ?? base;
+      const max = data.range?.max ?? base;
+      const projected = Math.max(0, Math.round(base * (1 + wave)));
+
+      return {
+        label,
+        demand: projected,
+        min,
+        max,
+      };
+    })
+    : [];
+
+  const handleDownloadPdf = () => {
+    if (!data) return;
+    const todayStr = new Date().toLocaleString('id-ID');
+
+    downloadMlPdfReport({
+      title: 'Laporan Prediksi Demand',
+      subtitle: 'Business AI Laundrop',
+      period: `${startDate} s/d ${endDate}`,
+      generatedAt: todayStr,
+      summaryRows: [
+        { label: 'Periode Prediksi', value: `${daysBetween(startDate, endDate)} hari` },
+        { label: 'Estimasi Order / Hari', value: `${data.estimated_orders} order` },
+        { label: 'Rentang Prediksi', value: `${data.range?.min ?? '-'} - ${data.range?.max ?? '-'} order` },
+        { label: 'Akurasi Model', value: `${Math.round((data.confidence || 0) * 100)}%` },
+      ],
+      tableHead: ['Tanggal', 'Estimasi Order', 'Batas Min', 'Batas Max'],
+      tableBody: projectionData.map((row) => [row.label, `${row.demand}`, `${row.min}`, `${row.max}`]),
+      notes: data.summary || 'Tidak ada ringkasan AI.',
+      filename: `laporan-prediksi-demand-${startDate}-${endDate}.pdf`,
+    });
+  };
+
   return (
     <div className="ml-dashboard">
       <PageHeader
@@ -142,9 +182,19 @@ export default function MLDemandDetail() {
           </button>
         </div>
 
-        <p className="ml-range-caption">
-          Periode prediksi: {daysBetween(startDate, endDate)} hari (maksimal 90 hari ke depan)
-        </p>
+        <div className="ml-range-actions">
+          <p className="ml-range-caption">
+            Periode prediksi: {daysBetween(startDate, endDate)} hari (maksimal 90 hari ke depan)
+          </p>
+          <button
+            className="ml-export-btn"
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={loading || !!error || !data}
+          >
+            <Download size={14} /> Unduh PDF
+          </button>
+        </div>
 
         {loading && <p className="ml-placeholder">Memuat data...</p>}
         {!loading && error && <p className="ml-error">{error}</p>}
@@ -164,20 +214,7 @@ export default function MLDemandDetail() {
             <PredictionTimeSeriesChart
               title="Grafik Prediksi Demand Harian"
               subtitle={`Estimasi order per hari untuk ${totalDays} hari ke depan`}
-              data={buildDateLabels(startDate, totalDays).map(({ label, dayIndex }) => {
-                const wave = Math.sin(dayIndex / 2.2) * 0.15;
-                const base = data.estimated_orders || 0;
-                const min = data.range?.min ?? base;
-                const max = data.range?.max ?? base;
-                const projected = Math.max(0, Math.round(base * (1 + wave)));
-
-                return {
-                  label,
-                  demand: projected,
-                  min,
-                  max,
-                };
-              })}
+              data={projectionData}
               lines={[
                 { dataKey: 'demand', name: 'Estimasi Order', color: '#2563eb', strokeWidth: 2.8 },
                 { dataKey: 'min', name: 'Batas Min', color: '#94a3b8', dashArray: '4 4' },
@@ -186,6 +223,17 @@ export default function MLDemandDetail() {
               yTickFormatter={(v) => `${v}`}
               tooltipFormatter={(v, name) => [`${Math.round(v)} order`, name]}
             />
+
+            {/* Gemini AI Summary */}
+            {data.summary && (
+              <div className="ml-summary-box">
+                <div className="ml-summary-header">
+                  <span className="ml-summary-icon">✨</span>
+                  <span className="ml-summary-label">Kesimpulan AI</span>
+                </div>
+                <p className="ml-summary-text">{data.summary}</p>
+              </div>
+            )}
           </div>
         )}
       </div>

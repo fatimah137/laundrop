@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Lightbulb } from 'lucide-react';
+import { Download, Lightbulb } from 'lucide-react';
 import PageHeader from '../../../../components/shared/PageHeader';
 import { formatIDR } from '../../../../data/format';
 import mlService from '../../../../services/mlService';
 import PredictionTimeSeriesChart from '../../../../components/Dashboard/ML/PredictionTimeSeriesChart';
+import { downloadMlPdfReport } from '../../../../utils/mlPdfReport';
 import '../MLDashboard.css';
 
 function toInputDate(date) {
@@ -81,6 +82,49 @@ export default function MLRecommendationDetail() {
     load(start, end);
   };
 
+  const projectionData = (() => {
+    if (!data) return [];
+    const summary = data.summary || {};
+    const dailyRevenue = (summary.total_revenue || 0) / Math.max(totalDays, 1);
+    const dailyOrder = (summary.order_count || 0) / Math.max(totalDays, 1);
+    const hasUpsell = (data.recommendations || []).some((r) => r.category === 'upsell');
+    const hasRetention = (data.recommendations || []).some((r) => r.category === 'retention');
+    const growth = hasUpsell ? 0.12 : 0.06;
+    const orderDrift = hasRetention ? 0.08 : 0.04;
+
+    return buildDateLabels(startDate, totalDays).map(({ label, dayIndex }) => ({
+      label,
+      revenue: Math.max(0, Math.round(dailyRevenue * (1 + (dayIndex / Math.max(totalDays, 1)) * growth))),
+      orders: Math.max(0, Number((dailyOrder * (1 + (dayIndex / Math.max(totalDays, 1)) * orderDrift)).toFixed(2))),
+    }));
+  })();
+
+  const handleDownloadPdf = () => {
+    if (!data) return;
+    const summary = data.summary || {};
+    const recommendationText = (data.recommendations || [])
+      .map((rec, idx) => `${idx + 1}. [${String(rec.priority || 'low').toUpperCase()}] ${rec.message}`)
+      .join(' ');
+
+    downloadMlPdfReport({
+      title: 'Laporan Rekomendasi Bisnis',
+      subtitle: 'Business AI Laundrop',
+      period: `${startDate} s/d ${endDate}`,
+      generatedAt: new Date().toLocaleString('id-ID'),
+      summaryRows: [
+        { label: 'Periode Evaluasi', value: `${daysBetween(startDate, endDate)} hari` },
+        { label: 'Total Revenue', value: formatIDR(summary.total_revenue) },
+        { label: 'Jumlah Order', value: `${summary.order_count ?? 0}` },
+        { label: 'Rata-rata Nilai Order', value: formatIDR(summary.avg_order_value) },
+        { label: 'Churn Rate', value: `${((summary.churn_rate || 0) * 100).toFixed(1)}%` },
+      ],
+      tableHead: ['Tanggal', 'Proyeksi Revenue/Hari', 'Proyeksi Order/Hari'],
+      tableBody: projectionData.map((row) => [row.label, formatIDR(row.revenue), `${row.orders}`]),
+      notes: recommendationText || 'Tidak ada rekomendasi.',
+      filename: `laporan-rekomendasi-bisnis-${startDate}-${endDate}.pdf`,
+    });
+  };
+
   return (
     <div className="ml-dashboard">
       <PageHeader
@@ -143,9 +187,19 @@ export default function MLRecommendationDetail() {
           </button>
         </div>
 
-        <p className="ml-range-caption">
-          Periode evaluasi insight: {daysBetween(startDate, endDate)} hari (maksimal 90 hari ke depan)
-        </p>
+        <div className="ml-range-actions">
+          <p className="ml-range-caption">
+            Periode evaluasi insight: {daysBetween(startDate, endDate)} hari (maksimal 90 hari ke depan)
+          </p>
+          <button
+            className="ml-export-btn"
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={loading || !!error || !data}
+          >
+            <Download size={14} /> Unduh PDF
+          </button>
+        </div>
 
         {loading && <p className="ml-placeholder">Memuat data...</p>}
         {!loading && error && <p className="ml-error">{error}</p>}
@@ -184,21 +238,7 @@ export default function MLRecommendationDetail() {
             <PredictionTimeSeriesChart
               title="Grafik Proyeksi Revenue & Order"
               subtitle={`Visualisasi tren harian berdasarkan rekomendasi untuk ${totalDays} hari`}
-              data={(() => {
-                const summary = data.summary || {};
-                const dailyRevenue = (summary.total_revenue || 0) / Math.max(totalDays, 1);
-                const dailyOrder = (summary.order_count || 0) / Math.max(totalDays, 1);
-                const hasUpsell = (data.recommendations || []).some(r => r.category === 'upsell');
-                const hasRetention = (data.recommendations || []).some(r => r.category === 'retention');
-                const growth = hasUpsell ? 0.12 : 0.06;
-                const orderDrift = hasRetention ? 0.08 : 0.04;
-
-                return buildDateLabels(startDate, totalDays).map(({ label, dayIndex }) => ({
-                  label,
-                  revenue: Math.max(0, Math.round(dailyRevenue * (1 + (dayIndex / Math.max(totalDays, 1)) * growth))),
-                  orders: Math.max(0, Number((dailyOrder * (1 + (dayIndex / Math.max(totalDays, 1)) * orderDrift)).toFixed(2))),
-                }));
-              })()}
+              data={projectionData}
               lines={[
                 { dataKey: 'revenue', name: 'Proyeksi Revenue/Hari', color: '#7c3aed', strokeWidth: 2.6 },
                 { dataKey: 'orders', name: 'Proyeksi Order/Hari', color: '#14b8a6', dashArray: '5 5' },
@@ -206,6 +246,16 @@ export default function MLRecommendationDetail() {
               yTickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : `${Math.round(v / 1000)}k`}
               tooltipFormatter={(v, name) => [name.includes('Revenue') ? formatIDR(v) : `${v} order`, name]}
             />
+
+            {data.ai_summary && (
+              <div className="ml-summary-box">
+                <div className="ml-summary-header">
+                  <span className="ml-summary-icon">✨</span>
+                  <span className="ml-summary-label">Kesimpulan AI</span>
+                </div>
+                <p className="ml-summary-text">{data.ai_summary}</p>
+              </div>
+            )}
           </div>
         )}
       </div>

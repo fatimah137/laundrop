@@ -49,4 +49,9 @@ return [
         'merchant_id'   => env('MIDTRANS_MERCHANT_ID'),
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
     ],
+
+    'gemini' => [
+    'api_key' => env('GEMINI_API_KEY'),
+    'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+    ],
 ];
