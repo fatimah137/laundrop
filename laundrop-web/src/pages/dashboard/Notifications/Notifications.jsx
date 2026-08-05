@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, Check, Trash2, Info, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import api from '../../../services/api';
+import { useRole } from '../../../context/RoleContext';
 import './Notifications.css';
 
 const TYPE_ICON = {
@@ -16,49 +18,6 @@ const TYPE_COLOR = {
   error:   'notif-icon-error',
 };
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    type:         'success',
-    title:        'Order Selesai',
-    message:      'Pesanan LD-260429-1061 milik Budi Hartono telah selesai diproses.',
-    created_date: '2026-05-01T10:30:00.000Z',
-    read:         false,
-  },
-  {
-    id: 2,
-    type:         'info',
-    title:        'Pesanan Baru',
-    message:      'Pesanan baru masuk dari Maya Anggraini untuk layanan Kilat.',
-    created_date: '2026-05-01T09:15:00.000Z',
-    read:         false,
-  },
-  {
-    id: 3,
-    type:         'warning',
-    title:        'Pembayaran Tertunda',
-    message:      'Pesanan LD-260429-5889 belum melakukan pembayaran.',
-    created_date: '2026-04-30T14:00:00.000Z',
-    read:         false,
-  },
-  {
-    id: 4,
-    type:         'info',
-    title:        'Status Diperbarui',
-    message:      'Pesanan LD-260428-2618 telah berubah status menjadi Siap.',
-    created_date: '2026-04-30T11:00:00.000Z',
-    read:         true,
-  },
-  {
-    id: 5,
-    type:         'error',
-    title:        'Pesanan Dibatalkan',
-    message:      'Pesanan LD-260426-4452 milik Lina Marlina telah dibatalkan.',
-    created_date: '2026-04-29T08:45:00.000Z',
-    read:         true,
-  },
-];
-
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleString('id-ID', {
@@ -70,14 +29,137 @@ const formatDateTime = (dateStr) => {
   });
 };
 
+function resolveNotificationType(notification) {
+  const rawType = String(notification?.type || '').toLowerCase();
+  const title = String(notification?.title || '').toLowerCase();
+  const body = String(notification?.body || '').toLowerCase();
+  const text = `${title} ${body}`;
+
+  // Database enum values: order_created, status_changed, payment_request, payment_success, reminder
+  
+  if (rawType === 'payment_success') return 'success';
+  if (rawType === 'payment_request') return 'warning';
+  if (rawType === 'order_created') return 'info';
+  if (rawType === 'reminder') return 'warning';
+  
+  if (rawType === 'status_changed') {
+    if (text.includes('selesai') || text.includes('siap')) return 'success';
+    if (text.includes('dibatalkan') || text.includes('gagal')) return 'error';
+    if (text.includes('menunggu')) return 'warning';
+    return 'info';
+  }
+
+  return 'info';
+}
+
 export default function Notifications() {
-  const [items, setItems] = useState(MOCK_NOTIFICATIONS);
+  const { decrementUnreadCount } = useRole();
+  const [items, setItems] = useState([]);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const unread = items.filter(i => !i.read).length;
+  // Fetch notifications from API
+  useEffect(() => {
+    let mounted = true;
 
-  const markRead    = (id) => setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  const markAllRead = ()   => setItems(prev => prev.map(n => ({ ...n, read: true })));
-  const deleteItem  = (id) => setItems(prev => prev.filter(n => n.id !== id));
+    const fetchNotifications = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await api.get('/notifications');
+        const payload = response?.data?.data;
+        const rows = payload?.notifications?.data ?? [];
+
+        if (!mounted) return;
+
+        const mappedNotifications = rows.map((n) => ({
+          id: n.id,
+          read: Boolean(n.is_read),
+          type: resolveNotificationType(n),
+          title: n.title || 'Notifikasi',
+          message: n.body || n.title || 'Notifikasi baru',
+          created_date: n.created_at,
+        }));
+
+        setItems(mappedNotifications);
+        setUnread(Number(payload?.unread_count ?? 0));
+      } catch (err) {
+        if (!mounted) return;
+        setItems([]);
+        setUnread(0);
+        setError(err?.response?.data?.message || 'Gagal memuat notifikasi');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const markRead = async (id) => {
+    const target = items.find((n) => n.id === id);
+    if (!target || target.read) return;
+
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    setUnread((prev) => Math.max(0, prev - 1));
+    decrementUnreadCount();
+
+    try {
+      await api.patch(`/notifications/${id}/read`);
+    } catch {
+      setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: false } : n)));
+      setUnread((prev) => prev + 1);
+    }
+  };
+
+  const markAllRead = async () => {
+    if (unread === 0) return;
+
+    const countToDecrement = unread;
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnread(0);
+
+    // Update context unread count
+    for (let i = 0; i < countToDecrement; i++) {
+      decrementUnreadCount();
+    }
+
+    try {
+      await api.patch('/notifications/read-all');
+    } catch {
+      const previous = items;
+      setItems(previous);
+      const restoredUnread = previous.filter((n) => !n.read).length;
+      setUnread(restoredUnread);
+    }
+  };
+
+  const deleteItem = async (id) => {
+    const target = items.find((n) => n.id === id);
+    setItems((prev) => prev.filter((n) => n.id !== id));
+
+    // If was unread, decrement count
+    if (target && !target.read) {
+      setUnread((prev) => Math.max(0, prev - 1));
+      decrementUnreadCount();
+    }
+
+    try {
+      await api.delete(`/notifications/${id}`);
+    } catch {
+      // Restore on error
+      setItems((prev) => [...prev, target]);
+      if (target && !target.read) {
+        setUnread((prev) => prev + 1);
+      }
+    }
+  };
 
   return (
     <div className="notif-page">
@@ -99,7 +181,22 @@ export default function Notifications() {
       </div>
 
       {/* ── Empty state ── */}
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="notif-empty">
+          <div className="notif-empty-icon">
+            <Bell size={26} />
+          </div>
+          <p className="notif-empty-title">Memuat notifikasi...</p>
+        </div>
+      ) : error ? (
+        <div className="notif-empty">
+          <div className="notif-empty-icon">
+            <Bell size={26} />
+          </div>
+          <p className="notif-empty-title">Terjadi kesalahan</p>
+          <p className="notif-empty-desc">{error}</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="notif-empty">
           <div className="notif-empty-icon">
             <Bell size={26} />

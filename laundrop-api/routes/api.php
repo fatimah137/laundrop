@@ -92,6 +92,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Employee only ────────────────────────────────────────────────────────
 
     Route::middleware('role:employee,owner')->group(function () {
+        // Customers list untuk drop-off order form (employee bisa lihat customers)
+        Route::get('customers/search', [CustomerController::class, 'index']);
+        
+        // Employees list untuk assign order (lihat daftar karyawan lain)
+        Route::get('employees', [EmployeeController::class, 'index']);
+        
         Route::patch('orders/{id}/status',          [OrderController::class, 'updateStatus']);
         Route::post('orders/{id}/bill',             [OrderController::class, 'bill']);
         Route::post('orders/{id}/confirm-cash-payment', [OrderController::class, 'confirmCashPayment']);

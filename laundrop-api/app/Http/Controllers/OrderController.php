@@ -112,6 +112,18 @@ class OrderController extends Controller
             body:    "Pesanan #{$order->order_number} sedang menunggu konfirmasi karyawan."
         );
 
+        // Kirim notifikasi ke SEMUA EMPLOYEES tentang pesanan baru
+        $employees = User::where('role', 'employee')->where('is_active', true)->get();
+        foreach ($employees as $employee) {
+            $this->notifService->send(
+                userId:  $employee->id,
+                orderId: $order->id,
+                type:    'order_created',
+                title:   'Pesanan Baru Masuk',
+                body:    "Pesanan #{$order->order_number} dari {$request->user()->name} - {$request->input('estimated_weight')}kg"
+            );
+        }
+
         return $this->success(new OrderResource($order), 'Pesanan berhasil dibuat', 201);
     }
 

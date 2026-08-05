@@ -54,6 +54,7 @@ export default function SavedAddresses() {
   const [formLat, setFormLat] = useState(DEFAULT_MAP_CENTER.lat);
   const [formLng, setFormLng] = useState(DEFAULT_MAP_CENTER.lng);
   const [toast, setToast] = useState(null);
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
 
   const userKey = useMemo(() => {
     return `${role}:${userData?.id || 'unknown'}`;
@@ -73,6 +74,37 @@ export default function SavedAddresses() {
       setSavedAddresses([]);
     }
   }, [savedAddressStorageSlot]);
+
+  // Geocode address ketika user mengetik
+  useEffect(() => {
+    if (!formAddress.trim() || formAddress.trim().length < 5) {
+      setGeocodingLoading(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setGeocodingLoading(true);
+      try {
+        const query = `${formAddress.trim()}, Semarang, Indonesia`;
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
+        );
+        const data = await response.json();
+        
+        if (data.length > 0) {
+          const { lat, lon } = data[0];
+          setFormLat(parseFloat(lat));
+          setFormLng(parseFloat(lon));
+        }
+      } catch (error) {
+        console.error('Geocoding error:', error);
+      } finally {
+        setGeocodingLoading(false);
+      }
+    }, 800); // 800ms debounce
+
+    return () => clearTimeout(timer);
+  }, [formAddress]);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -147,8 +179,14 @@ export default function SavedAddresses() {
   };
 
   const handleUseAddress = (addr) => {
+    // Get order type context from Order page
+    const orderType = sessionStorage.getItem('order_type_context') || 'pickup';
+    
     // Simpan pilihan ke sessionStorage dan kembali ke order page
-    sessionStorage.setItem('selected_saved_address', JSON.stringify(addr));
+    sessionStorage.setItem('selected_saved_address', JSON.stringify({
+      ...addr,
+      orderType: orderType
+    }));
     navigate('/customer/order', { replace: true });
   };
 
@@ -199,13 +237,36 @@ export default function SavedAddresses() {
 
             <label className="sa-label">
               Deskripsi Alamat
-              <textarea
-                className="sa-textarea"
-                value={formAddress}
-                onChange={(e) => setFormAddress(e.target.value)}
-                placeholder="Jl. Merpati No. 123, Semarang"
-                rows={2}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', width: '100%' }}>
+                <textarea
+                  className="sa-textarea"
+                  value={formAddress}
+                  onChange={(e) => setFormAddress(e.target.value)}
+                  placeholder="Jl. Merpati No. 123, Semarang"
+                  rows={2}
+                  style={{ flex: 1 }}
+                />
+                {geocodingLoading && (
+                  <span style={{
+                    fontSize: '12px',
+                    color: '#0ea5e9',
+                    marginTop: '8px',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                    flexShrink: 0
+                  }}>
+                    🔍
+                  </span>
+                )}
+              </div>
+              {geocodingLoading && (
+                <p style={{
+                  fontSize: '12px',
+                  color: '#0ea5e9',
+                  marginTop: '4px'
+                }}>
+                  Mencari lokasi...
+                </p>
+              )}
             </label>
 
             <label className="sa-label">
@@ -227,12 +288,14 @@ export default function SavedAddresses() {
                     <Marker position={[formLat, formLng]} icon={mapMarkerIcon} />
                   )}
                 </MapContainer>
-                <p className="sa-map-hint">Klik map untuk memilih titik lokasi</p>
+                <p className="sa-map-hint">
+                  {geocodingLoading ? '⏳ Memperbarui lokasi...' : '📍 Ketik alamat untuk auto-update, atau klik map untuk pilih manual'}
+                </p>
               </div>
             </label>
 
-            <p className="sa-coord-display">
-              Koordinat: {formLat.toFixed(6)}, {formLng.toFixed(6)}
+            <p className="sa-coord-display" style={{ opacity: geocodingLoading ? 0.6 : 1 }}>
+              📌 Koordinat: {formLat.toFixed(6)}, {formLng.toFixed(6)}
             </p>
 
             <div className="sa-form-actions">

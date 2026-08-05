@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Bell, Check, CheckCheck, Info, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import Layout from '../../../components/Customer/Layout';
 import api from '../../../services/api';
+import { useRole } from '../../../context/RoleContext';
 import './Notification.css';
 
 const TYPE_ICON = {
@@ -80,6 +81,7 @@ function formatRelativeTime(value) {
 }
 
 export default function Notifications() {
+  const { decrementUnreadCount } = useRole();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -135,6 +137,7 @@ export default function Notifications() {
 
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     setUnreadCount((prev) => Math.max(0, prev - 1));
+    decrementUnreadCount(); // Update context
 
     try {
       await api.patch(`/notifications/${id}/read`);
@@ -148,8 +151,14 @@ export default function Notifications() {
     if (unreadCount === 0) return;
 
     const previous = notifications;
+    const countToDecrement = unreadCount;
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
+
+    // Update context unread count
+    for (let i = 0; i < countToDecrement; i++) {
+      decrementUnreadCount();
+    }
 
     try {
       await api.patch('/notifications/read-all');

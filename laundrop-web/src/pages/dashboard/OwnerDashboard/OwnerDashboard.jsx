@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ShoppingBag, Wallet, Users, Clock } from 'lucide-react';
 import { useRole } from '../../../context/RoleContext';
+import { usePushNotifications } from '../../../hooks/usePushNotifications';
 import { formatIDR } from '../../../data/format';
 import PageHeader from '../../../components/shared/PageHeader';
 import StatCard from '../../../components/shared/StatCard';
@@ -15,6 +16,9 @@ export default function OwnerDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Initialize push notifications for employees only (auto-subscribes)
+  usePushNotifications(role === 'employee' ? currentUser?.id : null);
 
   const welcomeSubtitle = {
     owner:    'Berikut ringkasan hari ini.',

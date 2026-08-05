@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useRole } from "../../context/RoleContext";
 import api from "../../services/api";
 import Logo from "../../assets/Logo_Laundrop.png"; // 👈
 import "./auth.css";
+
+const REDIRECT_BY_ROLE = {
+  customer: '/customer',
+  employee: '/employee/dashboard',
+  owner:    '/owner/dashboard',
+};
 
 function GoogleIcon() {
   return (
@@ -32,6 +39,7 @@ function EyeIcon({ open }) {
 
 export default function Register() {
   const navigate = useNavigate();
+  const { loginWithGoogle } = useRole();
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [agreed, setAgreed] = useState(true);
@@ -45,10 +53,64 @@ export default function Register() {
     password_confirmation: "",
   });
 
+  const handleGoogleResponse = async (credentialResponse) => {
+    if (!credentialResponse?.credential) {
+      setError('Gagal memproses Google Register');
+      return;
+    }
+
+    try {
+      setError("");
+      const user = await loginWithGoogle(credentialResponse.credential);
+      setSuccess("Akun berhasil dibuat dengan Google");
+      setTimeout(() => {
+        navigate(REDIRECT_BY_ROLE[user.role]);
+      }, 1500);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleGoogleClick = async () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setError('Google sign-in belum dikonfigurasi. Tambahkan VITE_GOOGLE_CLIENT_ID.');
+      return;
+    }
+
+    if (!window.google?.accounts?.id) {
+      setError('Google sign-in belum siap. Refresh halaman.');
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleGoogleResponse,
+    });
+
+    window.google.accounts.id.prompt();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    // Validasi phone number harus berawalan 08
+    if (!form.phone.startsWith("08")) {
+      setError("Nomor telepon harus berawalan 08");
+      return;
+    }
+
+    if (!/^\d+$/.test(form.phone)) {
+      setError("Nomor telepon hanya boleh berisi angka");
+      return;
+    }
+
+    if (form.phone.length < 10 || form.phone.length > 12) {
+      setError("Nomor telepon harus 10-12 digit");
+      return;
+    }
 
     if (form.password !== form.password_confirmation) {
       setError("Konfirmasi password tidak cocok");
@@ -97,7 +159,7 @@ export default function Register() {
 
           <h1 className="auth-title">Register</h1>
 
-          <button className="btn-google" type="button">
+          <button className="btn-google" type="button" onClick={handleGoogleClick}>
             <GoogleIcon />
             Register using <strong>Google</strong>
           </button>
@@ -134,7 +196,7 @@ export default function Register() {
               <input
                 className="auth-input-plain"
                 type="tel"
-                placeholder="Masukkan nomor Anda"
+                placeholder="Masukkan nomor Whatsapp aktif Anda"
                 value={form.phone}
                 onChange={e => setForm({ ...form, phone: e.target.value })}
                 required

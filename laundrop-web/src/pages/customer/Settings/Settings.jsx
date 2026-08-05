@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Shield, Globe } from 'lucide-react';
+import { Bell, Mail, MapPin } from 'lucide-react';
 import Layout from '../../../components/Customer/Layout';
 import './Settings.css';
 
@@ -21,8 +21,8 @@ function SettingItem({ icon: Icon, title, description, checked, onChange }) {
 export default function Settings() {
   const [settings, setSettings] = useState({
     pushNotif: true,
-    promoNotif: false,
-    publicProfile: false,
+    emailNotif: true,
+    savedAddresses: true,
   });
 
   const update = (key) => (e) => setSettings((prev) => ({ ...prev, [key]: e.target.checked }));
@@ -45,19 +45,19 @@ export default function Settings() {
           />
 
           <SettingItem
-            icon={Globe}
-            title="Promo Notifications"
-            description="Terima info promo dan diskon terbaru."
-            checked={settings.promoNotif}
-            onChange={update('promoNotif')}
+            icon={Mail}
+            title="Email Notifications"
+            description="Terima update status laundry via email."
+            checked={settings.emailNotif}
+            onChange={update('emailNotif')}
           />
 
           <SettingItem
-            icon={Shield}
-            title="Public Profile"
-            description="Tampilkan nama profil di halaman komunitas."
-            checked={settings.publicProfile}
-            onChange={update('publicProfile')}
+            icon={MapPin}
+            title="Saved Addresses"
+            description="Simpan alamat rumah, kantor, dan tempat lainnya."
+            checked={settings.savedAddresses}
+            onChange={update('savedAddresses')}
           />
         </div>
       </div>

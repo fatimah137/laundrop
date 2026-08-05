@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, ShoppingBag, Clock, Bell, User, Settings, X, LogOut } from 'lucide-react';
 import { useRole } from '../../context/RoleContext';
@@ -18,6 +18,13 @@ const navItems = [
 export default function Sidebar({ open, onClose, onLogout }) {
   const location               = useLocation();
   const { currentUser, unreadCount } = useRole();
+  const [photo, setPhoto] = useState(null);
+
+  useEffect(() => {
+    // Get photo from localStorage
+    const savedPhoto = localStorage.getItem('laundrop_photo');
+    setPhoto(savedPhoto);
+  }, []);
 
   const initials = currentUser?.name
     ?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
@@ -67,7 +74,13 @@ export default function Sidebar({ open, onClose, onLogout }) {
         {/* Footer */}
         <div className="sidebar-footer">
           <div className="user-info-card">
-            <div className="user-avatar-small">{initials}</div>
+            <div className="user-avatar-small">
+              {photo ? (
+                <img src={photo} alt={currentUser?.name} className="user-avatar-photo" />
+              ) : (
+                <span className="user-avatar-initials">{initials}</span>
+              )}
+            </div>
             <div className="user-text">
               <p className="user-name">{currentUser?.name || 'User'}</p>
               <p className="user-email">{currentUser?.email || ''}</p>

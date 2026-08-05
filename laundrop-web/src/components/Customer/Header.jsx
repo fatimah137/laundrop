@@ -1,10 +1,25 @@
+import { useState, useEffect } from 'react';
 import { Menu, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useApp } from '../../context/AppContext';
+import { useRole } from '../../context/RoleContext';
 import './Header.css'; // import file CSS-nya
 
 export default function Header({ onMenuClick }) {
-  const { unreadCount, profile } = useApp();
+  const { currentUser, unreadCount } = useRole();
+  const [photo, setPhoto] = useState(null);
+
+  useEffect(() => {
+    // Get photo from localStorage (where it's saved from profile page)
+    const savedPhoto = localStorage.getItem('laundrop_photo');
+    setPhoto(savedPhoto);
+  }, []);
+
+  const initials = currentUser?.name
+    ?.split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'U';
 
   return (
     <header className="main-header">
@@ -26,7 +41,11 @@ export default function Header({ onMenuClick }) {
         {/* Profil User */}
         <Link to="/customer/profile" className="profile-link">
           <div className="avatar-circle">
-            {profile?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+            {photo ? (
+              <img src={photo} alt={currentUser?.name} className="avatar-photo" />
+            ) : (
+              <span className="avatar-initials">{initials}</span>
+            )}
           </div>
         </Link>
       </div>

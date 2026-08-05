@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { Phone, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import { useApp } from "../../../context/AppContext";
 import { useRole } from "../../../context/RoleContext";
 import api from "../../../services/api";
@@ -288,13 +290,19 @@ export default function Order() {
   const navigate = useNavigate();
   const location = useLocation();
   const { confirmPayment } = useApp();
-  const { currentUser } = useRole();
+  const { currentUser, updateCurrentUser } = useRole();
   const pickupBackupRef = useRef(null);
 
   const [placedOrder,   setPlacedOrder]   = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [showReceipt,   setShowReceipt]   = useState(false);
   const [qrisOrder,     setQrisOrder]     = useState(null); // ✅ tambah
+  
+  // Phone completion modal
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneInput, setPhoneInput] = useState(currentUser?.phone || '');
+  const [phoneSaving, setPhoneSaving] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   const [form, setForm] = useState(createBlankForm);
   const [now, setNow] = useState(() => new Date());
@@ -374,16 +382,38 @@ export default function Order() {
   // Load selected address from sessionStorage after returning from SavedAddresses page
   useEffect(() => {
     const selectedAddr = sessionStorage.getItem('selected_saved_address');
+    const savedFormState = sessionStorage.getItem('order_form_state');
+    
     if (selectedAddr) {
       try {
         const addressEntry = JSON.parse(selectedAddr);
-        applySavedAddress(addressEntry);
+        
+        // Restore form state if it was saved before navigating
+        if (savedFormState) {
+          try {
+            const restoredForm = JSON.parse(savedFormState);
+            setForm(restoredForm);
+            
+            // Then apply the selected address to the restored form
+            setTimeout(() => {
+              applySavedAddress(addressEntry);
+            }, 0);
+          } catch (e) {
+            console.error('Failed to restore form state:', e);
+            applySavedAddress(addressEntry);
+          }
+        } else {
+          applySavedAddress(addressEntry);
+        }
+        
         sessionStorage.removeItem('selected_saved_address');
+        sessionStorage.removeItem('order_form_state');
       } catch (e) {
         console.error('Invalid saved address:', e);
       }
     }
-  }, [location]);
+  }, []);
+  // Empty dependency array - only run once on mount
 
   useEffect(() => {
     let mounted = true;
@@ -723,17 +753,45 @@ export default function Order() {
       return;
     }
 
-    // Set address text first
-    setForm((prev) => ({
-      ...prev,
-      pickupAddress: addressEntry.address || "",
-    }));
+    // Get order type from addressEntry (which was set by SavedAddresses page)
+    const orderType = addressEntry.orderType || 'pickup';
 
-    // Then trigger reverse geocoding to get the correct district and validate area
-    updatePickupFromCoordinates(lat, lng);
+    // Set address based on order type from saved context
+    setForm((prev) => {
+      if (orderType === "pickup") {
+        // For pickup: set pickup address and coordinates
+        return {
+          ...prev,
+          pickupAddress: addressEntry.address || "",
+          pickupLat: lat,
+          pickupLng: lng,
+        };
+      } else {
+        // For drop_off: set delivery address and coordinates
+        return {
+          ...prev,
+          deliveryAddress: addressEntry.address || "",
+          deliveryLat: lat,
+          deliveryLng: lng,
+        };
+      }
+    });
+
+    // Only trigger validation for pickup orders
+    if (orderType === "pickup") {
+      setTimeout(() => {
+        updatePickupFromCoordinates(lat, lng);
+      }, 0);
+    }
+    
+    // Clean up context
+    sessionStorage.removeItem('order_type_context');
   };
 
   const openSavedAddressesPage = () => {
+    // Save entire form state before navigating to addresses page
+    sessionStorage.setItem('order_form_state', JSON.stringify(form));
+    sessionStorage.setItem('order_type_context', form.orderType);
     navigate('/customer/addresses');
   };
 
@@ -898,8 +956,39 @@ export default function Order() {
     }
   };
 
+  const handleSavePhone = async () => {
+    if (!phoneInput.trim()) {
+      setPhoneError('Nomor telepon tidak boleh kosong');
+      return;
+    }
+    if (phoneInput.trim().length < 10) {
+      setPhoneError('Nomor telepon minimal 10 digit');
+      return;
+    }
+    setPhoneSaving(true);
+    setPhoneError('');
+    try {
+      const response = await api.patch('/auth/me', { phone: phoneInput.trim() });
+      const updatedUser = response?.data?.data;
+      if (updatedUser) {
+        updateCurrentUser?.(updatedUser);
+        setShowPhoneModal(false);
+      }
+    } catch (err) {
+      setPhoneError(err?.response?.data?.message || 'Gagal menyimpan nomor telepon');
+    } finally {
+      setPhoneSaving(false);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Check if user has phone number
+    if (!currentUser?.phone) {
+      setShowPhoneModal(true);
+      return;
+    }
 
     if (!selectedService) {
       setServicesError("Layanan belum tersedia. Silakan coba refresh halaman.");
@@ -1264,6 +1353,7 @@ export default function Order() {
                 { label: "Alamat Antar",    value: form.orderType === "pickup" ? (form.pickupAddress || "-") : OUTLET_ADDRESS },
                 { label: "Alamat Kembali",  value: form.orderType === "pickup" ? (form.deliveryAddress || form.pickupAddress || "-") : (form.deliveryAddress || "-") },
                 { label: "Pembayaran",     value: form.paymentMethod },
+                { label: "Catatan",        value: form.notes || "-" },
               ].map(({ label, value }) => (
                 <div key={label} className="summary-row">
                   <span className="summary-row-label">{label}</span>
@@ -1403,6 +1493,38 @@ export default function Order() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Phone Completion Modal */}
+        {showPhoneModal && createPortal(
+          <div className="order-phone-overlay">
+            <div className="order-phone-modal">
+              <div className="order-phone-header">
+                <Phone size={24} color="#0ea5e9" />
+                <h3>Lengkapi Nomor Telepon</h3>
+                <p>Kami membutuhkan nomor telepon Anda sebelum membuat pesanan</p>
+              </div>
+              <form onSubmit={e => { e.preventDefault(); handleSavePhone(); }}>
+                <div className="order-phone-field">
+                  <label>Nomor Telepon/WhatsApp *</label>
+                  <input
+                    type="tel"
+                    placeholder="Contoh: 081234567890"
+                    value={phoneInput}
+                    onChange={e => setPhoneInput(e.target.value)}
+                    disabled={phoneSaving}
+                  />
+                  {phoneError && <span className="order-phone-error">{phoneError}</span>}
+                </div>
+                <div className="order-phone-actions">
+                  <button type="submit" disabled={phoneSaving} className="order-phone-btn">
+                    {phoneSaving ? 'Menyimpan...' : 'Simpan & Lanjut Order'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
         )}
 
       </div>

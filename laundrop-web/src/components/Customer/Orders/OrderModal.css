@@ -295,6 +295,20 @@
   opacity: 0.8;
 }
 
+.t-proof-link:disabled,
+.t-proof-link.disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.6;
+  text-decoration: none;
+}
+
+.t-proof-link:disabled:hover,
+.t-proof-link.disabled:hover {
+  color: #94a3b8;
+  text-decoration: underline dotted;
+}
+
 .t-proof-wrap {
   margin-top: 8px;
   border: 1px solid #dbeafe;

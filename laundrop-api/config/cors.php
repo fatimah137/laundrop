@@ -22,6 +22,8 @@ return [
     'allowed_origins' => [
         'https://laundrop.vercel.app',
         'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:5175',
     ],
 
     'allowed_origins_patterns' => [],

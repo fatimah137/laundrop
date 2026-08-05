@@ -8,6 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Use custom service worker that includes push notification handlers
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['favicon-laundrop.png', 'favicon.svg', 'icons.svg', 'logo.png'],
       manifest: {
         name: 'Laundrop - Laundry Profesional Antar Jemput',

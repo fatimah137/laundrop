@@ -92,12 +92,14 @@
 
 .sa-input,
 .sa-textarea {
+  width: 100%;
   padding: 9px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   transition: border-color 0.15s;
+  box-sizing: border-box;
 }
 
 .sa-input:focus,
@@ -317,4 +319,14 @@
 
 .sa-btn-delete:hover {
   background: #fef2f2;
+}
+
+/* Pulse animation for geocoding indicator */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }

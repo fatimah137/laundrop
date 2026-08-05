@@ -14,6 +14,7 @@ class Service extends Model
         'description',
         'price_per_kg',
         'est_duration_hours',
+        'unit',
         'is_active',
     ];
 

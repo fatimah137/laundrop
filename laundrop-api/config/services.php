@@ -54,4 +54,9 @@ return [
     'api_key' => env('GEMINI_API_KEY'),
     'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
     ],
+
+    'vapid' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+    ],
 ];

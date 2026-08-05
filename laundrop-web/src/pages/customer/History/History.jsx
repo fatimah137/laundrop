@@ -76,13 +76,30 @@ function formatTimelineDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
 
-  return date.toLocaleString('id-ID', {
+  const parts = new Intl.DateTimeFormat('id-ID', {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  }).formatToParts(date);
+
+  let result = '';
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    // Skip dots that are separators
+    if (part.type === 'literal' && part.value === '.') {
+      // Check if next part is minute — if so, use ':' instead
+      if (i + 1 < parts.length && parts[i + 1].type === 'minute') {
+        result += ':';
+      }
+      // Otherwise skip the dot (it's just a thousands separator or similar)
+      continue;
+    }
+    result += part.value;
+  }
+
+  return result;
 }
 
 function buildTimeline(status, orderType = 'pickup', statusLogs = [], createdAt = null) {

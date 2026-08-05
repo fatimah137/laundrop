@@ -40,6 +40,9 @@
   color: #1e293b;
   margin: 0;
   line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Mobile Responsive */

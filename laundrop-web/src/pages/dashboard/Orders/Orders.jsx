@@ -35,6 +35,7 @@ export default function Orders() {
   const { role } = useRole();
 
   const [orders, setOrders]             = useState([]);
+  const [employees, setEmployees]       = useState([]);
   const [view, setView]                 = useState('list');
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch]             = useState('');
@@ -122,24 +123,48 @@ export default function Orders() {
   useEffect(() => {
     let mounted = true;
 
-    const fetchOrders = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError('');
       try {
-        const response = await api.get('/orders', { params: { per_page: 100 } });
-        const rows = response?.data?.data ?? [];
+        // Fetch orders
+        const orderResponse = await api.get('/orders', { params: { per_page: 100 } });
+        const rows = orderResponse?.data?.data ?? [];
         if (!mounted) return;
         setOrders(rows.map(mapApiOrderToUi));
+        
+        // Fetch employees
+        const employeeResponse = await api.get('/employees', { params: { per_page: 100 } });
+        console.log('📨 Employee Response:', employeeResponse);
+        
+        let empData = employeeResponse?.data?.data ?? [];
+        
+        // Handle paginated response (data.data.data atau data.data.data.data)
+        if (!Array.isArray(empData) && empData?.data) {
+          empData = empData.data;
+        }
+        
+        if (!mounted) return;
+        
+        if (Array.isArray(empData) && empData.length > 0) {
+          setEmployees(empData);
+          console.log('✅ Using API employees:', empData);
+        } else {
+          setEmployees(MOCK_EMPLOYEES);
+          console.log('⚠️ API empty or error, using MOCK_EMPLOYEES');
+        }
       } catch (err) {
         if (!mounted) return;
         setOrders([]);
-        setError(err?.response?.data?.message || 'Gagal memuat order dari server');
+        setEmployees(MOCK_EMPLOYEES);
+        console.error('❌ Failed to fetch from API:', err?.response?.data || err?.message);
+        setError(err?.response?.data?.message || 'Gagal memuat data dari server');
       } finally {
         if (mounted) setLoading(false);
       }
     };
 
-    fetchOrders();
+    fetchData();
 
     return () => {
       mounted = false;
@@ -532,7 +557,7 @@ export default function Orders() {
       {showForm && (
         <OrderFormDialog
           order={editOrder}
-          employees={MOCK_EMPLOYEES}
+          employees={employees}
           onSave={handleSave}
           onClose={closeForm}
         />

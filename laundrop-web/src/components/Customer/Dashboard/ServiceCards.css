@@ -174,12 +174,39 @@
   background: #eff6ff;
 }
 
+.card.blue .icon-box {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.card.blue .price {
+  color: #1e40af;
+}
+
 .card.orange {
   background: #fff7ed;
 }
 
+.card.orange .icon-box {
+  background: #fed7aa;
+  color: #ea580c;
+}
+
+.card.orange .price {
+  color: #ea580c;
+}
+
 .card.purple {
   background: #f5f3ff;
+}
+
+.card.purple .icon-box {
+  background: #e9d5ff;
+  color: #be185d;
+}
+
+.card.purple .price {
+  color: #be185d;
 }
 
 .card.green {
@@ -194,4 +221,21 @@
 
 .card.green .price {
   color: #16a34a;
+}
+
+/* Loading & Empty States */
+.loading-placeholder {
+  grid-column: 1 / -1;
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
 }

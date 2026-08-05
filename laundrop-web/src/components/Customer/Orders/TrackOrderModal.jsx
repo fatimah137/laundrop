@@ -44,13 +44,30 @@ function formatTimelineDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
 
-  return new Intl.DateTimeFormat('id-ID', {
+  const parts = new Intl.DateTimeFormat('id-ID', {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date).replace('.', '');
+  }).formatToParts(date);
+
+  let result = '';
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    // Skip dots that are separators
+    if (part.type === 'literal' && part.value === '.') {
+      // Check if next part is minute — if so, use ':' instead
+      if (i + 1 < parts.length && parts[i + 1].type === 'minute') {
+        result += ':';
+      }
+      // Otherwise skip the dot (it's just a thousands separator or similar)
+      continue;
+    }
+    result += part.value;
+  }
+
+  return result;
 }
 
 function normalizeStatus(status, backendStatus) {
@@ -99,9 +116,9 @@ export default function TrackOrderModal({
     statusTimeMap.waiting_confirmation = order.created_at;
   }
 
-  const pickupProofUrl = order?.photos?.pickup || order?.photo_pickup_url || null;
-  const deliveryProofUrl = order?.photos?.delivery || order?.photo_delivery_url || null;
-  const scaleProofUrl = order?.photos?.scale || order?.photo_scale_url || null;
+  const pickupProofUrl = order?.photos?.pickup || order?.photo_pickup_url || order?.photo_pickup || null;
+  const deliveryProofUrl = order?.photos?.delivery || order?.photo_delivery_url || order?.photo_delivery || null;
+  const scaleProofUrl = order?.photos?.scale || order?.photo_scale_url || order?.photo_scale || null;
   const activeIdx = timelineSteps.findIndex(
     s => s.key.toLowerCase() === (statusKey || '').toLowerCase()
   ) === -1
@@ -211,33 +228,51 @@ export default function TrackOrderModal({
                         <p className="t-time">{formatTimelineDateTime(statusTimeMap[step.key])}</p>
                       )}
                       
-                      {step.key === 'picked_up' && pickupProofUrl && (
+                      {step.key === 'picked_up' && (
                         <button
                           type="button"
-                          className="t-proof-link"
-                          onClick={() => setPhotoModal({ url: pickupProofUrl, title: 'Foto Bukti Pengambilan Pakaian' })}
+                          className={`t-proof-link ${pickupProofUrl ? '' : 'disabled'}`}
+                          onClick={() => {
+                            if (pickupProofUrl) {
+                              setPhotoModal({ url: pickupProofUrl, title: 'Foto Bukti Pengambilan Pakaian' });
+                            }
+                          }}
+                          disabled={!pickupProofUrl}
+                          title={pickupProofUrl ? 'Lihat foto bukti' : 'Foto belum tersedia'}
                         >
-                          Lihat Foto Bukti
+                          {pickupProofUrl ? 'Lihat Foto' : 'Tunggu Foto'}
                         </button>
                       )}
 
-                      {step.key === 'waiting_payment' && scaleProofUrl && (
+                      {step.key === 'waiting_payment' && (
                         <button
                           type="button"
-                          className="t-proof-link"
-                          onClick={() => setPhotoModal({ url: scaleProofUrl, title: 'Foto Bukti Timbangan' })}
+                          className={`t-proof-link ${scaleProofUrl ? '' : 'disabled'}`}
+                          onClick={() => {
+                            if (scaleProofUrl) {
+                              setPhotoModal({ url: scaleProofUrl, title: 'Foto Bukti Timbangan' });
+                            }
+                          }}
+                          disabled={!scaleProofUrl}
+                          title={scaleProofUrl ? 'Lihat foto timbangan' : 'Foto belum tersedia'}
                         >
-                          Lihat Foto Bukti
+                          {scaleProofUrl ? 'Lihat Foto' : 'Tunggu Foto'}
                         </button>
                       )}
 
-                      {step.key === 'completed' && deliveryProofUrl && (
+                      {step.key === 'completed' && (
                         <button
                           type="button"
-                          className="t-proof-link"
-                          onClick={() => setPhotoModal({ url: deliveryProofUrl, title: 'Foto Bukti Serah Terima' })}
+                          className={`t-proof-link ${deliveryProofUrl ? '' : 'disabled'}`}
+                          onClick={() => {
+                            if (deliveryProofUrl) {
+                              setPhotoModal({ url: deliveryProofUrl, title: 'Foto Bukti Serah Terima' });
+                            }
+                          }}
+                          disabled={!deliveryProofUrl}
+                          title={deliveryProofUrl ? 'Lihat foto serah terima' : 'Foto belum tersedia'}
                         >
-                          Lihat Foto Bukti
+                          {deliveryProofUrl ? 'Lihat Foto' : 'Tunggu Foto'}
                         </button>
                       )}
                     </div>

@@ -28,6 +28,8 @@ export function RoleProvider({ children }) {
     }
   });
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const role = currentUser?.role ?? null;
 
   useEffect(() => {
@@ -36,6 +38,23 @@ export function RoleProvider({ children }) {
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
     }
   }, []);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await api.get('/notifications');
+        const payload = response?.data?.data;
+        setUnreadCount(Number(payload?.unread_count ?? 0));
+      } catch (error) {
+        setUnreadCount(0);
+      }
+    };
+
+    if (currentUser) {
+      fetchUnreadCount();
+    }
+  }, [currentUser]);
 
   async function login(email, password) {
     try {
@@ -108,6 +127,10 @@ export function RoleProvider({ children }) {
     });
   };
 
+  const decrementUnreadCount = () => {
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  };
+
   return (
     <RoleContext.Provider value={{
       role,
@@ -118,6 +141,8 @@ export function RoleProvider({ children }) {
       logout,
       can,
       updateCurrentUser,
+      unreadCount,
+      decrementUnreadCount,
     }}>
       {children}
     </RoleContext.Provider>
