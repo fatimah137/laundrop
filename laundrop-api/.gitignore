@@ -17,3 +17,4 @@ Thumbs.db
 
 # .gitignore
 storage/app/google/vision-key.json
+public/storage
