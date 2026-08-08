@@ -45,6 +45,7 @@ export default function Profile() {
 
   const [editing, setEditing]               = useState(false);
   const [form, setForm]                     = useState({});
+  const [phoneError, setPhoneError]         = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [photo, setPhoto]                   = useState(() => localStorage.getItem('laundrop_photo') || null);
   const [photoPreview, setPhotoPreview]     = useState(null);
@@ -79,9 +80,38 @@ export default function Profile() {
     setPhotoPreview(null);
   };
 
+  const validatePhone = (phone) => {
+    if (!phone) {
+      return '';
+    }
+    if (!phone.startsWith('08')) {
+      return 'Nomor telepon harus dimulai dengan 08';
+    }
+    if (!/^\d+$/.test(phone)) {
+      return 'Nomor telepon hanya boleh berisi angka';
+    }
+    if (phone.length < 10) {
+      return 'Nomor telepon minimal 10 digit';
+    }
+    return '';
+  };
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+    setForm(prev => ({ ...prev, phone: value }));
+    setPhoneError(validatePhone(value));
+  };
+
   const handleSave = async () => {
     setSaveError('');
     setSaveSuccess(false);
+
+    // Validate phone
+    const phoneValidation = validatePhone(form.phone);
+    if (phoneValidation) {
+      setPhoneError(phoneValidation);
+      return;
+    }
 
     try {
       const payload = {
@@ -96,6 +126,7 @@ export default function Profile() {
       setForm((prev) => ({ ...prev, ...updatedUser }));
       setEditing(false);
       setSaveSuccess(true);
+      setPhoneError('');
       setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
       setSaveError(err?.response?.data?.message || 'Gagal menyimpan profil.');
@@ -200,7 +231,7 @@ export default function Profile() {
                 </button>
               ) : (
                 <div className="edit-actions">
-                  <button className="btn-save" onClick={handleSave}>
+                  <button className="btn-save" onClick={handleSave} disabled={phoneError}>
                     <Check size={14} /> Save
                   </button>
                   <button className="btn-cancel" onClick={handleCancel}>
@@ -231,9 +262,13 @@ export default function Profile() {
                     <input
                       type={type}
                       value={form[key] || ''}
-                      onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
-                      className="form-input"
+                      onChange={key === 'phone' ? handlePhoneChange : e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
+                      className={`form-input ${key === 'phone' && phoneError ? 'form-input-error' : ''}`}
+                      placeholder={key === 'phone' ? '08xxxxxxxxxx' : ''}
                     />
+                    {key === 'phone' && phoneError && (
+                      <div className="form-error"><X size={14} /> {phoneError}</div>
+                    )}
                   </div>
                 ))}
               </div>

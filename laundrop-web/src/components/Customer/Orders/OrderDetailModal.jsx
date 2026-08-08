@@ -3,8 +3,24 @@ import { QRCodeSVG } from 'qrcode.react';
 import StatusBadge from '../../ui/StatusBadge';
 import './OrderDetailModal.css';
 
+const formatRp = (n) => `Rp ${Number(n).toLocaleString("id-ID")}`;
+
 export default function OrderDetailModal({ order, onClose, onCancel, canCancel = false, cancelling = false }) {
   if (!order) return null;
+
+  // ✅ Breakdown harga detail
+  const deliveryFee = Number(order.extraFee || 0);
+  const totalPrice = Number(order.price || 0);
+  
+  let laundryPrice = Number(order.laundryPrice || 0);
+  if (laundryPrice <= 0 && Number(order.estimated_price || 0) > 0) {
+    // Fallback: calculated from estimated_price and delivery fee
+    laundryPrice = Math.max(0, Number(order.estimated_price) - deliveryFee);
+  }
+  if (laundryPrice <= 0 && totalPrice > 0) {
+    // Last fallback: from price and delivery fee
+    laundryPrice = Math.max(0, totalPrice - deliveryFee);
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -58,6 +74,25 @@ export default function OrderDetailModal({ order, onClose, onCancel, canCancel =
             </div>
           </div>
 
+          {/* ✅ Price Breakdown */}
+          <div className="detail-price-breakdown">
+            <p className="breakdown-title">Rincian Harga</p>
+            <div className="breakdown-row">
+              <span className="breakdown-label">Harga Layanan</span>
+              <span className="breakdown-value">{formatRp(laundryPrice)}</span>
+            </div>
+            {deliveryFee > 0 && (
+              <div className="breakdown-row">
+                <span className="breakdown-label">Ongkos Kirim</span>
+                <span className="breakdown-value">+ {formatRp(deliveryFee)}</span>
+              </div>
+            )}
+            <div className="breakdown-row breakdown-total">
+              <span className="breakdown-label">Total</span>
+              <span className="breakdown-value">{formatRp(totalPrice)}</span>
+            </div>
+          </div>
+
           {/* Addresses */}
           <div className="address-section">
             <div className="address-row">
@@ -97,29 +132,6 @@ export default function OrderDetailModal({ order, onClose, onCancel, canCancel =
               <p className="address-text">{order.notes}</p>
             </div>
           )}
-
-          {/* Timeline */}
-          <div className="timeline-section">
-            <p className="timeline-title">Order Timeline</p>
-            <div className="timeline-list">
-              {order.timeline.map((step, i) => (
-                <div key={i} className="timeline-item">
-                  <div className="timeline-track">
-                    <div className={`timeline-dot ${step.done ? 'done' : ''}`}>
-                      {step.done ? '✓' : i + 1}
-                    </div>
-                    {i < order.timeline.length - 1 && (
-                      <div className={`timeline-line ${step.done ? 'done' : ''}`} />
-                    )}
-                  </div>
-                  <div className="timeline-content">
-                    <p className={`timeline-label ${step.done ? 'done' : ''}`}>{step.label}</p>
-                    {step.time && <p className="timeline-time">{step.time}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {canCancel && typeof onCancel === 'function' && (
             <div className="detail-actions">

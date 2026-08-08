@@ -615,6 +615,13 @@
   overflow-wrap: anywhere;
 }
 
+.verify-notes {
+  max-width: 70%;
+  overflow-wrap: anywhere;
+  font-style: italic;
+  color: #475569;
+}
+
 .verify-total-row {
   background: #eff6ff;
 }

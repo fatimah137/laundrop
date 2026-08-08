@@ -39,8 +39,9 @@ const DELIVERY_FEE_PER_KM_TIER = 3000;
 const SAVED_ADDRESS_STORAGE_KEY = "laundrop_saved_addresses_v1";
 const MAX_SAVED_ADDRESSES = 8;
 
-const today    = new Date().toISOString().split("T")[0];
-const tomorrow = new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString().split("T")[0];
+// Get local date (not UTC) - 'en-CA' locale gives YYYY-MM-DD format in local timezone
+const today    = new Date().toLocaleDateString('en-CA');
+const tomorrow = new Date(Date.now() + (24 * 60 * 60 * 1000)).toLocaleDateString('en-CA');
 const formatRp = (n) => `Rp ${n.toLocaleString("id-ID")}`;
 const DEFAULT_MAP_CENTER = LAUNDRY_COORDINATE;
 
@@ -888,28 +889,69 @@ export default function Order() {
   const submitOrder = async () => {
     if (!selectedService) return;
 
+    // Validasi weight
+    if (normalizedWeight <= 0) {
+      setMapError("Berat pakaian harus diisi dan lebih besar dari 0 kg");
+      setSubmitting(false);
+      return;
+    }
+
     setSubmitting(true);
     setMapError("");
 
     try {
+      // Ensure delivery coordinates are set
+      const deliveryLat = form.orderType === "drop_off" ? (form.deliveryLat || null) : form.pickupLat;
+      const deliveryLng = form.orderType === "drop_off" ? (form.deliveryLng || null) : form.pickupLng;
+
+      // Validate coordinates
+      if (!Number.isFinite(form.pickupLat) || !Number.isFinite(form.pickupLng)) {
+        setMapError("Koordinat penjemputan tidak valid. Silakan pilih di map.");
+        setSubmitting(false);
+        return;
+      }
+
+      if (form.orderType === "drop_off") {
+        if (!Number.isFinite(deliveryLat) || !Number.isFinite(deliveryLng)) {
+          setMapError("Koordinat pengiriman tidak valid. Silakan pilih di map.");
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const payload = {
         service_id: Number(selectedService.id),
         order_type: form.orderType,
         pickup_address: form.pickupAddress,
-        pickup_lat: form.pickupLat,
-        pickup_lng: form.pickupLng,
-        pickup_date: form.pickupDate,
-        pickup_time: form.pickupTime,
+        pickup_lat: Number(form.pickupLat),
+        pickup_lng: Number(form.pickupLng),
+        pickup_date: String(form.pickupDate),
+        pickup_time: String(form.pickupTime),
         delivery_address: form.orderType === "drop_off" ? form.deliveryAddress : (form.deliveryAddress || form.pickupAddress),
-        delivery_lat: form.orderType === "drop_off" ? form.deliveryLat : form.pickupLat,
-        delivery_lng: form.orderType === "drop_off" ? form.deliveryLng : form.pickupLng,
-        estimated_weight: normalizedWeight,
+        delivery_lat: Number(deliveryLat),
+        delivery_lng: Number(deliveryLng),
+        estimated_weight: Number(normalizedWeight),
         payment_method: String(form.paymentMethod || "").toLowerCase(),
         notes: form.notes || null,
       };
 
+      console.log("📦 Submitting order with payload:", payload);
+      console.log("  - service_id:", payload.service_id, "(" + typeof payload.service_id + ")");
+      console.log("  - order_type:", payload.order_type);
+      console.log("  - pickup_date:", payload.pickup_date, "(" + typeof payload.pickup_date + ")");
+      console.log("  - pickup_time:", payload.pickup_time, "(" + typeof payload.pickup_time + ")");
+      console.log("  - pickup_lat:", payload.pickup_lat, "(" + typeof payload.pickup_lat + ")");
+      console.log("  - pickup_lng:", payload.pickup_lng, "(" + typeof payload.pickup_lng + ")");
+      console.log("  - delivery_lat:", payload.delivery_lat, "(" + typeof payload.delivery_lat + ")");
+      console.log("  - delivery_lng:", payload.delivery_lng, "(" + typeof payload.delivery_lng + ")");
+      console.log("  - estimated_weight:", payload.estimated_weight, "(" + typeof payload.estimated_weight + ")");
+      console.log("  - payment_method:", payload.payment_method);
+
       const response = await api.post("/orders", payload);
       const created = response?.data?.data;
+
+      console.log("✅ Order API Response:", response.data);
+      console.log("✅ Order created successfully:", created);
 
       if (!created) {
         throw new Error("Response order tidak valid");
@@ -920,12 +962,13 @@ export default function Order() {
         rawId: created.id,
         order_number: created.order_number || `ORD-${created.id}`,
         service: created?.service?.name || selectedService.label,
-          status: "Menunggu Konfirmasi",
-          backend_status: "waiting_confirmation",
+        status: "Menunggu Konfirmasi",
+        backend_status: "waiting_confirmation",
         payment_status: "unpaid",
         paymentMethod: String(created.payment_method || form.paymentMethod || "").toUpperCase(),
         verified: false,
         estimated_price: estimatedPrice,
+        laundryPrice: estimatedPrice - Number(form.extraFee || 0),
         actual_weight: null,
         weight: normalizedWeight,
         clothesCount: form.clothesCount,
@@ -936,7 +979,6 @@ export default function Order() {
         notes: form.notes,
         items: form.items,
         extraFee: Number(form.extraFee || 0),
-        laundryPrice: estimatedPrice,
         distanceFromLaundryKm: Number(form.distanceFromLaundryKm || 0),
         price: grandTotal,
         date: new Date(created.created_at || Date.now()).toLocaleDateString("id-ID", {
@@ -948,8 +990,31 @@ export default function Order() {
 
       setPlacedOrder(uiOrder);
       setShowReceipt(true);
+      console.log("🎉 Receipt modal shown!");
     } catch (err) {
-      const message = err?.response?.data?.message || "Gagal membuat pesanan ke server";
+      console.error("❌ Error submitting order:", err);
+      const errorDetails = err?.response?.data;
+      console.error("Full error response:", errorDetails);
+      
+      let message = errorDetails?.message || "Gagal membuat pesanan ke server";
+      
+      // Log validation errors jika ada
+      if (errorDetails?.errors && typeof errorDetails.errors === 'object') {
+        console.error("Validation errors:", errorDetails.errors);
+        const errorMessages = [];
+        Object.entries(errorDetails.errors).forEach(([field, messages]) => {
+          console.error(`  - ${field}:`, messages);
+          if (Array.isArray(messages)) {
+            errorMessages.push(messages[0]);
+          } else {
+            errorMessages.push(messages);
+          }
+        });
+        if (errorMessages.length > 0) {
+          message = errorMessages.join(", ");
+        }
+      }
+      
       setMapError(message);
     } finally {
       setSubmitting(false);
@@ -994,6 +1059,13 @@ export default function Order() {
       setServicesError("Layanan belum tersedia. Silakan coba refresh halaman.");
       return;
     }
+
+    // Validasi weight
+    if (normalizedWeight <= 0) {
+      setMapError("Berat pakaian harus diisi dan lebih besar dari 0 kg");
+      return;
+    }
+
     if (isPickupOrder && !form.isServiceAreaValid) {
       setMapError("Order hanya tersedia untuk area kecamatan Tembalang dan Banyumanik.");
       return;
@@ -1477,6 +1549,12 @@ export default function Order() {
                   <span>Pembayaran</span>
                   <strong>{form.paymentMethod}</strong>
                 </div>
+                {form.notes && (
+                  <div className="verify-row">
+                    <span>Catatan</span>
+                    <strong className="verify-notes">{form.notes}</strong>
+                  </div>
+                )}
                 <div className="verify-row verify-total-row">
                   <span>Total</span>
                   <strong>{grandTotal > 0 ? formatRp(grandTotal) : "-"}</strong>

@@ -55,7 +55,26 @@
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  align-items: center;
 }
+
+@media (max-width: 640px) {
+  .hero-actions {
+    gap: 12px;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-actions a {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-actions {
+    gap: 8px;
+  }
 
 .hero-image {
   display: flex;

@@ -110,6 +110,59 @@
   color: #2563eb;
 }
 
+/* ── Price Breakdown ─────────────────────────────────────────────── */
+.detail-price-breakdown {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.breakdown-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.breakdown-label {
+  color: #475569;
+  font-weight: 500;
+}
+
+.breakdown-value {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.breakdown-row.breakdown-total {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.breakdown-row.breakdown-total .breakdown-label {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.breakdown-row.breakdown-total .breakdown-value {
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 /* Addresses */
 .address-section {
   display: flex;

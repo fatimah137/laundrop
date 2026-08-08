@@ -137,6 +137,23 @@ export default function TrackOrderModal({
     ? formatRp(order.price)
     : `~${formatRp(order.estimated_price || order.price)}`;
 
+  // ✅ Breakdown harga detail
+  // Priority: 1. Direct fields (laundryPrice, extraFee)
+  //           2. Calculated from estimated_price & extraFee
+  //           3. Calculated from price breakdown
+  const deliveryFee = Number(order.extraFee || 0);
+  const totalPrice = Number(order.price || 0);
+  
+  let laundryPrice = Number(order.laundryPrice || 0);
+  if (laundryPrice <= 0 && Number(order.estimated_price || 0) > 0) {
+    // Fallback: calculated from estimated_price and delivery fee
+    laundryPrice = Math.max(0, Number(order.estimated_price) - deliveryFee);
+  }
+  if (laundryPrice <= 0 && totalPrice > 0) {
+    // Last fallback: from price and delivery fee
+    laundryPrice = Math.max(0, totalPrice - deliveryFee);
+  }
+
   const canCancelOrder = typeof onCancel === 'function' && canCancel;
 
   return createPortal(
@@ -183,6 +200,28 @@ export default function TrackOrderModal({
               </button>
             </div>
           )}
+
+          {/* ✅ BREAKDOWN HARGA DETAIL */}
+          <div className="track-price-breakdown">
+            <p className="track-section-title">Rincian Harga</p>
+            <div className="track-price-row">
+              <span className="track-price-label">Harga Layanan</span>
+              <span className="track-price-value">{formatRp(laundryPrice)}</span>
+            </div>
+            {deliveryFee > 0 && (
+              <div className="track-price-row">
+                <span className="track-price-label">Ongkos Kirim</span>
+                <span className="track-price-value">+ {formatRp(deliveryFee)}</span>
+              </div>
+            )}
+            <div className="track-price-row track-price-total">
+              <span className="track-price-label">{order.verified ? 'Total' : 'Total (Estimasi)'}</span>
+              <span className="track-price-value">{order.verified ? formatRp(totalPrice) : `~${formatRp(totalPrice)}`}</span>
+            </div>
+            <p className="track-price-note">
+              * {order.verified ? 'Harga final berdasarkan berat aktual' : 'Harga final ditentukan setelah employee memverifikasi berat aktual'}
+            </p>
+          </div>
 
           {/* Progress bar horizontal */}
           <p className="track-section-title">Timeline Pesanan</p>

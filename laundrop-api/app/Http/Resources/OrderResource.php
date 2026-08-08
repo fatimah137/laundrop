@@ -43,6 +43,20 @@ class OrderResource extends JsonResource
             'photo_delivery'   => $this->photo_delivery
                 ? asset('storage/' . $this->photo_delivery) : null,
             'cancelled_at'     => $this->cancelled_at,
+            'verified'         => !is_null($this->verified_at),
+            'verified_at'      => $this->verified_at,
+            'payment_status'   => $this->transaction?->payment?->status ?? 'pending',
+            'paymentMethod'    => $this->payment_method,
+            
+            // ✅ HARGA: estimated sebelum verified, final setelah verified
+            'estimated_price'  => (int) (
+                ($this->estimated_weight ?? 0) * ($this->service?->price_per_kg ?? 0) + ($this->delivery_fee ?? 0)
+            ),
+            'price'            => (int) (
+                is_null($this->verified_at)
+                    ? (($this->estimated_weight ?? 0) * ($this->service?->price_per_kg ?? 0)) + ($this->delivery_fee ?? 0)
+                    : (($this->actual_weight ?? $this->estimated_weight ?? 0) * ($this->service?->price_per_kg ?? 0)) + ($this->delivery_fee ?? 0)
+            ),
             'created_at'       => $this->created_at,
 
             // Relasi — hanya dimuat kalau di-load

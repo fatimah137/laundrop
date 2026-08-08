@@ -200,8 +200,9 @@ export default function OrderHistory() {
           const unitPrice = Number(row?.service?.price_per_kg ?? 0);
           const estimatedWeight = Number(row?.estimated_weight ?? 0);
           const actualWeight = Number(row?.actual_weight ?? 0);
+          const deliveryFee = Number(row?.delivery_fee ?? 0);
           const effectiveWeight = actualWeight > 0 ? actualWeight : estimatedWeight;
-          const total = Number(row?.transaction?.total_amount ?? (unitPrice * effectiveWeight));
+          const total = Number(row?.transaction?.total_amount ?? (unitPrice * effectiveWeight + deliveryFee));
           const statusLogs = Array.isArray(row?.status_logs) ? row.status_logs : [];
 
           return {
@@ -221,7 +222,9 @@ export default function OrderHistory() {
             paymentMethod: (row?.payment_method || '').toUpperCase(),
             payment_status: row?.transaction?.payment?.status === 'success' || row?.status === 'completed' ? 'paid' : 'unpaid',
             verified: actualWeight > 0,
-            estimated_price: unitPrice * estimatedWeight,
+            estimated_price: (unitPrice * estimatedWeight) + deliveryFee,
+            laundryPrice: unitPrice * effectiveWeight,
+            extraFee: deliveryFee,
             deliveryAddress: row?.delivery_address ?? row?.pickup_address ?? '-',
             notes: row?.notes || '',
             orderType: row?.order_type ?? 'pickup',
@@ -391,8 +394,9 @@ export default function OrderHistory() {
       const unitPrice = Number(row?.service?.price_per_kg ?? 0);
       const estimatedWeight = Number(row?.estimated_weight ?? 0);
       const actualWeight = Number(row?.actual_weight ?? 0);
+      const deliveryFee = Number(row?.delivery_fee ?? 0);
       const effectiveWeight = actualWeight > 0 ? actualWeight : estimatedWeight;
-      const total = Number(row?.transaction?.total_amount ?? (unitPrice * effectiveWeight));
+      const total = Number(row?.transaction?.total_amount ?? (unitPrice * effectiveWeight + deliveryFee));
       const statusLogs = Array.isArray(row?.status_logs) ? row.status_logs : [];
 
       setSelectedOrder((prev) => {
@@ -406,7 +410,9 @@ export default function OrderHistory() {
           weight: estimatedWeight || prev.weight,
           actual_weight: actualWeight || prev.actual_weight,
           price: total,
-          estimated_price: unitPrice * estimatedWeight,
+          estimated_price: (unitPrice * estimatedWeight) + deliveryFee,
+          laundryPrice: unitPrice * effectiveWeight,
+          extraFee: deliveryFee,
           paymentMethod: (row?.payment_method || prev.paymentMethod || '').toUpperCase(),
           payment_status: row?.transaction?.payment?.status === 'success' || row?.status === 'completed' ? 'paid' : 'unpaid',
           pickupAddress: row?.pickup_address ?? prev.pickupAddress,

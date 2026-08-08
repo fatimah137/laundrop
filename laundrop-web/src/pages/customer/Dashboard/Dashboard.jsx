@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ShoppingBag, CheckCircle, DollarSign, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useRole } from '../../../context/RoleContext';
+import { usePushNotifications } from '../../../hooks/usePushNotifications';
 import api from '../../../services/api';
 import Layout from '../../../components/Customer/Layout';
 import { formatRp } from '../../../context/AppContext';
@@ -41,6 +42,9 @@ function formatTime(value) {
 
 export default function Dashboard() {
   const { currentUser } = useRole();
+  
+  // Subscribe customer to push notifications
+  usePushNotifications(currentUser?.id);
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,10 +72,11 @@ export default function Dashboard() {
           const unitPrice = Number(row?.service?.price_per_kg ?? 0);
           const estimatedWeight = Number(row?.estimated_weight ?? 0);
           const actualWeight = Number(row?.actual_weight ?? 0);
+          const deliveryFee = Number(row?.delivery_fee ?? 0);
           const weightForPrice = actualWeight > 0 ? actualWeight : estimatedWeight;
           const transactionTotal = Number(row?.transaction?.total_amount ?? 0);
-          const estimatedPrice = unitPrice * estimatedWeight;
-          const finalPrice = unitPrice * weightForPrice;
+          const estimatedPrice = (unitPrice * estimatedWeight) + deliveryFee;
+          const finalPrice = (unitPrice * weightForPrice) + deliveryFee;
           const statusLabel = STATUS_LABEL_MAP[row?.status] ?? 'Pending';
 
           return {
@@ -85,6 +90,8 @@ export default function Dashboard() {
             payment_status: row?.status === 'completed' ? 'paid' : 'unpaid',
             verified: actualWeight > 0,
             estimated_price: estimatedPrice,
+            laundryPrice: unitPrice * weightForPrice,
+            extraFee: deliveryFee,
             price: transactionTotal > 0 ? transactionTotal : finalPrice,
             weight: estimatedWeight,
             actual_weight: actualWeight,

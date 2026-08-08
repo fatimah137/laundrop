@@ -22,8 +22,10 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
-            'phone'    => 'required|string|max:20',
+            'phone'    => 'required|string|regex:/^08\d{8,18}$/',
             'password' => ['required', 'confirmed', PasswordRule::min(8)->numbers()->symbols()],
+        ], [
+            'phone.regex' => 'Nomor telepon harus dimulai dengan 08 dan minimal 10 digit',
         ]);
 
         if ($validator->fails()) {
@@ -105,7 +107,9 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name'  => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
-            'phone' => 'sometimes|nullable|string|max:20',
+            'phone' => 'sometimes|nullable|string|max:20|regex:/^08\d{8,18}$/',
+        ], [
+            'phone.regex' => 'Nomor telepon harus dimulai dengan 08 dan minimal 10 digit',
         ]);
 
         if ($validator->fails()) {

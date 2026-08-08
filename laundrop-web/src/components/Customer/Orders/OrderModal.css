@@ -201,6 +201,57 @@
   margin-bottom: 16px;
 }
 
+/* ── Track price breakdown ───────────────────────────────────────── */
+.track-price-breakdown {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  margin-bottom: 20px;
+}
+
+.track-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.track-price-label {
+  color: var(--gray-700);
+  font-weight: 500;
+}
+
+.track-price-value {
+  color: var(--gray-900);
+  font-weight: 600;
+}
+
+.track-price-row.track-price-total {
+  border-top: 1px solid var(--gray-200);
+  padding-top: 10px;
+  margin-top: 6px;
+}
+
+.track-price-row.track-price-total .track-price-label {
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.track-price-row.track-price-total .track-price-value {
+  color: var(--blue);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.track-price-note {
+  font-size: 11px;
+  color: var(--gray-500);
+  margin-top: 8px;
+  font-style: italic;
+}
+
 /* ── Timeline ────────────────────────────────────────────────────── */
 .timeline { padding: 0; margin-bottom: 18px; }
 
