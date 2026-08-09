@@ -13,7 +13,7 @@ import api from '../services/api';
  * - Auto-cleanup saat unmount
  */
 export const usePushNotifications = (userId) => {
-  const VAPID_PUBLIC_KEY = 'FNqihYQ15H0CQ2GfI5N0SSTNuChki584eO1qrj57jF6e7eQSP2lKozN7lIKz7DRGPAXkySIG34e-YQDKhs4eslU';
+  const VAPID_PUBLIC_KEY = 'BKs4o50WNwLJ4Rwcgr7AqJYZyIwr9EXqdZBJyV-g2c52BGGhxTKnlmdlSoqU5ZqNunGuCV8CiQ4R2v_U2_387gk';
   const STORAGE_KEY = `push_subscribed_${userId}`;
   
   // State untuk track permission dan subscription status
