@@ -549,20 +549,4 @@
     padding: 6px 10px;
     font-size: 10px;
   }
-
-  .detail-grid {
-    gap: 8px;
-  }
-
-  .detail-cell {
-    padding: 8px;
-  }
-
-  .qr-code-section {
-    padding: 10px 12px;
-  }
-
-  .order-qr-code {
-    width: 90px;
-  }
 }
