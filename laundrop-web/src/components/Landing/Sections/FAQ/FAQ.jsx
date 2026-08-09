@@ -4,12 +4,12 @@ import './FAQ.css'
 const faqs = [
   {
     q: 'Bagaimana cara kerja pickup and delivery?',
-    a: 'Anda cukup memesan melalui website atau WhatsApp kami, tentukan jadwal penjemputan, dan tim kami akan datang ke lokasi Anda. Setelah selesai, pakaian akan diantarkan langsung ke depan pintu Anda.',
+    a: 'Anda cukup memesan melalui website kami, tentukan jadwal penjemputan, dan tim kami akan datang ke lokasi Anda. Setelah selesai, pakaian akan diantarkan langsung ke depan pintu Anda.',
   },
-  { q: 'Daerah mana saja yang bisa memesan Laundrop?', a: 'Saat ini kami melayani area Semarang dan sekitarnya. Silakan hubungi kami untuk memastikan area Anda terjangkau.' },
+  { q: 'Daerah mana saja yang bisa memesan Laundrop?', a: 'Saat ini kami melayani area Tembalang, Banyumanik, dan sekitarnya. Silakan hubungi kami untuk memastikan area Anda terjangkau.' },
   { q: 'Bagaimana harga ditentukan untuk setiap layanan?', a: 'Harga dihitung berdasarkan berat pakaian (per kilogram). Anda bisa melihat daftar harga lengkap di bagian Pricing.' },
   { q: 'Apakah Laundrop memakai produk eco-friendly?', a: 'Ya, kami menggunakan deterjen ramah lingkungan yang aman untuk pakaian dan keluarga Anda.' },
-  { q: 'Bisakah saya melacak pesanan secara real-time?', a: 'Ya! Kami akan mengirimkan notifikasi WhatsApp di setiap tahap proses laundry Anda.' },
+  { q: 'Bisakah saya melacak pesanan secara real-time?', a: 'Ya! Kami akan mengirimkan notifikasi di setiap tahap proses laundry Anda.' },
 ]
 
 export default function FAQ() {

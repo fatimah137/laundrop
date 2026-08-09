@@ -21,10 +21,15 @@ export default function Header({ onMenuClick }) {
     .toUpperCase()
     .slice(0, 2) || 'U';
 
+  const handleMenuClick = () => {
+    console.log('🍔 Hamburger clicked!');
+    onMenuClick();
+  };
+
   return (
     <header className="main-header">
       {/* Tombol Menu untuk Mobile */}
-      <button className="mobile-menu-btn" onClick={onMenuClick}>
+      <button className="mobile-menu-btn" onClick={handleMenuClick}>
         <Menu className="icon" />
       </button>
 

@@ -26,6 +26,11 @@ export default function Sidebar({ open, onClose, onLogout }) {
     setPhoto(savedPhoto);
   }, []);
 
+  // Debug: Log when open prop changes
+  useEffect(() => {
+    console.log('🔍 Sidebar - open state changed:', open);
+  }, [open]);
+
   const initials = currentUser?.name
     ?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
 
@@ -34,6 +39,8 @@ export default function Sidebar({ open, onClose, onLogout }) {
       {open && <div className="mobile-overlay" onClick={onClose} />}
 
       <aside className={`sidebar-container ${open ? 'is-open' : ''}`}>
+        {/* DEBUG: Show if open class applied */}
+        {/* Current class: sidebar-container {open ? 'is-open' : ''} */}
 
         {/* Header Logo */}
         <div className="sidebar-header">

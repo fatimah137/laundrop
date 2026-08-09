@@ -51,6 +51,22 @@ export default function Navbar() {
             <li><a href="#how">Cara Kerja</a></li>
             <li><a href="#pricing">Harga</a></li>
             <li><a href="#faq">FAQ</a></li>
+            <li className="mobile-menu-action">
+              <button
+                onClick={handleLoginClick}
+                className="navbar-login mobile-btn"
+              >
+                Login
+              </button>
+            </li>
+            <li className="mobile-menu-action">
+              <button
+                onClick={handleOrderClick}
+                className="btn-primary mobile-btn"
+              >
+                Pesan Sekarang
+              </button>
+            </li>
           </ul>
 
           <div className="navbar-actions">

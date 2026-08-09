@@ -29,22 +29,26 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
+  const handleMenuClick = () => {
+    console.log('📱 Layout: Menu clicked, setting sidebar open');
+    setIsSidebarOpen(true);
+  };
+
   return (
     <div className="layout-container">
-
-      {isSidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
-      )}
 
       {/* Sidebar — notif & logout ada di dalam sidebar */}
       <Sidebar
         open={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={() => {
+          console.log('📱 Layout: Closing sidebar');
+          setIsSidebarOpen(false);
+        }}
         onLogout={() => setShowLogoutModal(true)}
       />
 
       <div className="main-wrapper">
-        <Header onMenuClick={() => setIsSidebarOpen(true)} />
+        <Header onMenuClick={handleMenuClick} />
         <main className="content-area">
           {children}
         </main>

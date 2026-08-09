@@ -36,9 +36,7 @@
 }
 
 /* ── Overlay Mobile ──────────────────────────────────────────────── */
-.sidebar-overlay {
-  display: none;
-}
+/* ✅ Removed - overlay now handled by Sidebar component */
 
 /* ── Bottom Navbar — default hidden ──────────────────────────────── */
 .customer-bottom-nav {
@@ -53,23 +51,9 @@
     padding-bottom: 72px;
   }
 
-  /* Sembunyikan sidebar */
-  .sidebar-container {
-    display: none !important;
-  }
-
   /* Sembunyikan tombol hamburger di header */
   .header-menu-btn {
     display: none;
-  }
-
-  /* Sidebar overlay */
-  .sidebar-overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 40;
   }
 
   /* Tampilkan bottom navbar */
@@ -82,8 +66,8 @@
     left: 0;
     right: 0;
     height: 60px;
-    background: #fff;              /* ✅ putih — sama dengan employee */
-    border-top: 1px solid #e2e8f0; /* ✅ border terang */
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
     z-index: 100;
     box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
   }

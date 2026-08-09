@@ -20,10 +20,25 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  outline: none;
+  transition: background-color 0.2s ease;
 }
 
 .mobile-menu-btn:hover {
   background-color: #f1f5f9;
+}
+
+.mobile-menu-btn:active,
+.mobile-menu-btn:focus {
+  background-color: #e2e8f0;
+  outline: none;
+}
+
+.mobile-menu-btn .icon {
+  width: 20px;
+  height: 20px;
+  color: #1e293b;
+  stroke-width: 2.5;
 }
 
 .header-right {

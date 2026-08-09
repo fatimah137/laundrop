@@ -549,21 +549,32 @@
 .verify-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.52);
+  background: rgba(15, 23, 42, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1400;
-  padding: 16px;
+  z-index: 1001;
+  padding: 20px;
+  animation: overlayIn 0.2s ease;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .verify-modal {
-  width: min(560px, 100%);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
   background: #fff;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
   padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .verify-title {
@@ -659,6 +670,139 @@
 
 .verify-btn-confirm:hover {
   background: #1d4ed8;
+}
+
+/* ═════════════════════════════════════════════════════════════════ */
+/* VERIFICATION MODAL RESPONSIVE                                    */
+/* ═════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .verify-overlay {
+    padding: 30px 16px 100px 16px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 30px;
+  }
+
+  .verify-modal {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .verify-overlay {
+    padding: 20px 12px 100px 12px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 20px;
+  }
+
+  .verify-modal {
+    max-width: 100%;
+    max-height: 75vh;
+    border-radius: 20px;
+  }
+
+  .verify-title {
+    font-size: 16px;
+  }
+
+  .verify-subtitle {
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+
+  .verify-row {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .verify-total-row strong {
+    font-size: 14px;
+  }
+
+  .verify-actions {
+    margin-top: 14px;
+    gap: 8px;
+  }
+
+  .verify-btn {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .verify-overlay {
+    padding: 10px 10px 90px 10px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15px;
+  }
+
+  .verify-modal {
+    max-height: 70vh;
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .verify-title {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .verify-subtitle {
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+
+  .verify-list {
+    border-radius: 10px;
+  }
+
+  .verify-row {
+    padding: 9px 10px;
+    font-size: 11px;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .verify-row span {
+    color: #64748b;
+  }
+
+  .verify-row strong {
+    text-align: left;
+    font-size: 12px;
+  }
+
+  .verify-address {
+    max-width: 100%;
+  }
+
+  .verify-notes {
+    max-width: 100%;
+  }
+
+  .verify-total-row strong {
+    font-size: 13px;
+  }
+
+  .verify-actions {
+    margin-top: 12px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .verify-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 8px 10px;
+    font-size: 11px;
+    border-radius: 8px;
+  }
 }
 
 /* ═════ Phone Completion Modal ════════════════════════════════════════════════════════ */

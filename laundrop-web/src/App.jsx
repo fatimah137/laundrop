@@ -16,6 +16,11 @@ import ResetSuccess from './pages/auth/ResetSucces'
 // Landing
 import Home from './pages/Home'
 
+// Test Pages
+import TestOrderModal from './pages/TestOrderModal'
+import TestVerificationModal from './pages/TestVerificationModal'
+import TestLogoutModal from './pages/TestLogoutModal'
+
 // Customer Pages
 import CustomerDashboard from './pages/customer/Dashboard/Dashboard'
 import CustomerOrder from './pages/customer/Order/Order'
@@ -53,6 +58,11 @@ function App() {
 
             {/* ─── Landing ─── */}
             <Route path="/" element={<Home />} />
+
+            {/* ─── Test ─── */}
+            <Route path="/test-order-modal" element={<TestOrderModal />} />
+            <Route path="/test-verification-modal" element={<TestVerificationModal />} />
+            <Route path="/test-logout-modal" element={<TestLogoutModal />} />
 
             {/* ─── Auth ─── */}
             <Route path="/login"          element={<Login />} />

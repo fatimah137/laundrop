@@ -1,22 +1,30 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 50;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1001;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 20px;
+  animation: overlayIn 0.2s ease;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .modal-container {
   background: #fff;
   border-radius: 20px;
   width: 100%;
-  max-width: 520px;
+  max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow-x: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Header */
@@ -63,11 +71,20 @@
   justify-content: center;
   cursor: pointer;
   color: #64748b;
-  transition: background 0.2s;
+  transition: background 0.2s ease;
+  z-index: 10;
+  padding: 0;
+  flex-shrink: 0;
+  outline: none;
 }
 
 .modal-close-btn:hover {
   background: #e2e8f0;
+}
+
+.modal-close-btn:active {
+  background: #cbd5e1;
+  transform: scale(0.95);
 }
 
 /* Body */
@@ -76,6 +93,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding-bottom: 40px;
 }
 
 /* Detail Grid */
@@ -358,4 +376,197 @@
   color: #475569;
   margin: 0;
   font-weight: 500;
+}
+
+/* ═════════════════════════════════════════════════════════════════ */
+/* MOBILE RESPONSIVE                                                  */
+/* ═════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .modal-overlay {
+    padding: 30px 16px 100px 16px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 30px;
+  }
+
+  .modal-container {
+    max-width: 100%;
+    max-height: 80vh;
+  }
+
+  .modal-body {
+    padding-bottom: 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 20px 12px 100px 12px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 20px;
+  }
+
+  .modal-container {
+    max-width: 100%;
+    max-height: 75vh;
+    border-radius: 20px;
+  }
+
+  .modal-header {
+    padding: 16px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .modal-order-label {
+    font-size: 10px;
+  }
+
+  .modal-order-id {
+    font-size: 16px;
+  }
+
+  .modal-header-right {
+    gap: 8px;
+  }
+
+  .modal-close-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .modal-body {
+    padding: 16px;
+    gap: 14px;
+    padding-bottom: 35px;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .detail-cell {
+    padding: 10px;
+  }
+
+  .detail-label {
+    font-size: 10px;
+  }
+
+  .detail-value {
+    font-size: 13px;
+  }
+
+  .detail-price-breakdown {
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+
+  .breakdown-title {
+    font-size: 11px;
+  }
+
+  .breakdown-row {
+    padding: 5px 0;
+    font-size: 12px;
+  }
+
+  .qr-code-section {
+    padding: 12px 16px;
+  }
+
+  .order-qr-code {
+    width: 100px;
+  }
+
+  .detail-cancel-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 10px 10px 90px 10px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15px;
+  }
+
+  .modal-container {
+    max-height: 70vh;
+    border-radius: 16px;
+  }
+
+  .modal-header {
+    padding: 12px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-close-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modal-body {
+    padding: 14px;
+    gap: 12px;
+    padding-bottom: 30px;
+  }
+
+  .detail-grid {
+    gap: 8px;
+  }
+
+  .detail-cell {
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .detail-label {
+    font-size: 9px;
+  }
+
+  .detail-value {
+    font-size: 12px;
+  }
+
+  .qr-code-section {
+    padding: 10px 12px;
+  }
+
+  .order-qr-code {
+    width: 80px;
+  }
+
+  .qr-label {
+    font-size: 10px;
+  }
+
+  .detail-cancel-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+}
+    padding: 12px 12px 16px;
+    gap: 12px;
+  }
+
+  .detail-grid {
+    gap: 8px;
+  }
+
+  .detail-cell {
+    padding: 8px;
+  }
+
+  .qr-code-section {
+    padding: 10px 12px;
+  }
+
+  .order-qr-code {
+    width: 90px;
+  }
 }
