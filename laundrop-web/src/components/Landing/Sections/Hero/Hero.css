@@ -75,6 +75,7 @@
   .hero-actions {
     gap: 8px;
   }
+}
 
 .hero-image {
   display: flex;
