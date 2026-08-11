@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
-import { Phone, X } from "lucide-react";
+import { Phone, X, MapPin } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useApp } from "../../../context/AppContext";
 import { useRole } from "../../../context/RoleContext";
+import { useCustomerLocation } from "../../../hooks/useCustomerLocation";
 import api from "../../../services/api";
 import Layout from '../../../components/Customer/Layout';
 import PageTitle from "../../../components/ui/PageTitle";
@@ -294,6 +295,9 @@ export default function Order() {
   const { currentUser, updateCurrentUser } = useRole();
   const pickupBackupRef = useRef(null);
 
+  // 🌍 Get customer's realtime location
+  const { location: customerLocation, loading: locationLoading, error: locationError, requestLocation } = useCustomerLocation();
+
   const [placedOrder,   setPlacedOrder]   = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [showReceipt,   setShowReceipt]   = useState(false);
@@ -317,6 +321,7 @@ export default function Order() {
   const [submitting, setSubmitting] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState([]);
+  const [useCustomerLocationForPickup, setUseCustomerLocationForPickup] = useState(false);
 
   const savedAddressStorageSlot = useMemo(() => {
     const userKey = currentUser?.id || currentUser?.email || "guest";
@@ -415,6 +420,16 @@ export default function Order() {
     }
   }, []);
   // Empty dependency array - only run once on mount
+
+  // 🌍 Auto-populate pickup location dengan lokasi customer realtime
+  useEffect(() => {
+    if (!customerLocation || form.pickupLat !== null) return; // Jangan override jika sudah ada pickup location
+    if (form.orderType !== "pickup") return; // Hanya untuk pickup order
+    
+    // Auto-populate dengan lokasi customer
+    setUseCustomerLocationForPickup(true);
+    updatePickupFromCoordinates(customerLocation.lat, customerLocation.lng);
+  }, [customerLocation, form.orderType]);
 
   useEffect(() => {
     let mounted = true;
@@ -693,10 +708,10 @@ export default function Order() {
   );
   const pickupPosition = useMemo(
     () => ({
-      lat: typeof form.pickupLat === "number" ? form.pickupLat : DEFAULT_MAP_CENTER.lat,
-      lng: typeof form.pickupLng === "number" ? form.pickupLng : DEFAULT_MAP_CENTER.lng,
+      lat: typeof form.pickupLat === "number" ? form.pickupLat : (customerLocation?.lat ?? DEFAULT_MAP_CENTER.lat),
+      lng: typeof form.pickupLng === "number" ? form.pickupLng : (customerLocation?.lng ?? DEFAULT_MAP_CENTER.lng),
     }),
-    [form.pickupLat, form.pickupLng]
+    [form.pickupLat, form.pickupLng, customerLocation]
   );
 
   const deliveryPosition = useMemo(
@@ -1193,14 +1208,52 @@ export default function Order() {
               <div className="order-section">
                 <div className="section-header-with-action">
                   <h3 className="section-title"><IconMapPin /> Alamat</h3>
-                  <button
-                    type="button"
-                    className="btn-pick-saved-address"
-                    onClick={openSavedAddressesPage}
-                  >
-                    Pilih Alamat Tersimpan
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {customerLocation && !form.pickupLat && (
+                      <button
+                        type="button"
+                        className="btn-pick-saved-address"
+                        onClick={() => updatePickupFromCoordinates(customerLocation.lat, customerLocation.lng)}
+                        title="Gunakan lokasi saat ini"
+                        style={{ backgroundColor: '#0ea5e9', color: 'white' }}
+                      >
+                        📍 Gunakan Lokasi Saya
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-pick-saved-address"
+                      onClick={openSavedAddressesPage}
+                    >
+                      Pilih Alamat Tersimpan
+                    </button>
+                  </div>
                 </div>
+
+                {/* Location Status */}
+                {locationLoading && (
+                  <div className="map-area-warning" style={{ marginBottom: 12 }}>
+                    Mencari lokasi Anda... Mohon tunggu dan pastikan GPS aktif.
+                  </div>
+                )}
+                {locationError && (
+                  <div className="map-area-warning" style={{ marginBottom: 12 }}>
+                    <span>{locationError}</span>
+                    <button
+                      type="button"
+                      onClick={requestLocation}
+                      style={{ marginLeft: '8px', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+                    >
+                      Coba lagi
+                    </button>
+                  </div>
+                )}
+                {customerLocation && useCustomerLocationForPickup && (
+                  <div className="map-area-warning" style={{ marginBottom: 12, backgroundColor: '#d4edda', borderColor: '#28a745', color: '#155724' }}>
+                    Lokasi Anda terdeteksi! Map sudah berpusat ke posisi Anda.
+                  </div>
+                )}
+
                 {mapError && <div className="map-error-box">{mapError}</div>}
                 {loadingServiceArea && (
                   <p className="form-hint" style={{ marginBottom: 8 }}>

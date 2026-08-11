@@ -356,7 +356,7 @@ export default function TrackOrderModal({
             <div className="receipt-row">
               <span className="receipt-row-label">Status Bayar</span>
               <span className={`receipt-row-value ${order.payment_status === 'paid' ? 'track-paid' : 'track-unpaid'}`}>
-                {order.payment_status === 'paid' ? '✓ Lunas' : '⏳ Belum Bayar'}
+                {order.payment_status === 'paid' ? '✓ Lunas' : 'Belum Bayar'}
               </span>
             </div>
 
