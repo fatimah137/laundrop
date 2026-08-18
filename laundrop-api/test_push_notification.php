@@ -13,15 +13,18 @@
  * 4. Log results
  */
 
-require 'bootstrap/app.php';
+// Load Composer autoloader first
+require __DIR__ . '/vendor/autoload.php';
+
+// Then bootstrap Laravel application
+$app = require 'bootstrap/app.php';
 
 use App\Services\NotificationService;
 use App\Models\PushSubscription;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
-// Boot Laravel application
-$app = require 'bootstrap/app.php';
+// Boot Laravel kernel
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\MLController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\RouteController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public ───────────────────────────────────────────────────────────────────
@@ -52,6 +53,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Push Subscription
     Route::post('push/subscribe',   [PushSubscriptionController::class, 'subscribe']);
     Route::delete('push/unsubscribe',[PushSubscriptionController::class, 'unsubscribe']);
+
+    // Route Directions (OpenRouteService)
+    Route::post('route/directions', [RouteController::class, 'getRoute']);
 
     // Notifikasi
     Route::prefix('notifications')->group(function () {

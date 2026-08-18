@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
-import { Phone, X, MapPin } from "lucide-react";
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Polyline, Popup } from "react-leaflet";
+import { Phone, X, MapPin, Navigation2 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useApp } from "../../../context/AppContext";
 import { useRole } from "../../../context/RoleContext";
 import { useCustomerLocation } from "../../../hooks/useCustomerLocation";
+import { useRoute } from "../../../hooks/useRoute";
 import api from "../../../services/api";
 import Layout from '../../../components/Customer/Layout';
 import PageTitle from "../../../components/ui/PageTitle";
@@ -112,6 +113,16 @@ const deliveryMarkerIcon = L.icon({
   shadowSize: [41, 41],
 });
 
+// 🏭 Outlet/Laundry marker icon (GREEN)
+const outletMarkerIcon = L.icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 const extractPolygonsFromGeoJson = (geoJson) => {
   if (!geoJson || !geoJson.type || !geoJson.coordinates) return [];
 
@@ -173,6 +184,105 @@ function MapCenterUpdater({ lat, lng }) {
   }, [lat, lng, map]);
 
   return null;
+}
+
+// 📍 Component untuk menampilkan garis jarak antara outlet dan customer location
+function DistancePolyline({ outletLat, outletLng, customerLat, customerLng, distanceKm, polylinePoints }) {
+  console.log('🗺️ DistancePolyline component rendered with:', {
+    outletLat,
+    outletLng,
+    customerLat,
+    customerLng,
+    distanceKm,
+    polylinePointsCount: polylinePoints?.length || 0,
+    polylinePointsSample: polylinePoints?.slice(0, 3),
+  });
+
+  if (!customerLat || !customerLng) {
+    console.log('❌ DistancePolyline: Missing customer coordinates, returning null');
+    return null;
+  }
+
+  // Use actual polyline points dari OpenRouteService jika tersedia, fallback ke straight line
+  const positions = (polylinePoints && polylinePoints.length > 0) 
+    ? polylinePoints 
+    : [
+        [outletLat, outletLng],      // Start: Outlet
+        [customerLat, customerLng],   // End: Customer
+      ];
+
+  console.log('📍 Positions:', { positionsCount: positions.length, positionsSample: positions.slice(0, 3) });
+  
+  // Check if coordinates look valid (should be within valid lat/lng ranges)
+  if (positions.length > 0) {
+    const firstPos = positions[0];
+    const lastPos = positions[positions.length - 1];
+    const isValidLatLng = (lat, lng) => {
+      return typeof lat === 'number' && typeof lng === 'number' && 
+             lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    };
+    console.log('📌 Coordinate validation:', {
+      firstPos,
+      lastPos,
+      firstIsValid: isValidLatLng(firstPos[0], firstPos[1]),
+      lastIsValid: isValidLatLng(lastPos[0], lastPos[1]),
+      outletCoords: [outletLat, outletLng],
+      customerCoords: [customerLat, customerLng],
+    });
+  }
+
+  // Determine polyline style based on source
+  const isActualRoute = polylinePoints && polylinePoints.length > 0;
+  console.log('🎨 isActualRoute:', isActualRoute);
+  const polylineStyle = {
+    color: isActualRoute ? "#3b82f6" : "#9ca3af",
+    weight: 3,
+    opacity: isActualRoute ? 0.8 : 0.5,
+    dashArray: isActualRoute ? null : "5, 5", // Solid for actual route, dashed for fallback
+  };
+
+  return (
+    <>
+      {/* Garis penghubung - mengikuti jalan atau straight line */}
+      {(() => {
+        console.log('🎯 About to render Polyline with:', {
+          positions,
+          style: polylineStyle,
+          positionsLength: positions.length,
+        });
+        return null;
+      })()}
+      <Polyline
+        positions={positions}
+        {...polylineStyle}
+      />
+      
+      {/* Distance label di tengah garis */}
+      <Marker
+        position={[
+          (outletLat + customerLat) / 2,
+          (outletLng + customerLng) / 2,
+        ]}
+        icon={L.divIcon({
+          className: 'distance-label-marker',
+          html: `<div style="
+            background: white;
+            color: #1f2937;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 2px solid ${isActualRoute ? '#3b82f6' : '#d1d5db'};
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          ">${distanceKm?.toFixed(2) || '0'} km</div>`,
+          iconSize: null,
+          iconAnchor: null,
+          popupAnchor: null,
+        })}
+      />
+    </>
+  );
 }
 
 function IconBag() {
@@ -297,6 +407,32 @@ export default function Order() {
 
   // 🌍 Get customer's realtime location
   const { location: customerLocation, loading: locationLoading, error: locationError, requestLocation } = useCustomerLocation();
+
+  // 🛣️ Get route directions from outlet to customer/delivery location
+  const { route: pickupRoute, loading: _pickupRouteLoading, error: _pickupRouteError, getRoute: getPickupRoute } = useRoute();
+  const { route: deliveryRoute, loading: _deliveryRouteLoading, error: _deliveryRouteError, getRoute: getDeliveryRoute } = useRoute();
+
+  // 🐛 Track when pickupRoute changes
+  useEffect(() => {
+    console.log('🔍 pickupRoute changed:', {
+      hasRoute: !!pickupRoute,
+      hasPolylinePoints: !!pickupRoute?.polyline_points,
+      polylinePointsCount: pickupRoute?.polyline_points?.length || 0,
+      routeDistance: pickupRoute?.distance,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+  }, [pickupRoute]);
+
+  // 🐛 Track when deliveryRoute changes
+  useEffect(() => {
+    console.log('🔍 deliveryRoute changed:', {
+      hasRoute: !!deliveryRoute,
+      hasPolylinePoints: !!deliveryRoute?.polyline_points,
+      polylinePointsCount: deliveryRoute?.polyline_points?.length || 0,
+      routeDistance: deliveryRoute?.distance,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+  }, [deliveryRoute]);
 
   const [placedOrder,   setPlacedOrder]   = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
@@ -476,6 +612,59 @@ export default function Order() {
       mounted = false;
     };
   }, []);
+
+  // Fetch pickup route dari outlet ke customer location
+  useEffect(() => {
+    console.log('📍 Pickup route useEffect triggered', {
+      orderType: form.orderType,
+      pickupLat: form.pickupLat,
+      pickupLng: form.pickupLng,
+      customerLocLat: customerLocation?.lat,
+      customerLocLng: customerLocation?.lng,
+    });
+
+    if (form.orderType !== "pickup") {
+      console.log('❌ Not pickup order, skipping');
+      return;
+    }
+
+    // Prioritas: form.pickupLat/Lng (manual drag) > customerLocation (auto GPS)
+    const destLat = typeof form.pickupLat === "number" ? form.pickupLat : customerLocation?.lat;
+    const destLng = typeof form.pickupLng === "number" ? form.pickupLng : customerLocation?.lng;
+
+    console.log('📍 Destination:', { destLat, destLng });
+
+    if (!destLat || !destLng) {
+      console.log('❌ Missing destination coordinates');
+      return;
+    }
+    
+    console.log('🎯 Calling getPickupRoute...');
+    getPickupRoute({
+      origin_lat: LAUNDRY_COORDINATE.lat,
+      origin_lng: LAUNDRY_COORDINATE.lng,
+      destination_lat: destLat,
+      destination_lng: destLng,
+      mode: 'driving',
+    }).catch(err => {
+      console.warn('Failed to fetch pickup route:', err);
+    });
+  }, [form.pickupLat, form.pickupLng, form.orderType, getPickupRoute]);
+
+  // Fetch delivery route saat delivery address berubah
+  useEffect(() => {
+    if (!form.deliveryLat || !form.deliveryLng || form.orderType !== "drop_off") return;
+    
+    getDeliveryRoute({
+      origin_lat: LAUNDRY_COORDINATE.lat,
+      origin_lng: LAUNDRY_COORDINATE.lng,
+      destination_lat: form.deliveryLat,
+      destination_lng: form.deliveryLng,
+      mode: 'driving',
+    }).catch(err => {
+      console.warn('Failed to fetch delivery route:', err);
+    });
+  }, [form.deliveryLat, form.deliveryLng, form.orderType, getDeliveryRoute]);
 
   const updatePickupFromCoordinates = async (lat, lng) => {
     const distanceFromLaundryKm = calculateDistanceKm(
@@ -714,6 +903,11 @@ export default function Order() {
     [form.pickupLat, form.pickupLng, customerLocation]
   );
 
+  // 🐛 Track when pickupPosition changes
+  useEffect(() => {
+    console.log('📍 pickupPosition changed:', pickupPosition);
+  }, [pickupPosition]);
+
   const deliveryPosition = useMemo(
     () => ({
       lat: typeof form.deliveryLat === "number" ? form.deliveryLat : DEFAULT_MAP_CENTER.lat,
@@ -721,6 +915,11 @@ export default function Order() {
     }),
     [form.deliveryLat, form.deliveryLng]
   );
+
+  // 🐛 Track when deliveryPosition changes
+  useEffect(() => {
+    console.log('📍 deliveryPosition changed:', deliveryPosition);
+  }, [deliveryPosition]);
 
   const normalizedWeight = useMemo(() => {
     const raw = String(form.weight ?? '').trim();
@@ -1289,6 +1488,46 @@ export default function Order() {
                         position={[form.pickupLat, form.pickupLng]}
                       />
                     )}
+                    
+                    {/* 🏭 Outlet marker (hijau) */}
+                    <Marker
+                      icon={outletMarkerIcon}
+                      position={[LAUNDRY_COORDINATE.lat, LAUNDRY_COORDINATE.lng]}
+                    >
+                      <Popup>
+                        <div style={{ fontSize: '12px', fontWeight: '600' }}>
+                          🏭 Outlet Laundry
+                        </div>
+                      </Popup>
+                    </Marker>
+                    
+                    {/* 📍 Polyline penghubung outlet ke lokasi customer */}
+                    {pickupPosition.lat && pickupPosition.lng && (
+                      <>
+                        {(() => {
+                          console.log('🎯 About to render DistancePolyline for pickup:', {
+                            pickupRouteFull: pickupRoute,
+                            polylinePoints: pickupRoute?.polyline_points,
+                            polylinePointsCount: pickupRoute?.polyline_points?.length || 0,
+                          });
+                          return null;
+                        })()}
+                        <DistancePolyline
+                        outletLat={LAUNDRY_COORDINATE.lat}
+                        outletLng={LAUNDRY_COORDINATE.lng}
+                        customerLat={pickupPosition.lat}
+                        customerLng={pickupPosition.lng}
+                        distanceKm={pickupRoute?.distance?.km || calculateDistanceKm(
+                          LAUNDRY_COORDINATE.lat,
+                          LAUNDRY_COORDINATE.lng,
+                          pickupPosition.lat,
+                          pickupPosition.lng
+                        )}
+                        polylinePoints={pickupRoute?.polyline_points}
+                        />
+                      </>
+                    )}
+                    
                     <MapClickHandler onSelect={updatePickupFromCoordinates} />
                   </MapContainer>
                 </div>
@@ -1380,6 +1619,36 @@ export default function Order() {
                       },
                     }}
                   />
+                  
+                  {/* 🏭 Outlet marker (hijau) */}
+                  <Marker
+                    icon={outletMarkerIcon}
+                    position={[LAUNDRY_COORDINATE.lat, LAUNDRY_COORDINATE.lng]}
+                  >
+                    <Popup>
+                      <div style={{ fontSize: '12px', fontWeight: '600' }}>
+                        🏭 Outlet Laundry
+                      </div>
+                    </Popup>
+                  </Marker>
+                  
+                  {/* 📍 Polyline penghubung outlet ke alamat pengantaran */}
+                  {form.deliveryLat && form.deliveryLng && (
+                    <DistancePolyline
+                      outletLat={LAUNDRY_COORDINATE.lat}
+                      outletLng={LAUNDRY_COORDINATE.lng}
+                      customerLat={form.deliveryLat}
+                      customerLng={form.deliveryLng}
+                      distanceKm={deliveryRoute?.distance?.km || calculateDistanceKm(
+                        LAUNDRY_COORDINATE.lat,
+                        LAUNDRY_COORDINATE.lng,
+                        form.deliveryLat,
+                        form.deliveryLng
+                      )}
+                      polylinePoints={deliveryRoute?.polyline_points}
+                    />
+                  )}
+                  
                   <MapClickHandler onSelect={updateDeliveryFromCoordinates} />
                 </MapContainer>
               </div>
